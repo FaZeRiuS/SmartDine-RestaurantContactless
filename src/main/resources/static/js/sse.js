@@ -23,7 +23,7 @@ function startSseConnection(userId) {
     }
 
     console.log('>>> NOTIFICATIONS: Connecting to SSE stream...');
-    eventSource = new EventSource('/api/sse/subscribe/' + userId);
+    eventSource = new EventSource('/api/sse/subscribe/' + encodeURIComponent(userId));
 
     eventSource.onopen = () => {
         console.log('>>> NOTIFICATIONS: Connected successfully');
@@ -84,6 +84,28 @@ function startSseConnection(userId) {
             console.error('>>> NOTIFICATIONS: EventSource experienced an error');
         }
     };
+}
+
+// Exposed for layout / SW lifecycle hooks
+window.startSseConnection = startSseConnection;
+
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    let sseAfterSwTimer = null;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        const uid = window.currentUserId;
+        if (!uid) return;
+        clearTimeout(sseAfterSwTimer);
+        sseAfterSwTimer = setTimeout(() => {
+            try {
+                if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+                    console.log('>>> NOTIFICATIONS: Reconnecting SSE after Service Worker took control');
+                    startSseConnection(uid);
+                }
+            } catch (e) {
+                console.warn('>>> NOTIFICATIONS: SSE reconnect after SW skipped:', e);
+            }
+        }, 400);
+    });
 }
 
 function handleOrderNotification(order) {

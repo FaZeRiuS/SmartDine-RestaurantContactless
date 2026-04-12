@@ -107,8 +107,8 @@ public class SseServiceImpl implements SseService {
 
     private void sendHeartbeat(SseEmitter emitter, String label) {
         try {
-            // SSE comment line (ignored by EventSource) — keeps proxies/Tomcat from treating the stream as idle
-            emitter.send(SseEmitter.event().comment(""));
+            // SSE comment line (ignored by EventSource). Non-empty comment avoids edge cases with empty frames.
+            emitter.send(SseEmitter.event().comment("keep-alive"));
         } catch (Exception e) {
             log.trace("Heartbeat failed for {}, removing emitter", label);
             // The emitter will be removed via its onError/onCompletion handlers
