@@ -15,13 +15,8 @@ function initWebSocket(userId) {
     }
 
     
-    // Determine the WebSocket URL: ws:// or wss:// based on the current protocol
-    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    // When using Spring's .withSockJS(), the native websocket endpoint is at /ws/websocket
-    const brokerURL = `${protocol}${window.location.host}/ws/websocket`;
-
     stompClient = new StompJs.Client({
-        brokerURL: brokerURL,
+        webSocketFactory: () => new SockJS('/ws'),
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
