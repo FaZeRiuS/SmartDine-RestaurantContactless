@@ -420,11 +420,14 @@ h3+p {
 .navbar-brand {
     display: flex;
     align-items: center;
+    height: 100%;
 }
 
 .brand-logo {
-    height: 34px;
-    width: auto;
+    height: 38px !important;
+    width: auto !important;
+    max-width: 200px;
+    object-fit: contain;
     transition: transform var(--transition);
 }
 
