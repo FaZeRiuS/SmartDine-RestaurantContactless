@@ -21,6 +21,12 @@ services:
       - keycloak-net
     ports:
       - "127.0.0.1:8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+        reservations:
+          memory: 512M
     restart: unless-stopped
 
   keycloak-db:
@@ -38,6 +44,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     restart: unless-stopped
 
 networks:
