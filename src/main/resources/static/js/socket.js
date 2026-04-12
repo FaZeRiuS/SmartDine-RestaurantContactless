@@ -23,6 +23,7 @@ function initWebSocket(userId) {
     });
 
     stompClient.onConnect = (frame) => {
+        console.log('>>> WEBSOCKET: Connected successfully');
         
         // Subscribe to the topic for this user
         const topic = '/topic/order-updates/' + userId;
@@ -59,9 +60,14 @@ function initWebSocket(userId) {
     };
 
     stompClient.onWebSocketError = (event) => {
-        console.error('WebSocket Error:', event);
+        console.error('>>> WEBSOCKET: Connection error:', event);
+        // Provide more context to the user if possible
+        if (window.location.hostname.includes('azure.com') && !stompClient.active) {
+            console.warn('>>> DIAGNOSTIC: Detect potential DNS or connectivity issue with Azure domain.');
+        }
     };
 
+    console.log('>>> WEBSOCKET: Activating connection...');
     stompClient.activate();
 }
 
