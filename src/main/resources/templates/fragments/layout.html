@@ -15,6 +15,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Preload Critical Assets -->
+    <link rel="preload" th:href="@{/images/logo.png}" as="image" fetchpriority="high">
+    <link rel="preload" th:href="@{/css/style.css}" as="style">
+    
     <link rel="apple-touch-icon" th:href="@{/icons/apple-touch-icon.png}">
     <link rel="icon" type="image/png" sizes="32x32" th:href="@{/icons/favicon-32x32.png}">
     <link rel="icon" type="image/png" sizes="16x16" th:href="@{/icons/favicon-16x16.png}">
@@ -28,7 +32,7 @@
 <nav class="navbar" th:fragment="header">
     <div class="navbar-inner">
         <a class="navbar-brand" th:href="@{/}">
-            <img th:src="@{/images/logo.png}" alt="SmartDine" class="brand-logo">
+            <img th:src="@{/images/logo.png}" alt="SmartDine" class="brand-logo" fetchpriority="high">
         </a>
 
         <ul class="navbar-nav" id="mainNav">
@@ -142,45 +146,45 @@
         window.isAuthenticated = /*[[${#authentication.name != 'anonymousUser'}]]*/ false;
     </script>
     
-    <script th:src="@{/js/csrf.js}"></script>
-    <script th:src="@{/js/ui.js}"></script>
-    <script th:src="@{/js/cart.js}"></script>
-    <script th:src="@{/js/sse.js}"></script>
+    <script th:src="@{/js/csrf.js}" defer></script>
+    <script th:src="@{/js/ui.js}" defer></script>
+    <script th:src="@{/js/cart.js}" defer></script>
+    <script th:src="@{/js/sse.js}" defer></script>
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
-            // Ensure XSRF-TOKEN cookie exists before any POST/PUT/DELETE from JS.
+            // 1. Warm up CSRF
             fetch('/api/csrf', { credentials: 'same-origin' }).catch(() => {});
 
-            function bootstrapIdentityAndSse() {
-                fetch('/api/user/me')
-                    .then(res => res.json())
-                    .then(data => {
-                        window.currentUserId = data.id;
-                        if (typeof initSse === 'function') {
-                            initSse(data.id);
-                        }
-                        if (typeof window.refreshCartUI === 'function') {
-                            window.refreshCartUI();
-                        }
-                    })
-                    .catch(err => {
-                        console.error('>>> IDENTITY: Error synchronizing identity:', err);
-                        if (typeof window.refreshCartUI === 'function') {
-                            window.refreshCartUI();
-                        }
-                    });
+            // 2. Centralized Identity & UI Boot
+            async function bootstrapApp() {
+                try {
+                    const res = await fetch('/api/user/me');
+                    if (!res.ok) throw new Error('Identity failed');
+                    const data = await res.json();
+                    
+                    window.currentUserId = data.id;
+                    
+                    // Initialize components in sequence
+                    if (typeof initSharedUI === 'function') initSharedUI();
+                    if (typeof initSse === 'function') initSse(data.id);
+                    if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
+                    
+                } catch (err) {
+                    console.warn('>>> BOOTSTRAP: Reduced functionality mode:', err.message);
+                    if (typeof initSharedUI === 'function') initSharedUI();
+                    if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
+                }
             }
 
-            // Register SW early (same tick as identity) so it often activates before SSE; we do not await
-            // serviceWorker.ready — it can stall in some embedded/headless clients and would block SSE entirely.
+            // 3. Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('/sw.js')
                     .then(reg => console.log('>>> PWA: Service Worker registered!', reg.scope))
-                    .catch(err => console.error('>>> PWA: Service Worker registration failed:', err));
+                    .catch(err => console.error('>>> PWA: SW failed:', err));
             }
 
-            bootstrapIdentityAndSse();
+            bootstrapApp();
         });
     </script>
 </div>

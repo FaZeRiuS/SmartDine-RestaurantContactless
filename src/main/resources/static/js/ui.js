@@ -2,14 +2,17 @@
  * ui.js - Common UI logic and utilities for all sections (Customer, Staff, Admin)
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+function initSharedUI() {
     initMobileMenu();
     if (window.isAuthenticated) {
         loadLoyaltySummary();
     }
     initPushNotifications();
     checkUrlParams();
-});
+}
+
+// Exposed to central orchestration in layout.html
+window.initSharedUI = initSharedUI;
 
 /**
  * Sends a critical error log to the server for PWA/Lifecycle monitoring.
