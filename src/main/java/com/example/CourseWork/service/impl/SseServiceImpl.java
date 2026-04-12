@@ -48,7 +48,10 @@ public class SseServiceImpl implements SseService {
 
         // Send an initial "connected" event to verify the stream is open
         try {
-            emitter.send(SseEmitter.event().name("connected").data("SSE connection established"));
+            emitter.send(SseEmitter.event()
+                    .name("connected")
+                    .data("SSE connection established")
+                    .reconnectTime(10000)); // Hint browser to reconnect every 10s if connection lost
         } catch (IOException e) {
             log.warn("Failed to send initial SSE event to {}: {}", userId, e.getMessage());
         }
