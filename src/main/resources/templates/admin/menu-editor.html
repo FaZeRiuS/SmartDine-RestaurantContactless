@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор меню — SmartDine</title>
+    <meta name="description" content="Адміністрування меню та страв ресторану SmartDine">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main>
+
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h1 class="section-title"><span class="title-accent">✏️</span> Редактор меню</h1>
+                <p class="section-subtitle">Створюйте та редагуйте меню та страви</p>
+            </div>
+        </div>
+
+        <!-- ═══ MENUS PANEL ═══ -->
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <h2 class="admin-panel-title">📋 Категорії меню</h2>
+                <button class="btn btn-primary btn-sm" onclick="openMenuModal()" aria-label="Створити нову категорію меню">+ Нове меню</button>
+            </div>
+            <div class="admin-panel-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Назва</th>
+                            <th>Час роботи</th>
+                            <th>Кількість страв</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menusTableBody">
+                        <tr th:each="menu : ${menus}">
+                            <td th:text="${menu.id}">1</td>
+                            <td class="order-id-cell" th:text="${menu.name}">Menu</td>
+                            <td>
+                                <span th:if="${menu.startTime != null && menu.endTime != null}"
+                                      th:text="${#temporals.format(menu.startTime, 'HH:mm')} + ' — ' + ${#temporals.format(menu.endTime, 'HH:mm')}"></span>
+                                <span th:unless="${menu.startTime != null && menu.endTime != null}" class="text-muted">Весь день</span>
+                            </td>
+                            <td th:text="${menu.dishes != null ? menu.dishes.size() : 0}">0</td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-secondary btn-sm"
+                                            th:data-id="${menu.id}"
+                                            th:data-name="${menu.name}"
+                                            th:data-start="${menu.startTime}"
+                                            th:data-end="${menu.endTime}"
+                                            onclick="openMenuModal(this.dataset)"
+                                            aria-label="Редагувати категорію">✏️</button>
+                                    <button class="btn btn-danger btn-sm"
+                                            th:data-id="${menu.id}"
+                                            onclick="deleteMenu(this.dataset.id)"
+                                            aria-label="Видалити категорію">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══ DISHES PANEL ═══ -->
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <h2 class="admin-panel-title">🍽 Страви</h2>
+                <button class="btn btn-primary btn-sm" onclick="openDishModal()" aria-label="Додати нову страву">+ Нова страва</button>
+            </div>
+            <div class="admin-panel-body">
+                <div class="loading-overlay" id="dishesLoading">
+                    <div class="loading-spinner"></div>
+                    <span>Завантаження страв...</span>
+                </div>
+                <table class="data-table" id="dishesTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Назва</th>
+                            <th>Ціна</th>
+                            <th>Доступно</th>
+                            <th>Теги</th>
+                            <th>Дії</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dishesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ═══ MENU MODAL ═══ -->
+<div class="modal-overlay" id="menuModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="menuModalTitle">Нове меню</h3>
+            <button class="modal-close" onclick="closeModal('menuModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="menuEditId">
+            <div class="form-group">
+                <label class="form-label" for="menuName">Назва меню</label>
+                <input type="text" class="form-input" id="menuName" placeholder="Наприклад: Основне меню">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="menuStartTime">Час початку (необов'язково)</label>
+                <input type="time" class="form-input" id="menuStartTime">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="menuEndTime">Час закінчення (необов'язково)</label>
+                <input type="time" class="form-input" id="menuEndTime">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('menuModal')">Скасувати</button>
+            <button class="btn btn-primary" onclick="saveMenu()">💾 Зберегти</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ DISH MODAL ═══ -->
+<div class="modal-overlay" id="dishModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="dishModalTitle">Нова страва</h3>
+            <button class="modal-close" onclick="closeModal('dishModal')">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="dishEditId">
+            <div class="form-group">
+                <label class="form-label" for="dishName">Назва страви</label>
+                <input type="text" class="form-input" id="dishName" placeholder="Наприклад: Стейк з яловичини">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="dishDescription">Опис</label>
+                <textarea class="form-textarea" id="dishDescription" placeholder="Короткий опис страви..."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="dishPrice">Ціна (₴)</label>
+                <input type="number" class="form-input" id="dishPrice" step="0.01" min="0" placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="dishTags">Теги (через кому)</label>
+                <input type="text" class="form-input" id="dishTags" placeholder="meat, spicy, bestseller">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="dishMenuIds">Категорії меню (ID через кому)</label>
+                <input type="text" class="form-input" id="dishMenuIds" placeholder="1, 2, 3">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Фото страви</label>
+                <div class="dish-upload-container">
+                    <input type="file" id="dishImageFile" accept="image/*" class="form-input" style="margin-bottom: 0.5rem;" onchange="uploadDishImage()">
+                    <input type="hidden" id="dishImageUrl">
+                    <div id="dishImagePreview" class="mt-1" style="display: none;">
+                        <img src="" alt="Preview" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--border);">
+                        <button class="btn btn-danger btn-sm mt-1" type="button" onclick="removeDishImage()">Видалити фото</button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" id="dishAvailable" checked>
+                    <label class="form-label mb-0" for="dishAvailable">Доступна для замовлення</label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('dishModal')">Скасувати</button>
+            <button class="btn btn-primary" onclick="saveDish()">💾 Зберегти</button>
+        </div>
+    </div>
+</div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<script th:src="@{/js/csrf.js}"></script>
+<script th:src="@{/js/ui.js}"></script>
+<script th:src="@{/js/admin.js}"></script>
+
+</body>
+</html>

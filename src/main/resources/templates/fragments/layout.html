@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle != null ? pageTitle + ' — SmartDine' : 'SmartDine — Безконтактне замовлення'}">SmartDine</title>
+    <meta name="description" content="SmartDine — система безконтактного замовлення страв у ресторані через QR-код">
+    <meta name="theme-color" content="#0a0a0a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SmartDine">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
+    <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
+    <link rel="manifest" th:href="@{/manifest.json(v=1)}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- ═══ HEADER FRAGMENT ═══ -->
+<nav class="navbar" th:fragment="header">
+    <div class="navbar-inner">
+        <a class="navbar-brand" th:href="@{/}">
+            <span class="logo-icon">🍽️</span>
+            <span class="logo-text">SmartDine</span>
+        </a>
+
+        <ul class="navbar-nav" id="mainNav">
+            <li><a th:href="@{/}" th:classappend="${currentUri == '/' ? 'active' : ''}">Головна</a></li>
+            <li><a th:href="@{/menu}" th:classappend="${currentUri == '/menu' ? 'active' : ''}">Меню</a></li>
+            <li><a th:href="@{/cart}" th:classappend="${currentUri == '/cart' ? 'active' : ''}">Кошик</a></li>
+        </ul>
+
+        <!-- Right-side Auth/Profile Icons -->
+        <div class="header-actions">
+            <!-- Login for Guest -->
+            <a th:href="@{/oauth2/authorization/keycloak}" class="header-icon-btn" sec:authorize="!isAuthenticated()" aria-label="Увійти">
+                <span class="header-btn-text">Увійти</span>
+            </a>
+            
+            <!-- Desktop Profile (Visible on PC) -->
+            <div class="header-profile-desktop" sec:authorize="isAuthenticated()">
+                <div class="loyalty-badge-header" sec:authorize="hasRole('CUSTOMER')">
+                    <span class="loyalty-balance-text"><span class="js-header-loyalty-balance" th:text="${loyaltyBalance != null ? #numbers.formatDecimal(loyaltyBalance, 1, 2) : '—'}">—</span> ₴</span>
+                    <span class="loyalty-cashback-text">(<span class="js-header-cashback-rate" th:text="${cashbackRate != null ? #numbers.formatInteger(cashbackRate * 100, 1) : '1'}">1</span>%)</span>
+                </div>
+                <a th:href="@{/profile}" class="header-profile-btn">
+                    <div class="nav-user-avatar" 
+                         th:text="${#strings.substring(username != null ? username : (#authentication.name != 'anonymousUser' ? #authentication.name : 'U'), 0, 1).toUpperCase()}">U</div>
+                    <span class="header-btn-text" th:text="${username != null ? username : #authentication.name}">User</span>
+                </a>
+            </div>
+            
+            <div class="burger-menu-container" sec:authorize="isAuthenticated()">
+                <button class="menu-toggle" id="menuToggle" aria-label="Меню">☰</button>
+                
+                <ul class="navbar-burger" id="burgerNav">
+                    <!-- User Info Section (Burger) -->
+                    <li class="burger-user-info">
+                        <a th:href="@{/profile}" class="header-profile-btn">
+                            <div class="nav-user-avatar" 
+                                 th:text="${#strings.substring(username != null ? username : (#authentication.name != 'anonymousUser' ? #authentication.name : 'U'), 0, 1).toUpperCase()}">U</div>
+                            <span class="header-btn-text" th:text="${username != null ? username : #authentication.name}">User</span>
+                        </a>
+                        <div class="loyalty-badge-header" sec:authorize="hasRole('CUSTOMER')">
+                            <span class="loyalty-balance-text"><span class="js-header-loyalty-balance" th:text="${loyaltyBalance != null ? #numbers.formatDecimal(loyaltyBalance, 1, 2) : '—'}">—</span> ₴</span>
+                            <span class="loyalty-cashback-text">(<span class="js-header-cashback-rate" th:text="${cashbackRate != null ? #numbers.formatInteger(cashbackRate * 100, 1) : '1'}">1</span>%)</span>
+                        </div>
+                    </li>
+                    <li class="nav-divider"></li>
+
+                    <!-- Authenticated links -->
+                    <li sec:authorize="hasRole('CUSTOMER')">
+                        <a th:href="@{/orders}" th:classappend="${currentUri == '/orders' ? 'active' : ''}">Мої замовлення</a>
+                    </li>
+
+                    <li sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+                        <a th:href="@{/staff/orders}" th:classappend="${currentUri.startsWith('/staff') ? 'active' : ''}">Замовлення</a>
+                    </li>
+
+                    <li sec:authorize="hasAnyRole('CHEF','ADMINISTRATOR')">
+                        <a th:href="@{/admin/menu}" th:classappend="${currentUri == '/admin/menu' ? 'active' : ''}">Редактор меню</a>
+                    </li>
+
+                    <li sec:authorize="hasRole('ADMINISTRATOR')">
+                        <a th:href="@{/admin/dashboard}" th:classappend="${currentUri == '/admin/dashboard' ? 'active' : ''}">Dashboard</a>
+                    </li>
+
+                    <li class="nav-divider"></li>
+                    <li>
+                        <a th:href="@{/logout}" class="logout-btn" aria-label="Вийти з акаунта">Вийти</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══ MOBILE NAVIGATION FRAGMENT ═══ -->
+<div class="mobile-nav" th:fragment="mobile-nav">
+    <a th:href="@{/}" class="mobile-nav-item" th:classappend="${currentUri == '/' ? 'active' : ''}">
+        <span class="mobile-nav-icon">🏠</span>
+        <span class="mobile-nav-label">Головна</span>
+    </a>
+    <a th:href="@{/menu}" class="mobile-nav-item" th:classappend="${currentUri == '/menu' ? 'active' : ''}">
+        <span class="mobile-nav-icon">📋</span>
+        <span class="mobile-nav-label">Меню</span>
+    </a>
+
+    <a th:href="@{/cart}" class="mobile-nav-item" th:classappend="${currentUri == '/cart' ? 'active' : ''}">
+        <span class="mobile-nav-icon">
+            🛒
+            <span class="cart-badge-mobile" id="mobile-cart-count">0</span>
+        </span>
+        <span class="mobile-nav-label">Кошик</span>
+    </a>
+    <a th:href="@{/staff/orders}" class="mobile-nav-item" th:classappend="${currentUri.startsWith('/staff') ? 'active' : ''}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+        <span class="mobile-nav-icon">⚙️</span>
+        <span class="mobile-nav-label">Замовлення</span>
+    </a>
+</div>
+
+<!-- ═══ FOOTER FRAGMENT ═══ -->
+<footer class="footer" th:fragment="footer">
+    <p>&copy; 2026 <span class="footer-brand">SmartDine</span> — Безконтактне замовлення у ресторані</p>
+    <div th:replace="~{fragments/layout :: mobile-nav}"></div>
+</footer>
+
+<!-- ═══ SCRIPTS FRAGMENT ═══ -->
+<div th:fragment="scripts">
+    <!-- Real-time updates -->
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.2.1/bundles/stomp.umd.min.js"></script>
+    
+    <!-- Scripts -->
+    <script th:inline="javascript">
+        window.vapidPublicKey = /*[[${vapidPublicKey}]]*/ null;
+        window.isAuthenticated = /*[[${#authentication.name != 'anonymousUser'}]]*/ false;
+    </script>
+    
+    <script th:src="@{/js/csrf.js}"></script>
+    <script th:src="@{/js/ui.js}"></script>
+    <script th:src="@{/js/cart.js}"></script>
+    <script th:src="@{/js/socket.js}"></script>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure XSRF-TOKEN cookie exists before any POST/PUT/DELETE from JS.
+            fetch('/api/csrf', { credentials: 'same-origin' }).catch(() => {});
+            fetch('/api/user/me')
+                .then(res => res.json())
+                .then(data => {
+                    window.currentUserId = data.id;
+                    if (typeof initWebSocket === 'function') {
+                        initWebSocket(data.id);
+                    }
+                    if (typeof window.refreshCartUI === 'function') {
+                        window.refreshCartUI();
+                    }
+                })
+                .catch(err => {
+                    console.error('>>> IDENTITY: Error synchronizing identity:', err);
+                    if (typeof window.refreshCartUI === 'function') {
+                        window.refreshCartUI();
+                    }
+                });
+
+            // PWA Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then(reg => console.log('>>> PWA: Service Worker registered!', reg.scope))
+                        .catch(err => console.error('>>> PWA: Service Worker registration failed:', err));
+                });
+            }
+        });
+    </script>
+</div>
+
+</body>
+</html>

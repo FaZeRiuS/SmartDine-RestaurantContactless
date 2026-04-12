@@ -3,12 +3,87 @@ package com.example.CourseWork.repository;
 import com.example.CourseWork.addition.OrderStatus;
 import com.example.CourseWork.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findAllByOrderByCreatedAtDesc();
     List<Order> findAllByStatusOrderByCreatedAtDesc(OrderStatus status);
+    List<Order> findByStatusInOrderByCreatedAtDesc(List<OrderStatus> statuses);
+    List<Order> findAllByUserIdOrderByCreatedAtDesc(String userId);
+
+    interface TopDishView {
+        String getName();
+        Long getQuantity();
+    }
+
+    interface HourCountView {
+        Integer getOrderHour();
+        Long getCount();
+    }
+
+    @Query(value = """
+        SELECT COALESCE(SUM(o.total_price), 0)
+        FROM orders o
+        WHERE o.payment_status = 'SUCCESS'
+          AND o.created_at >= :from
+          AND o.created_at < :to
+        """, nativeQuery = true)
+    Double sumRevenue(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = """
+        SELECT COUNT(*)
+        FROM orders o
+        WHERE o.payment_status = 'SUCCESS'
+          AND o.created_at >= :from
+          AND o.created_at < :to
+        """, nativeQuery = true)
+    Long countSuccessfulOrders(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = """
+        SELECT COUNT(*)
+        FROM orders o
+        WHERE o.payment_status = 'SUCCESS'
+          AND o.user_id = :userId
+        """, nativeQuery = true)
+    Long countSuccessfulOrdersByUserId(@Param("userId") String userId);
+
+    @Query(value = """
+        SELECT COALESCE(AVG(o.total_price), 0)
+        FROM orders o
+        WHERE o.payment_status = 'SUCCESS'
+          AND o.created_at >= :from
+          AND o.created_at < :to
+        """, nativeQuery = true)
+    Double avgCheck(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = """
+        SELECT d.name AS name, COALESCE(SUM(oi.quantity), 0) AS quantity
+        FROM orders o
+        JOIN order_item oi ON oi.order_id = o.id
+        JOIN dish d ON d.id = oi.dish_id
+        WHERE o.payment_status = 'SUCCESS'
+          AND o.created_at >= :from
+          AND o.created_at < :to
+        GROUP BY d.name
+        ORDER BY quantity DESC
+        LIMIT 5
+        """, nativeQuery = true)
+    List<TopDishView> findTopDishes(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = """
+        SELECT CAST(EXTRACT(HOUR FROM o.created_at) AS INT) AS orderHour, COUNT(*) AS count
+        FROM orders o
+        WHERE o.payment_status = 'SUCCESS'
+          AND o.created_at >= :from
+          AND o.created_at < :to
+        GROUP BY orderHour
+        ORDER BY orderHour
+        """, nativeQuery = true)
+    List<HourCountView> countSuccessfulOrdersByHour(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }

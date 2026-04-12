@@ -1,0 +1,84 @@
+services:
+  app:
+    image: coursework-app:latest
+    # Build on VPS (or build locally and push to registry)
+    build: .
+    ports:
+      - "127.0.0.1:8081:8081" # expose only to localhost; nginx will proxy
+    networks:
+      - backend
+      - egress
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-prod}
+      - APP_PUBLIC_BASE_URL=${APP_PUBLIC_BASE_URL}
+      # For first deploy on empty DB you may set: update (then switch back to validate)
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO:-validate}
+
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/restaurant_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+
+      # If you need different URLs for browser vs container network, set:
+      # KEYCLOAK_PUBLIC_URL=https://auth.example.com
+      # KEYCLOAK_INTERNAL_URL=https://auth.example.com (or http://keycloak:8080 in dev)
+      - KEYCLOAK_AUTH_SERVER_URL=${KEYCLOAK_AUTH_SERVER_URL}
+      - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL:-${KEYCLOAK_AUTH_SERVER_URL}}
+      - KEYCLOAK_INTERNAL_URL=${KEYCLOAK_INTERNAL_URL:-${KEYCLOAK_AUTH_SERVER_URL}}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+
+      - LIQPAY_PUBLIC_KEY=${LIQPAY_PUBLIC_KEY}
+      - LIQPAY_PRIVATE_KEY=${LIQPAY_PRIVATE_KEY}
+
+      # Web Push
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_SUBJECT=${VAPID_SUBJECT}
+    volumes:
+      - ./uploads:/app/uploads
+
+
+      # Lock down origins in production (set to your real domain)
+      - app.cors.allowed-origins=${APP_ALLOWED_ORIGINS}
+      - app.ws.allowed-origins=${APP_ALLOWED_ORIGINS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres:
+    image: postgres:16
+    networks:
+      - backend
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=restaurant_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  backend:
+    internal: true
+  # Non-internal network for outbound connectivity (Keycloak/LiqPay, etc.)
+  egress:
+    internal: false
+
+volumes:
+  postgres_data:
+

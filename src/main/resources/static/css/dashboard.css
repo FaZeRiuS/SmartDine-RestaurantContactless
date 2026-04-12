@@ -1,0 +1,173 @@
+/* ── Admin Dashboard ──────────────────────────────────── */
+.dash-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+}
+.dash-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(14px);
+}
+.dash-card h3 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+}
+.dash-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.dash-metric .value {
+    font-size: 30px;
+    font-weight: 900;
+    color: var(--text-primary);
+}
+.dash-metric .unit {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 700;
+}
+.dash-sub {
+    margin-top: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+.span-4 { grid-column: span 4; }
+.span-6 { grid-column: span 6; }
+.span-12 { grid-column: span 12; }
+
+@media (max-width: 960px) {
+    .span-4, .span-6 { grid-column: span 12; }
+}
+
+@media (max-width: 768px) {
+    .dash-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 20px;
+    }
+    .dash-actions {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .dash-actions .btn {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 14px 20px;
+        font-size: 16px;
+        margin: 0;
+        box-sizing: border-box;
+    }
+}
+
+.chart-wrap {
+    height: 320px;
+    position: relative;
+}
+.chart-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.dash-header .title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.dash-header .title h1 {
+    margin: 0;
+    font-size: 22px;
+}
+.dash-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.dash-actions a {
+    text-decoration: none;
+}
+.dash-error {
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px dashed var(--border-gold);
+    background: rgba(201, 169, 110, 0.06);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* QR section responsive layout */
+.qr-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 0.5rem;
+}
+.qr-controls .form-group {
+    min-width: 220px;
+}
+.qr-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+}
+.qr-actions .form-input {
+    flex: 1 1 100%;
+    min-width: 0;
+}
+.qr-actions .btn,
+.qr-actions a.btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+    justify-content: center;
+    padding: 10px 16px;
+}
+@media (max-width: 600px) {
+    .qr-controls .form-group {
+        min-width: 100%;
+        flex: 1 1 100%;
+    }
+    .qr-controls .btn {
+        width: 100%;
+    }
+    .qr-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .qr-actions .btn,
+    .qr-actions a.btn {
+        width: 100%;
+        min-width: 0;
+        flex: none;
+        margin: 0;
+        padding: 14px 20px;
+        display: flex;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+}
+
+.qr-preview-img {
+    border: 1px solid rgba(0,0,0,.1);
+    border-radius: 12px;
+    background: #fff;
+    padding: 12px;
+}

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartDine — Безконтактне замовлення у ресторані</title>
+    <meta name="description" content="SmartDine — зручне безконтактне замовлення страв через QR-код. Переглядайте меню, обирайте страви та замовляйте прямо з телефону.">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<!-- Header -->
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main>
+<!-- Active Order Status (Home Page Widget) -->
+<div id="activeOrderContainer" class="container hidden mb-4">
+    <div class="active-order-card home-widget fade-in-up">
+        <div class="active-order-header">
+            <h3>Ваш статус замовлення #<span id="activeOrderId">0</span></h3>
+            <div class="status-badges-group">
+                <div class="status-badge-wrapper" id="orderStatusWrapper">
+                    <span class="order-status-badge" id="activeOrderStatus"></span>
+                </div>
+                <div class="status-badge-separator"></div>
+                <div class="status-badge-wrapper" id="paymentStatusWrapper">
+                    <span class="order-status-badge" id="activePaymentStatus"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="active-order-minimal-info">
+            <div id="activeOrderItems"></div>
+        </div>
+
+        <div class="active-order-footer">
+            <div class="cart-total">
+                <span>Сума до сплати:</span>
+                <span id="activeOrderTotalPrice">0.00 ₴</span>
+            </div>
+
+            <details id="loyaltyAccordion" class="accordion">
+                <summary class="accordion-summary">Бали лояльності</summary>
+                <div id="loyaltySection" class="cart-summary mt-1 p-1">
+                    <div class="d-flex flex-column gap-1">
+                        <div>
+                            <div class="text-muted text-sm">
+                                Доступно: <span id="loyaltyBalance">—</span> ₴ • макс. 50%
+                            </div>
+                            <div class="text-muted text-xs">
+                                Застосовано: <span id="loyaltyApplied">0.00</span> ₴
+                            </div>
+                        </div>
+                        
+                        <input id="loyaltyAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
+                               placeholder="Сума ₴"/>
+                        
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-primary btn-sm flex-1" type="button" 
+                                    onclick="applyLoyaltyToOrder()">Застосувати</button>
+                                    
+                            <button class="btn btn-secondary btn-sm flex-1" type="button" 
+                                    onclick="clearLoyaltyOnOrder()">Скасувати</button>
+                        </div>
+
+                        <div id="loyaltyHint" class="text-muted text-xs"></div>
+                    </div>
+                </div>
+            </details>
+
+            <details id="tipsAccordion" class="accordion">
+                <summary class="accordion-summary">Чайові</summary>
+                <div id="tipsSection" class="cart-summary mt-1 p-1">
+                    <div class="d-flex flex-column gap-1">
+                        <div class="text-muted text-sm">
+                            Оберіть варіант чайових або введіть суму:
+                        </div>
+                        <div class="d-flex gap-sm flex-wrap align-center">
+                            <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(10)">+10 ₴</button>
+                            <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(20)">+20 ₴</button>
+                            <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(50)">+50 ₴</button>
+                            <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(0)">0 ₴</button>
+                        </div>
+                        
+                        <input id="tipAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
+                               placeholder="Сума ₴"/>
+                        
+                        <button class="btn btn-primary btn-sm" type="button" 
+                                onclick="applyTipToOrder()">Застосувати чайові</button>
+
+                        <div class="text-muted text-xs">
+                            Застосовано: <span id="tipApplied">0.00</span> ₴
+                        </div>
+                        <div id="tipHint" class="text-muted text-xs"></div>
+                    </div>
+                </div>
+            </details>
+            
+            <div class="d-flex gap-1 mt-1">
+                <div id="paymentActions" class="hidden flex-1">
+                    <button class="btn btn-primary w-full" id="payBtn" onclick="payOrder()">
+                        Оплатити зараз
+                    </button>
+                </div>
+                <button class="btn btn-secondary flex-1" id="addMoreBtn" onclick="document.getElementById('menus-overview').scrollIntoView({behavior: 'smooth'})">
+                    Додати ще страв
+                </button>
+            </div>
+            
+            <!-- Call Waiter Section -->
+            <div id="callWaiterSection" class="mt-1"></div>
+            
+            <p class="text-success mt-1 hidden" id="paidMessage">
+                Замовлення оплачено та готується!
+            </p>
+            <div id="orderReviewSection"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Last Order Suggestion (Home Page Widget) -->
+<div id="lastOrderContainer" class="container hidden mb-4">
+    <div class="active-order-card home-widget fade-in-up">
+        <div class="active-order-header">
+            <h3>Повторити попереднє замовлення?</h3>
+        </div>
+        
+        <div class="active-order-minimal-info mb-1" style="padding-bottom: 0.5rem">
+            <div id="lastOrderItems"></div>
+        </div>
+
+        <div class="active-order-footer">
+            <div class="cart-total">
+                <span>Разом:</span>
+                <span id="lastOrderTotalPrice">0.00 ₴</span>
+            </div>
+            
+            <button class="btn btn-primary w-full mt-1" id="repeatOrderBtn" onclick="repeatLastOrder()">
+                Додати в кошик
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Hero Section -->
+<section id="heroSection" class="hero">
+    <div class="hero-content">
+        <h1>SmartDine</h1>
+        <p>
+            Скануйте QR-код, обирайте улюблені страви та замовляйте — без очікування офіціанта
+            <span th:if="${tableNumber != null}" class="table-badge">
+                • Стіл №[[${tableNumber}]]
+            </span>
+        </p>
+        <a th:href="@{/menu(table=${tableNumber})}" class="hero-cta">
+            Переглянути меню
+        </a>
+    </div>
+</section>
+
+<!-- Personalized Recommendations (Authenticated Users Only) -->
+<section class="section section-personalized" sec:authorize="isAuthenticated()" th:if="${personalizedRecommendations != null && !personalizedRecommendations.isEmpty()}">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">
+                    Рекомендації для вас
+                </h2>
+                <p class="section-subtitle">На основі ваших попередніх замовлень</p>
+            </div>
+        </div>
+
+        <div class="dishes-grid">
+            <div class="dish-card fade-in-up" th:each="dish, stat : ${personalizedRecommendations}"
+                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'"
+                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+
+                <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
+                
+                <div class="dish-image-container">
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" 
+                         th:src="${dish.imageUrl}" 
+                         th:alt="${dish.name}" 
+                         decoding="async"
+                         class="dish-image">
+                    <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
+                        <span>Dish</span>
+                    </div>
+                </div>
+
+                <div class="dish-card-content">
+                    <div class="dish-card-header mb-1">
+                        <span class="dish-name" th:text="${dish.name}">Страва</span>
+                        <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
+                    </div>
+                    <div class="text-muted text-sm mt-1"
+                         th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
+                        ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
+                        <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
+                    </div>
+                    <div class="text-muted text-sm mt-1"
+                         th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
+                        ★ Немає оцінок
+                    </div>
+                    <p class="dish-description" th:text="${dish.description}">Опис</p>
+                    <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
+                        <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
+                    </div>
+                    <div class="dish-actions">
+                        <button class="btn btn-primary add-to-cart-btn"
+                                th:data-dish-id="${dish.id}"
+                                th:data-dish-name="${dish.name}"
+                                onclick="addToCart(this.dataset.dishId, this.dataset.dishName)">
+                            🛒 У кошик
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Popular Dishes (Everyone) -->
+<section class="section" sec:authorize="!hasAnyRole('WAITER', 'CHEF', 'ADMINISTRATOR')">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">
+                    <span class="title-accent">🔥</span> Популярні страви
+                </h2>
+                <p class="section-subtitle">Те, що обирають наші гості найчастіше</p>
+            </div>
+        </div>
+
+        <div class="dishes-grid" th:if="${popularDishes != null && !popularDishes.isEmpty()}">
+            <div class="dish-card fade-in-up" th:each="dish, stat : ${popularDishes}"
+                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'"
+                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+
+                <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
+                
+                <div class="dish-image-container">
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" 
+                         th:src="${dish.imageUrl}" 
+                         th:alt="${dish.name}" 
+                         loading="lazy"
+                         decoding="async"
+                         class="dish-image">
+                    <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
+                        <span>Dish</span>
+                    </div>
+                </div>
+
+                <div class="dish-card-content">
+                    <div class="dish-card-header">
+                        <span class="dish-name" th:text="${dish.name}">Страва</span>
+                        <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
+                    </div>
+                    <div class="text-muted text-sm mt-1"
+                         th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
+                        ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
+                        <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
+                    </div>
+                    <div class="text-muted text-sm mt-1"
+                         th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
+                        ★ Немає оцінок
+                    </div>
+                    <p class="dish-description" th:text="${dish.description}">Опис</p>
+                    <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
+                        <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
+                    </div>
+                    <div class="dish-actions">
+                        <button class="btn btn-primary add-to-cart-btn"
+                                th:data-dish-id="${dish.id}"
+                                th:data-dish-name="${dish.name}"
+                                onclick="addToCart(this.dataset.dishId, this.dataset.dishName)">
+                            🛒 У кошик
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty-state" th:if="${popularDishes == null || popularDishes.isEmpty()}">
+            <h3>Поки що немає популярних страв</h3>
+            <p class="text-muted">Перегляньте наше меню, щоб знайти щось смачне!</p>
+        </div>
+    </div>
+</section>
+
+<!-- Menus Overview -->
+<section class="section" id="menus-overview" th:if="${menus != null && !menus.isEmpty()}" th:data-selected-menu-id="${selectedMenuId}">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Наше меню</h2>
+                <p class="section-subtitle">Оберіть категорію та перегляньте страви</p>
+            </div>
+            <a th:href="@{/menu(table=${tableNumber})}" class="btn btn-secondary">Переглянути все →</a>
+        </div>
+
+        <div class="menu-tabs">
+            <button class="menu-tab active" onclick="filterMenu('all', this)">Усе</button>
+            <button class="menu-tab" th:each="menu : ${menus}"
+                    th:text="${menu.name}"
+                    th:onclick="'filterMenu(' + ${menu.id} + ', this)'"
+                    th:data-menu-id="${menu.id}">
+                Категорія
+            </button>
+        </div>
+
+        <div th:each="menu : ${menus}" class="menu-category" th:data-menu-id="${menu.id}">
+            <h3 class="menu-category-title">
+                <span th:text="${menu.name}">Категорія</span>
+                <span class="menu-category-time"
+                      th:if="${menu.startTime != null && menu.endTime != null}"
+                      th:text="${#temporals.format(menu.startTime, 'HH:mm')} + ' — ' + ${#temporals.format(menu.endTime, 'HH:mm')}">
+                </span>
+            </h3>
+
+            <div class="dishes-grid" th:if="${menu.dishes != null && !menu.dishes.isEmpty()}">
+                <div class="dish-card" th:each="dish : ${menu.dishes}"
+                     th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+
+                    <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
+
+                    <div class="dish-image-container">
+                        <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" 
+                             th:src="${dish.imageUrl}" 
+                             th:alt="${dish.name}" 
+                             loading="lazy"
+                             decoding="async"
+                             class="dish-image">
+                        <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
+                            <span th:if="${dish.tags != null && dish.tags.contains('meat')}">🥩</span>
+                            <span th:if="${dish.tags != null && dish.tags.contains('seafood')}">🐟</span>
+                            <span th:if="${dish.tags != null && dish.tags.contains('sweet')}">🍰</span>
+                            <span th:if="${dish.tags != null && dish.tags.contains('drink')}">🍹</span>
+                            <span th:unless="${dish.tags != null && (dish.tags.contains('meat') || dish.tags.contains('seafood') || dish.tags.contains('sweet') || dish.tags.contains('drink'))}">🍽️</span>
+                        </div>
+                    </div>
+
+                    <div class="dish-card-content">
+                        <div class="dish-card-header">
+                            <span class="dish-name" th:text="${dish.name}">Страва</span>
+                            <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
+                        </div>
+
+                        <p class="dish-description" th:text="${dish.description}">Опис</p>
+
+                        <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
+                            <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
+                        </div>
+
+                        <div class="dish-actions">
+                            <button class="btn btn-primary add-to-cart-btn"
+                                    th:data-dish-id="${dish.id}"
+                                    th:data-dish-name="${dish.name}"
+                                    onclick="addToCart(this.dataset.dishId, this.dataset.dishName)">
+                                🛒 У кошик
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-muted mt-1" th:if="${menu.dishes == null || menu.dishes.isEmpty()}">
+                У цій категорії поки немає страв
+            </p>
+        </div>
+    </div>
+</section>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script th:src="@{/js/menu-filter.js}"></script>
+
+<!-- WebSocket & Identity Scripts -->
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -3,6 +3,7 @@ package com.example.CourseWork.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -13,6 +14,10 @@ public class Menu {
     private Integer id;
     private String name;
 
-    @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL)
-    private List<Dish> dishes;
+    private LocalTime startTime;
+    private LocalTime endTime;
+
+    @ManyToMany(mappedBy = "menus", cascade = CascadeType.ALL)
+    private List<Dish> dishes = new java.util.ArrayList<>();
 }
+

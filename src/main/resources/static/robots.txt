@@ -1,0 +1,29 @@
+# robots.txt for SmartDine
+# Optimized for PWA and Restaurant Contactless Ordering
+
+User-agent: *
+
+# Allow crawling of public-facing pages
+Allow: /
+Allow: /menu
+Allow: /css/
+Allow: /js/
+Allow: /images/
+
+# Disallow crawling of internal/private areas
+Disallow: /admin/
+Disallow: /staff/
+Disallow: /profile/
+Disallow: /orders/
+Disallow: /cart/
+Disallow: /api/
+Disallow: /oauth2/
+Disallow: /login
+Disallow: /logout
+
+# Disallow crawling of technical files
+Disallow: /sw.js
+Disallow: /manifest.json
+
+# If you have a sitemap, uncomment below:
+# Sitemap: https://your-domain.com/sitemap.xml

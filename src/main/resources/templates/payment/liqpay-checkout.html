@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting to LiqPay…</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body onload="document.getElementById('liqpayForm').submit()">
+<main>
+<section class="section">
+    <div class="container" style="max-width: 720px;">
+        <div class="section-header">
+            <div>
+                <h1 class="section-title">Оплата через LiqPay</h1>
+                <p class="section-subtitle">Зараз ми перенаправимо вас на сторінку оплати.</p>
+            </div>
+        </div>
+
+        <form id="liqpayForm" method="POST" th:action="${actionUrl}">
+            <input type="hidden" name="data" th:value="${data}"/>
+            <input type="hidden" name="signature" th:value="${signature}"/>
+            <noscript>
+                <button class="btn btn-primary w-full" type="submit">Перейти до оплати</button>
+            </noscript>
+        </form>
+
+        <div class="cart-summary" style="margin-top: 1rem;">
+            <div class="text-muted">
+                Якщо редірект не відбувся автоматично — натисніть кнопку вище.
+            </div>
+        </div>
+    </div>
+</section>
+</main>
+</body>
+</html>
+

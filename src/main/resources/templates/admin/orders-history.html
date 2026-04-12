@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Історія замовлень — SmartDine</title>
+    <meta name="description" content="Повна історія замовлень ресторану SmartDine">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main>
+
+<section class="section">
+    <div class="container">
+        <div class="section-header">
+            <div>
+                <h1 class="section-title"><span class="title-accent">📊</span> Історія замовлень</h1>
+                <p class="section-subtitle">Повний перелік усіх замовлень</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadAllOrders()" aria-label="Оновити список замовлень">🔄 Оновити</button>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div>
+                <label class="form-label" for="filterStatus">Статус замовлення:</label>
+                <select class="form-select" id="filterStatus" onchange="applyFilters()" aria-label="Фільтрувати за статусом замовлення">
+                    <option value="">Усі</option>
+                    <option value="NEW">Нові</option>
+                    <option value="PREPARING">Готуються</option>
+                    <option value="READY">Готові</option>
+                    <option value="COMPLETED">Завершені</option>
+                    <option value="CANCELLED">Скасовані</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label" for="filterPayment">Статус оплати:</label>
+                <select class="form-select" id="filterPayment" onchange="applyFilters()" aria-label="Фільтрувати за статусом оплати">
+                    <option value="">Усі</option>
+                    <option value="PENDING">Очікує</option>
+                    <option value="SUCCESS">Оплачено</option>
+                    <option value="FAILED">Помилка</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading-overlay" id="historyLoading">
+            <div class="loading-spinner"></div>
+            <span>Завантаження замовлень...</span>
+        </div>
+
+        <!-- Orders table -->
+        <div class="admin-panel" id="historyPanel" style="display:none;">
+            <div class="admin-panel-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Стіл</th>
+                            <th>Користувач</th>
+                            <th>Статус</th>
+                            <th>Оплата</th>
+                            <th>Сума</th>
+                            <th>Дата</th>
+                            <th>Деталі</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="empty-state hidden" id="historyEmpty">
+            <div class="empty-state-icon">📊</div>
+            <h3>Немає замовлень</h3>
+            <p class="text-muted">Замовлення ще не було створено</p>
+        </div>
+    </div>
+</section>
+
+<!-- Order Detail Modal -->
+<div class="modal-overlay" id="orderDetailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title" id="orderDetailTitle">Замовлення</h3>
+            <button class="modal-close" onclick="closeModal('orderDetailModal')">✕</button>
+        </div>
+        <div class="modal-body" id="orderDetailBody"></div>
+    </div>
+</div>
+</main>
+
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script th:src="@{/js/orders-history-admin.js}"></script>
+
+</body>
+</html>

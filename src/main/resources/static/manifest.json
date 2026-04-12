@@ -1,0 +1,43 @@
+{
+  "name": "SmartDine — Безконтактне замовлення",
+  "short_name": "SmartDine",
+  "description": "Система безконтактного замовлення страв у ресторані через QR-код",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "images/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "images/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "images/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["food", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Меню",
+      "url": "menu",
+      "icons": [{ "src": "images/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Кошик",
+      "url": "cart",
+      "icons": [{ "src": "images/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

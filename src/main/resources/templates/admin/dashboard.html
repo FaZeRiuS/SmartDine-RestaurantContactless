@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — SmartDine</title>
+    <meta name="description" content="Admin dashboard analytics">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css}">
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main>
+
+<section class="section">
+    <div class="container">
+        <div class="dash-header">
+            <div class="title">
+                <div class="nav-user-avatar">📊</div>
+                <div>
+                    <h1>Адмін Dashboard</h1>
+                    <div class="dash-sub">Ключові показники ефективності закладу</div>
+                </div>
+            </div>
+            <div class="dash-actions">
+                <a class="btn btn-secondary" th:href="@{/admin/orders}">📜 Історія замовлень</a>
+                <a class="btn btn-secondary" href="#qr">🔳 QR для столів</a>
+            </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="dash-grid">
+            <div class="dash-card span-4">
+                <h3>Виручка сьогодні</h3>
+                <div class="dash-metric">
+                    <div class="value" th:text="${#numbers.formatDecimal(summary.revenueToday(), 1, 'POINT', 2, 'POINT')}">0.00</div>
+                    <div class="unit">₴</div>
+                </div>
+                <div class="dash-sub">Сума оплачених замовлень за поточну добу</div>
+            </div>
+
+            <div class="dash-card span-4">
+                <h3>Виручка за 7 днів</h3>
+                <div class="dash-metric">
+                    <div class="value" th:text="${#numbers.formatDecimal(summary.revenueLast7Days(), 1, 'POINT', 2, 'POINT')}">0.00</div>
+                    <div class="unit">₴</div>
+                </div>
+                <div class="dash-sub">Останні 7 днів включно з сьогодні</div>
+            </div>
+
+            <div class="dash-card span-4">
+                <h3>Середній чек (7 днів)</h3>
+                <div class="dash-metric">
+                    <div class="value" th:text="${#numbers.formatDecimal(summary.averageCheckLast7Days(), 1, 'POINT', 2, 'POINT')}">0.00</div>
+                    <div class="unit">₴</div>
+                </div>
+                <div class="dash-sub">
+                    Оплачених замовлень сьогодні:
+                    <strong th:text="${summary.successfulOrdersToday()}">0</strong>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="dash-card span-6">
+                <h3>Топ-5 страв (7 днів)</h3>
+                <div class="chart-wrap">
+                    <canvas id="topDishesChart"></canvas>
+                </div>
+                <div class="dash-sub">Сумарна кількість продажів по позиціях</div>
+            </div>
+
+            <div class="dash-card span-6">
+                <h3>Успішні замовлення по годинах (сьогодні)</h3>
+                <div class="chart-wrap">
+                    <canvas id="hourlyOrdersChart"></canvas>
+                </div>
+                <div class="dash-sub">Кількість оплачених замовлень в розрізі годин</div>
+            </div>
+
+            <!-- QR generator -->
+            <div class="dash-card span-12" id="qr">
+                <h3>QR для столів</h3>
+                <div class="dash-sub mb-1">
+                    Генерує QR з посиланням на головну сторінку з параметром <code>table</code> (номер столу збережеться в сесію).
+                </div>
+
+                <div class="qr-controls">
+                    <div class="form-group">
+                        <label class="form-label" for="tableNumber">Номер столу</label>
+                        <input class="form-input" type="number" id="tableNumber" min="1" max="500" value="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="qrSize">Розмір (px)</label>
+                        <input class="form-input" type="number" id="qrSize" min="120" max="1024" value="320">
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="renderQr()" aria-label="Згенерувати QR-код для обраного столу">Згенерувати</button>
+                    </div>
+                </div>
+
+                <div class="form-group mt-1">
+                    <label class="form-label" for="targetUrl">Посилання (вшите в QR)</label>
+                    <div class="qr-actions">
+                        <input class="form-input" id="targetUrl" readonly value="">
+                        <button class="btn btn-secondary" onclick="copyUrl()" aria-label="Скопіювати посилання у буфер обміну">Скопіювати</button>
+                        <a class="btn btn-secondary" id="openUrlBtn" target="_blank" rel="noreferrer" aria-label="Відкрити посилання у новій вкладці">Відкрити</a>
+                        <a class="btn btn-primary" id="downloadBtn" download aria-label="Завантажити згенерований QR-код як зображення">⬇️ PNG</a>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-2 flex-wrap" style="align-items: start;">
+                    <div style="min-width: 280px;">
+                        <div class="text-muted mb-1">Попередній перегляд</div>
+                        <img id="qrImg" alt="QR code" class="qr-preview-img">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: mobile-nav}"></div>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+
+<!-- Prefer local WebJar; CDN as backup -->
+<script th:src="@{/webjars/chart.js/4.4.1/dist/chart.umd.min.js}"></script>
+<script>
+    if (typeof Chart === 'undefined') {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+        document.head.appendChild(s);
+    }
+</script>
+
+<!-- Dashboard data (requires Thymeleaf server-side rendering) -->
+<script th:inline="javascript">
+    window.topDishesData = /*[[${topDishes}]]*/ [];
+    window.hourlyOrdersData = /*[[${hourlyOrdersToday}]]*/ [];
+</script>
+<script th:src="@{/js/dashboard-charts.js}"></script>
+
+</body>
+</html>

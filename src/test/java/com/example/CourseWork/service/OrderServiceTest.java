@@ -1,288 +1,215 @@
 package com.example.CourseWork.service;
 
 import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.dto.*;
+import com.example.CourseWork.addition.PaymentStatus;
+import com.example.CourseWork.dto.OrderResponseDto;
 import com.example.CourseWork.mapper.OrderMapper;
-import com.example.CourseWork.model.*;
+import com.example.CourseWork.model.KeycloakUser;
+import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.*;
 import com.example.CourseWork.service.impl.OrderServiceImpl;
+import com.example.CourseWork.util.KeycloakUtil;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
+@SuppressWarnings("null")
 class OrderServiceTest {
 
     @Mock private OrderRepository orderRepository;
     @Mock private DishRepository dishRepository;
     @Mock private CartRepository cartRepository;
     @Mock private OrderMapper orderMapper;
+    @Mock private PaymentService paymentService;
+    @Mock private SimpMessagingTemplate messagingTemplate;
+    @Mock private OrderServiceReviewRepository orderServiceReviewRepository;
+    @Mock private OrderDishReviewRepository orderDishReviewRepository;
+    @Mock private PushNotificationService pushNotificationService;
 
-    private OrderService orderService;
+    @Mock private Authentication authentication;
+    @Mock private SecurityContext securityContext;
+
+    @InjectMocks
+    private OrderServiceImpl orderService;
+
+    private MockedStatic<KeycloakUtil> mockedKeycloakUtil;
+    private MockedStatic<SecurityContextHolder> mockedSecurityContextHolder;
+
+    private static final String USER_ID = "user-123";
+    private static final String STRANGER_ID = "stranger-456";
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        orderService = new OrderServiceImpl(orderRepository, dishRepository, cartRepository, orderMapper);
+        mockedKeycloakUtil = Mockito.mockStatic(KeycloakUtil.class);
+        mockedSecurityContextHolder = Mockito.mockStatic(SecurityContextHolder.class);
+        
+        lenient().when(SecurityContextHolder.getContext()).thenReturn(securityContext);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockedKeycloakUtil.close();
+        mockedSecurityContextHolder.close();
+    }
+
+    private KeycloakUser createMockUser(String id) {
+        KeycloakUser user = new KeycloakUser();
+        user.setId(id);
+        return user;
     }
 
     @Test
-    void testCreateOrder_Success() {
-        String userId = "user-123";
-
-        Dish dish = new Dish();
-        dish.setId(1);
-        dish.setName("Pizza");
-        dish.setPrice(10.0f);
-
-        OrderItemDto itemDto = new OrderItemDto();
-        itemDto.setDishId(1);
-        itemDto.setQuantity(2);
-        itemDto.setSpecialRequest("Extra cheese");
-
-        OrderRequestDto orderRequestDto = new OrderRequestDto();
-        orderRequestDto.setItems(List.of(itemDto));
-
+    void getOrderById_AsOwner_ShouldSuccess() {
+        // Arrange
         Order order = new Order();
         order.setId(1);
-        order.setUserId(userId);
-        order.setStatus(OrderStatus.NEW);
-        order.setCreatedAt(LocalDateTime.now());
-        order.setTotalPrice(20.0f);
-
-        OrderResponseDto responseDto = new OrderResponseDto();
-        responseDto.setId(1);
-        responseDto.setUserId(userId);
-        responseDto.setStatus(OrderStatus.NEW);
-        responseDto.setTotalPrice(20.0f);
-
-        when(dishRepository.findById(1)).thenReturn(Optional.of(dish));
-        when(orderRepository.save(any(Order.class))).thenReturn(order);
-        when(orderMapper.toResponseDto(any(Order.class))).thenReturn(responseDto);
-
-        OrderResponseDto response = orderService.createOrder(userId, orderRequestDto);
-
-        assertNotNull(response);
-        assertEquals(userId, response.getUserId());
-        assertEquals(20.0f, response.getTotalPrice());
-    }
-
-    @Test
-    void testCreateOrder_DishNotFound() {
-        String userId = "user-123";
-
-        OrderItemDto itemDto = new OrderItemDto();
-        itemDto.setDishId(1);
-        itemDto.setQuantity(2);
-        itemDto.setSpecialRequest("Extra cheese");
-
-        OrderRequestDto orderRequestDto = new OrderRequestDto();
-        orderRequestDto.setItems(List.of(itemDto));
-
-        when(dishRepository.findById(1)).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () ->
-                orderService.createOrder(userId, orderRequestDto));
-    }
-
-    @Test
-    void testGetOrderById() {
-        String userId = "user-123";
-        Order order = new Order();
-        order.setId(1);
-        order.setUserId(userId);
-        order.setStatus(OrderStatus.NEW);
-        order.setCreatedAt(LocalDateTime.now());
-        order.setTotalPrice(30.0f);
-
-        Dish dish = new Dish();
-        dish.setId(1);
-        dish.setName("Burger");
-        dish.setPrice(15.0f);
-
-        OrderItem item = new OrderItem();
-        item.setDish(dish);
-        item.setQuantity(2);
-        item.setSpecialRequest(null);
-        item.setOrder(order);
-
-        order.setItems(List.of(item));
-
-        OrderResponseDto responseDto = new OrderResponseDto();
-        responseDto.setId(1);
-        responseDto.setUserId(userId);
-        responseDto.setStatus(OrderStatus.NEW);
-        responseDto.setTotalPrice(30.0f);
+        order.setUserId(USER_ID);
 
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
-        when(orderMapper.toResponseDto(any(Order.class))).thenReturn(responseDto);
+        mockedKeycloakUtil.when(KeycloakUtil::getCurrentUser).thenReturn(createMockUser(USER_ID));
+        when(orderMapper.toResponseDto(order)).thenReturn(new OrderResponseDto());
 
+        // Act
         OrderResponseDto result = orderService.getOrderById(1);
 
-        assertNotNull(result);
-        assertEquals(1, result.getId());
-        assertEquals(userId, result.getUserId());
+        // Assert
+        assertThat(result).isNotNull();
     }
 
     @Test
-    void testGetNewOrders() {
-        String userId = "user-123";
+    void getOrderById_AsStaff_ShouldSuccess() {
+        // Arrange
         Order order = new Order();
         order.setId(1);
-        order.setUserId(userId);
-        order.setStatus(OrderStatus.NEW);
-        order.setCreatedAt(LocalDateTime.now());
-        order.setTotalPrice(30.0f);
+        order.setUserId(STRANGER_ID);
 
-        Dish dish = new Dish();
-        dish.setId(1);
-        dish.setName("Pizza");
-        dish.setPrice(15.0f);
+        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
+        mockedKeycloakUtil.when(KeycloakUtil::getCurrentUser).thenReturn(createMockUser(USER_ID));
+        
+        // Mock staff role
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_WAITER"))).when(authentication).getAuthorities();
 
-        OrderItem item = new OrderItem();
-        item.setDish(dish);
-        item.setQuantity(2);
-        item.setSpecialRequest("No cheese");
-        item.setOrder(order);
+        when(orderMapper.toResponseDto(order)).thenReturn(new OrderResponseDto());
 
-        order.setItems(List.of(item));
+        // Act
+        OrderResponseDto result = orderService.getOrderById(1);
 
-        OrderResponseDto responseDto = new OrderResponseDto();
-        responseDto.setId(1);
-        responseDto.setUserId(userId);
-        responseDto.setStatus(OrderStatus.NEW);
-        responseDto.setTotalPrice(30.0f);
-
-        when(orderRepository.findAllByStatusOrderByCreatedAtDesc(OrderStatus.NEW))
-                .thenReturn(List.of(order));
-        when(orderMapper.toResponseDto(any(Order.class))).thenReturn(responseDto);
-
-        List<OrderResponseDto> result = orderService.getNewOrders();
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(userId, result.getFirst().getUserId());
+        // Assert
+        assertThat(result).isNotNull();
     }
 
     @Test
-    void testGetAllOrders() {
-        String userId = "user-123";
+    void getOrderById_AsStranger_ShouldThrowException() {
+        // Arrange
         Order order = new Order();
         order.setId(1);
-        order.setUserId(userId);
-        order.setStatus(OrderStatus.NEW);
-        order.setCreatedAt(LocalDateTime.now());
-        order.setTotalPrice(25.0f);
+        order.setUserId(STRANGER_ID);
 
-        Dish dish = new Dish();
-        dish.setId(1);
-        dish.setName("Salad");
-        dish.setPrice(12.5f);
+        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
+        mockedKeycloakUtil.when(KeycloakUtil::getCurrentUser).thenReturn(createMockUser(USER_ID));
+        
+        // Mock no staff roles
+        doReturn(Collections.emptyList()).when(authentication).getAuthorities();
 
-        OrderItem item = new OrderItem();
-        item.setDish(dish);
-        item.setQuantity(2);
-        item.setOrder(order);
-        order.setItems(List.of(item));
-
-        OrderResponseDto responseDto = new OrderResponseDto();
-        responseDto.setId(1);
-        responseDto.setUserId(userId);
-        responseDto.setStatus(OrderStatus.NEW);
-        responseDto.setTotalPrice(25.0f);
-
-        when(orderRepository.findAllByOrderByCreatedAtDesc()).thenReturn(List.of(order));
-        when(orderMapper.toResponseDto(any(Order.class))).thenReturn(responseDto);
-
-        List<OrderResponseDto> orders = orderService.getAllOrders();
-
-        assertEquals(1, orders.size());
-        assertEquals(userId, orders.getFirst().getUserId());
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.getOrderById(1))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Access denied");
     }
 
     @Test
-    void testConfirmOrderFromCart() {
-        String userId = "user-123";
-        Cart cart = new Cart();
-        cart.setUserId(userId);
-        cart.setItems(new ArrayList<>());
-
-        Dish dish = new Dish();
-        dish.setId(1);
-        dish.setName("Dish1");
-        dish.setPrice(10.0f);
-
-        CartItem cartItem = new CartItem();
-        cartItem.setDish(dish);
-        cartItem.setQuantity(2);
-        cartItem.setSpecialRequest("No onions");
-        cart.getItems().add(cartItem);
-
+    void updateOrderItemQuantity_DecreaseWhenPaid_ShouldThrowException() {
+        // Arrange
         Order order = new Order();
         order.setId(1);
-        order.setUserId(userId);
+        order.setUserId(USER_ID);
         order.setStatus(OrderStatus.NEW);
-        order.setCreatedAt(LocalDateTime.now());
-        order.setTotalPrice(20.0f);
+        order.setPaymentStatus(PaymentStatus.SUCCESS);
 
-        OrderResponseDto responseDto = new OrderResponseDto();
-        responseDto.setId(1);
-        responseDto.setUserId(userId);
-        responseDto.setStatus(OrderStatus.NEW);
-        responseDto.setTotalPrice(20.0f);
+        com.example.CourseWork.model.OrderItem item = new com.example.CourseWork.model.OrderItem();
+        item.setId(10);
+        item.setQuantity(5);
+        order.getItems().add(item);
 
-        when(cartRepository.findByUserId(userId)).thenReturn(Optional.of(cart));
-        when(orderRepository.save(any(Order.class))).thenReturn(order);
-        when(orderMapper.toResponseDto(any(Order.class))).thenReturn(responseDto);
+        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
 
-        OrderResponseDto result = orderService.confirmOrderFromCart(userId);
-
-        assertNotNull(result);
-        assertEquals(userId, result.getUserId());
-        assertEquals(OrderStatus.NEW, result.getStatus());
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.updateOrderItemQuantity(1, USER_ID, 10, 3))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Cannot decrease quantity for an order that is already processing or paid");
     }
 
     @Test
-    void testChangeOrderStatus() {
-        String userId = "user-123";
+    void payOrder_WhenReady_ShouldChangeToCompleted() throws Exception {
+        // Arrange
         Order order = new Order();
         order.setId(1);
-        order.setUserId(userId);
-        order.setStatus(OrderStatus.NEW);
-        order.setCreatedAt(LocalDateTime.now());
-        order.setTotalPrice(25.0f);
+        order.setUserId(USER_ID);
+        order.setStatus(OrderStatus.READY);
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setTotalPrice(100.0f);
 
-        Dish dish = new Dish();
-        dish.setId(1);
-        dish.setName("Salad");
-        dish.setPrice(12.5f);
+        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
+        when(paymentService.processPayment(anyFloat(), anyString())).thenReturn(true);
+        when(orderRepository.save(any())).thenAnswer(i -> i.getArguments()[0]);
+        when(orderMapper.toResponseDto(any())).thenReturn(new OrderResponseDto());
 
-        OrderItem item = new OrderItem();
-        item.setDish(dish);
-        item.setQuantity(2);
-        item.setOrder(order);
-        order.setItems(List.of(item));
+        // Act
+        orderService.payOrder(1, USER_ID, "pm_test");
 
-        OrderResponseDto responseDto = new OrderResponseDto();
-        responseDto.setId(1);
-        responseDto.setUserId(userId);
-        responseDto.setStatus(OrderStatus.COMPLETED);
-        responseDto.setTotalPrice(25.0f);
+        // Assert
+        assertThat(order.getPaymentStatus()).isEqualTo(PaymentStatus.SUCCESS);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+    }
 
-        when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
-        when(orderRepository.save(any(Order.class))).thenReturn(order);
-        when(orderMapper.toResponseDto(any(Order.class))).thenReturn(responseDto);
+    @Test
+    void payOrder_ShouldAuthorizeOwnerOnly() {
+        // Arrange
+        Order order = new Order();
+        order.setId(1);
+        order.setUserId(STRANGER_ID);
 
-        OrderResponseDto updatedOrderResponse = orderService.updateOrderStatus(order.getId(), OrderStatus.COMPLETED);
+        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
 
-        assertNotNull(updatedOrderResponse);
-        assertEquals(OrderStatus.COMPLETED, updatedOrderResponse.getStatus());
-        assertEquals(order.getId(), updatedOrderResponse.getId());
-        assertEquals(userId, updatedOrderResponse.getUserId());
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.payOrder(1, USER_ID, "pm_test"))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Unauthorized");
+    }
+
+    @Test
+    void confirmOrderFromCart_EmptyCart_ShouldThrowException() {
+        // Arrange
+        com.example.CourseWork.model.Cart cart = new com.example.CourseWork.model.Cart();
+        cart.setItems(Collections.emptyList());
+
+        when(cartRepository.findByUserId(USER_ID)).thenReturn(Optional.of(cart));
+
+        // Act & Assert
+        assertThatThrownBy(() -> orderService.confirmOrderFromCart(USER_ID, 5))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Cart is empty");
     }
 }

@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.*;
 
+@SuppressWarnings("null")
 class DishServiceTest {
 
     @Mock
@@ -27,12 +28,15 @@ class DishServiceTest {
     @Mock
     private DishMapper dishMapper;
 
+    @Mock
+    private DishRatingService dishRatingService;
+
     private DishService dishService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        dishService = new DishServiceImpl(dishRepository, menuRepository, dishMapper);
+        dishService = new DishServiceImpl(dishRepository, menuRepository, dishMapper, dishRatingService);
     }
 
     @Test
@@ -47,7 +51,7 @@ class DishServiceTest {
         dish.setDescription("Delicious pizza with cheese");
         dish.setPrice(9.99f);
         dish.setIsAvailable(true);
-        dish.setMenu(menu);
+        dish.setMenus(List.of(menu));
 
         DishResponseDto responseDto = new DishResponseDto();
         responseDto.setId(1);
@@ -55,7 +59,7 @@ class DishServiceTest {
         responseDto.setDescription("Delicious pizza with cheese");
         responseDto.setPrice(9.99f);
         responseDto.setIsAvailable(true);
-        responseDto.setMenuId(1);
+        responseDto.setMenuIds(List.of(1));
 
         Mockito.when(dishRepository.findById(1)).thenReturn(Optional.of(dish));
         Mockito.when(dishMapper.toResponseDto(any(Dish.class))).thenReturn(responseDto);
@@ -64,7 +68,8 @@ class DishServiceTest {
 
         assertNotNull(result);
         assertEquals("Pizza", result.getName());
-        assertEquals(1, result.getMenuId());
+        assertTrue(result.getMenuIds().contains(1));
+        verify(dishRatingService, times(1)).enrichWithRatings(anyList());
     }
 
     @Test
@@ -81,22 +86,22 @@ class DishServiceTest {
 
         Menu menu = new Menu();
         menu.setId(1);
-        dish1.setMenu(menu);
+        dish1.setMenus(List.of(menu));
 
         Dish dish2 = new Dish();
         dish2.setIsAvailable(true);
-        dish2.setMenu(menu);
+        dish2.setMenus(List.of(menu));
 
         List<Dish> dishes = Arrays.asList(dish1, dish2);
 
         DishResponseDto responseDto1 = new DishResponseDto();
         responseDto1.setId(1);
-        responseDto1.setMenuId(1);
+        responseDto1.setMenuIds(List.of(1));
         responseDto1.setIsAvailable(true);
 
         DishResponseDto responseDto2 = new DishResponseDto();
         responseDto2.setId(2);
-        responseDto2.setMenuId(1);
+        responseDto2.setMenuIds(List.of(1));
         responseDto2.setIsAvailable(true);
 
         Mockito.when(dishRepository.findByIsAvailableTrue()).thenReturn(dishes);
@@ -106,6 +111,7 @@ class DishServiceTest {
         List<DishResponseDto> result = dishService.getAllAvailableDishes();
 
         assertEquals(2, result.size());
+        verify(dishRatingService, times(1)).enrichWithRatings(anyList());
     }
 
     @Test
@@ -115,7 +121,7 @@ class DishServiceTest {
         dishDto.setDescription("Delicious pasta with tomato sauce");
         dishDto.setPrice(12.99f);
         dishDto.setIsAvailable(true);
-        dishDto.setMenuId(1);
+        dishDto.setMenuIds(List.of(1));
 
         Menu menu = new Menu();
         menu.setId(1);
@@ -127,7 +133,7 @@ class DishServiceTest {
         dishEntity.setDescription("Delicious pasta with tomato sauce");
         dishEntity.setPrice(12.99f);
         dishEntity.setIsAvailable(true);
-        dishEntity.setMenu(menu);
+        dishEntity.setMenus(List.of(menu));
 
         DishResponseDto responseDto = new DishResponseDto();
         responseDto.setId(1);
@@ -135,10 +141,10 @@ class DishServiceTest {
         responseDto.setDescription("Delicious pasta with tomato sauce");
         responseDto.setPrice(12.99f);
         responseDto.setIsAvailable(true);
-        responseDto.setMenuId(1);
+        responseDto.setMenuIds(List.of(1));
 
         Mockito.when(dishRepository.save(Mockito.any(Dish.class))).thenReturn(dishEntity);
-        Mockito.when(menuRepository.findById(1)).thenReturn(Optional.of(menu));
+        Mockito.when(menuRepository.findAllById(dishDto.getMenuIds())).thenReturn(List.of(menu));
         Mockito.when(dishMapper.toResponseDto(any(Dish.class))).thenReturn(responseDto);
 
         DishResponseDto result = dishService.createDish(dishDto);
@@ -148,7 +154,7 @@ class DishServiceTest {
         assertEquals("Delicious pasta with tomato sauce", result.getDescription());
         assertEquals(12.99f, result.getPrice());
         assertTrue(result.getIsAvailable());
-        assertEquals(1, result.getMenuId());
+        assertTrue(result.getMenuIds().contains(1));
     }
 
     @Test

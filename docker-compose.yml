@@ -4,10 +4,37 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/restaurant_db
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password
-      - KEYCLOAK_AUTH_SERVER_URL=http://keycloak:8080
+      # Run backend in dev mode (local testing)
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+
+      # Public base URL used for LiqPay result_url/server_url.
+      # Set this to your ngrok HTTPS URL before starting compose:
+      #   APP_PUBLIC_BASE_URL=https://xxxx.ngrok-free.app docker compose up --build
+      - APP_PUBLIC_BASE_URL=${APP_PUBLIC_BASE_URL:-http://localhost:8081}
+
+      # DB
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL:-jdbc:postgresql://postgres:5432/restaurant_db}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD:-${POSTGRES_PASSWORD:-password}}
+
+      # Keycloak
+      # Internal URL is used by backend container; public URL is used in browser redirects.
+      - KEYCLOAK_AUTH_SERVER_URL=${KEYCLOAK_AUTH_SERVER_URL:-http://keycloak:8080}
+      - KEYCLOAK_INTERNAL_URL=${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080}
+      - KEYCLOAK_PUBLIC_URL=${KEYCLOAK_PUBLIC_URL:-http://localhost:8080}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+
+      # LiqPay (sandbox keys for dev)
+      - LIQPAY_PUBLIC_KEY=${LIQPAY_PUBLIC_KEY}
+      - LIQPAY_PRIVATE_KEY=${LIQPAY_PRIVATE_KEY}
+      
+      # Web Push
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_SUBJECT=${VAPID_SUBJECT}
+    volumes:
+      - ./uploads:/app/uploads
+
     depends_on:
       - postgres
       - keycloak
@@ -18,11 +45,16 @@ services:
       - "8080:8080"
     environment:
       - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
       - KC_DB=postgres
       - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
       - KC_DB_USERNAME=postgres
-      - KC_DB_PASSWORD=password
+      - KC_DB_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - KC_HOSTNAME=localhost
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_HTTPS=false
+      - KC_HTTP_ENABLED=true
+      - KC_PROXY=edge
     command:
       - start-dev
     depends_on:
@@ -34,10 +66,10 @@ services:
       - "5433:5432"
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
       - POSTGRES_MULTIPLE_DATABASES=restaurant_db,keycloak
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
       - ./init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
 
 volumes:

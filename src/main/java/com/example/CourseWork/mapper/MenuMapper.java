@@ -1,6 +1,5 @@
 package com.example.CourseWork.mapper;
 
-import com.example.CourseWork.dto.DishResponseDto;
 import com.example.CourseWork.dto.MenuResponseDto;
 import com.example.CourseWork.dto.MenuWithDishesDto;
 import com.example.CourseWork.model.Menu;
@@ -11,10 +10,18 @@ import java.util.stream.Collectors;
 @Component
 public class MenuMapper {
     
+    private final DishMapper dishMapper;
+
+    public MenuMapper(DishMapper dishMapper) {
+        this.dishMapper = dishMapper;
+    }
+    
     public MenuResponseDto toResponseDto(Menu menu) {
         MenuResponseDto dto = new MenuResponseDto();
         dto.setId(menu.getId());
         dto.setName(menu.getName());
+        dto.setStartTime(menu.getStartTime());
+        dto.setEndTime(menu.getEndTime());
         return dto;
     }
 
@@ -22,15 +29,11 @@ public class MenuMapper {
         MenuWithDishesDto dto = new MenuWithDishesDto();
         dto.setId(menu.getId());
         dto.setName(menu.getName());
-        dto.setDishes(menu.getDishes().stream().map(dish -> {
-            DishResponseDto dishDto = new DishResponseDto();
-            dishDto.setId(dish.getId());
-            dishDto.setName(dish.getName());
-            dishDto.setDescription(dish.getDescription());
-            dishDto.setPrice(dish.getPrice());
-            dishDto.setIsAvailable(dish.getIsAvailable());
-            return dishDto;
-        }).collect(Collectors.toList()));
+        dto.setStartTime(menu.getStartTime());
+        dto.setEndTime(menu.getEndTime());
+        dto.setDishes(menu.getDishes().stream()
+                .map(dishMapper::toResponseDto)
+                .collect(Collectors.toList()));
         return dto;
     }
-} 
+}

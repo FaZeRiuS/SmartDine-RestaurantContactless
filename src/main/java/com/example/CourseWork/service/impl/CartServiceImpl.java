@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
+@SuppressWarnings("null")
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
@@ -26,8 +27,12 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public CartResponseDto getCartByUserId(String userId) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found for user"));
+        Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
+            Cart newCart = new Cart();
+            newCart.setUserId(userId);
+            newCart.setItems(new ArrayList<>());
+            return cartRepository.save(newCart);
+        });
 
         return cartMapper.toResponseDto(cart);
     }
@@ -49,13 +54,13 @@ public class CartServiceImpl implements CartService {
             throw new RuntimeException("Dish is not available");
         }
         CartItem existingItem = cart.getItems().stream()
-                .filter(item -> item.getDish().getId().equals(dish.getId()))
+                .filter(item -> item.getDish().getId().equals(dish.getId()) &&
+                        java.util.Objects.equals(item.getSpecialRequest(), itemDto.getSpecialRequest()))
                 .findFirst()
                 .orElse(null);
 
         if (existingItem != null) {
             existingItem.setQuantity(existingItem.getQuantity() + itemDto.getQuantity());
-            existingItem.setSpecialRequest(itemDto.getSpecialRequest());
         } else {
             CartItem item = new CartItem();
             item.setCart(cart);
@@ -67,6 +72,55 @@ public class CartServiceImpl implements CartService {
 
         cartRepository.save(cart);
 
+        return cartMapper.toResponseDto(cart);
+    }
+
+    @Transactional
+    @Override
+    public CartResponseDto updateCartItemQuantity(String userId, Integer itemId, Integer quantity) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        CartItem item = cart.getItems().stream()
+                .filter(i -> i.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+
+        if (quantity <= 0) {
+            cart.getItems().remove(item);
+        } else {
+            item.setQuantity(quantity);
+        }
+
+        cartRepository.save(cart);
+        return cartMapper.toResponseDto(cart);
+    }
+
+    @Transactional
+    @Override
+    public CartResponseDto updateCartItemSpecialRequest(String userId, Integer itemId, String specialRequest) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        CartItem item = cart.getItems().stream()
+                .filter(i -> i.getId().equals(itemId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+
+        item.setSpecialRequest(specialRequest);
+        cartRepository.save(cart);
+        return cartMapper.toResponseDto(cart);
+    }
+
+    @Transactional
+    @Override
+    public CartResponseDto removeCartItem(String userId, Integer itemId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        cart.getItems().removeIf(i -> i.getId().equals(itemId));
+        cartRepository.save(cart);
+        
         return cartMapper.toResponseDto(cart);
     }
 }

@@ -15,6 +15,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("null")
 class MenuServiceTest {
 
     @Mock
@@ -23,12 +24,18 @@ class MenuServiceTest {
     @Mock
     private MenuMapper menuMapper;
 
+    @Mock
+    private RecommendationService recommendationService;
+
+    @Mock
+    private DishRatingService dishRatingService;
+
     private MenuServiceImpl menuService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        menuService = new MenuServiceImpl(menuRepository, menuMapper);
+        menuService = new MenuServiceImpl(menuRepository, menuMapper, recommendationService, dishRatingService);
     }
 
     @Test
@@ -105,6 +112,7 @@ class MenuServiceTest {
         assertEquals(1, result.size());
         assertEquals("Lunch Menu", result.getFirst().getName());
         assertEquals(1, result.getFirst().getDishes().size());
+        verify(dishRatingService, times(1)).enrichWithRatings(anyList());
     }
 
     @Test

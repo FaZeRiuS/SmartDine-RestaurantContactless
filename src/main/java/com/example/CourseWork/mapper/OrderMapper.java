@@ -5,6 +5,8 @@ import com.example.CourseWork.dto.OrderResponseDto;
 import com.example.CourseWork.model.Order;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,16 +18,33 @@ public class OrderMapper {
         dto.setId(order.getId());
         dto.setUserId(order.getUserId());
         dto.setStatus(order.getStatus());
+        dto.setPaymentStatus(order.getPaymentStatus());
         dto.setCreatedAt(order.getCreatedAt());
         dto.setTotalPrice(order.getTotalPrice());
+        BigDecimal total = BigDecimal.valueOf(order.getTotalPrice()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal discount = (order.getLoyaltyDiscount() == null ? BigDecimal.ZERO : order.getLoyaltyDiscount())
+                .setScale(2, RoundingMode.HALF_UP);
+        if (discount.compareTo(BigDecimal.ZERO) < 0) discount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        if (discount.compareTo(total) > 0) discount = total;
+        BigDecimal tip = (order.getTipAmount() == null ? BigDecimal.ZERO : order.getTipAmount())
+                .setScale(2, RoundingMode.HALF_UP);
+        if (tip.compareTo(BigDecimal.ZERO) < 0) tip = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal payable = total.subtract(discount).add(tip).setScale(2, RoundingMode.HALF_UP);
+        dto.setLoyaltyDiscount(discount.floatValue());
+        dto.setAmountToPay(payable.floatValue());
+        dto.setTipAmount(tip.floatValue());
+        dto.setTableNumber(order.getTableNumber());
+        dto.setNeedsWaiter(order.isNeedsWaiter());
 
         List<OrderItemResponseDto> items = order.getItems().stream().map(item -> {
-            OrderItemResponseDto i = new OrderItemResponseDto();
-            i.setDishId(item.getDish().getId());
-            i.setDishName(item.getDish().getName());
-            i.setQuantity(item.getQuantity());
-            i.setSpecialRequest(item.getSpecialRequest());
-            return i;
+            OrderItemResponseDto itemDto = new OrderItemResponseDto();
+            itemDto.setId(item.getId());
+            itemDto.setDishId(item.getDish().getId());
+            itemDto.setDishName(item.getDish().getName());
+            itemDto.setQuantity(item.getQuantity());
+            itemDto.setPrice(item.getDish().getPrice());
+            itemDto.setSpecialRequest(item.getSpecialRequest());
+            return itemDto;
         }).collect(Collectors.toList());
 
         dto.setItems(items);

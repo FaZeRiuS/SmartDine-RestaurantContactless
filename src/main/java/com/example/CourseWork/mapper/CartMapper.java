@@ -17,6 +17,7 @@ public class CartMapper {
 
         var items = cart.getItems().stream().map(item -> {
             CartItemDetailDto detail = new CartItemDetailDto();
+            detail.setId(item.getId());
             detail.setDishId(item.getDish().getId());
             detail.setDishName(item.getDish().getName());
             detail.setPrice(item.getDish().getPrice());

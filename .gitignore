@@ -4,6 +4,24 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### OS / misc ###
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+
+*.md
+!README.md
+
+### Uploads ###
+/uploads/*
+!/uploads/.gitkeep
+
+### Database ###
+*.mv.db
+*.trace.db
+
 ### STS ###
 .apt_generated
 .classpath
@@ -32,4 +50,10 @@ build/
 ### VS Code ###
 .vscode/
 
+### Environment / secrets ###
 .env
+.env.*
+!.env.example
+
+### Docker (optional local artifacts) ###
+**/docker-compose.override.yml
