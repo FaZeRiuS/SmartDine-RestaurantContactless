@@ -1,6 +1,0 @@
-ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS loyalty_discount NUMERIC(19, 2) NOT NULL DEFAULT 0;
-
-ALTER TABLE orders
-    ADD COLUMN IF NOT EXISTS loyalty_points_spent NUMERIC(19, 2) NOT NULL DEFAULT 0;
-

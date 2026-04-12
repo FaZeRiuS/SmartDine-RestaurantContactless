@@ -1,6 +1,10 @@
 package com.example.CourseWork.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -13,11 +17,26 @@ public class Dish {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "Dish name cannot be blank")
+    @Size(max = 255)
+    @Column(nullable = false)
     private String name;
+
+    @Size(max = 1000)
     private String description;
+
+    @NotNull(message = "Price is required")
+    @Positive(message = "Price must be positive")
+    @Column(nullable = false)
     private Float price;
+
+    @Size(max = 512)
+    @Column(name = "image_url", length = 512)
     private String imageUrl;
-    private Boolean isAvailable;
+
+    @NotNull
+    @Column(name = "is_available", nullable = false)
+    private Boolean isAvailable = true;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

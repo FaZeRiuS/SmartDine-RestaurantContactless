@@ -1,6 +1,10 @@
 package com.example.CourseWork.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -17,24 +21,32 @@ public class OrderServiceReview {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
+    @NotNull
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "rating", nullable = false)
+    @NotNull
+    @Min(1)
+    @Max(5)
+    @Column(nullable = false)
     private Integer rating;
 
+    @Size(max = 2000)
     @Column(name = "comment", columnDefinition = "TEXT")
     private String comment;
 
+    @NotNull
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
+    @NotNull
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
     @PrePersist
     void prePersist() {
