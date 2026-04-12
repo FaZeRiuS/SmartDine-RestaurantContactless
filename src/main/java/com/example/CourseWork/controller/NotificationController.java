@@ -5,6 +5,7 @@ import com.example.CourseWork.model.PushSubscription;
 import com.example.CourseWork.repository.PushSubscriptionRepository;
 import com.example.CourseWork.util.KeycloakUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,9 +16,17 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
+@Slf4j
 public class NotificationController {
 
     private final PushSubscriptionRepository subscriptionRepository;
+
+    @PostMapping("/log")
+    public ResponseEntity<Void> logClientError(@RequestBody String message) {
+        String userId = KeycloakUtil.getCurrentUser().getId();
+        log.error("[PWA-ERROR] user: {}, message: {}", userId, message);
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/subscribe")
     public ResponseEntity<Void> subscribe(@RequestBody PushSubscriptionDto dto) {

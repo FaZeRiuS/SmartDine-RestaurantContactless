@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}">
+    <title>Помилка — SmartDine</title>
+</head>
+<body>
+
+<div th:replace="~{fragments/layout :: header}"></div>
+
+<main class="container page-content">
+    <div class="empty-state fade-in-up" style="padding: 6rem 2rem; position: relative; min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <!-- Large background code for premium feel -->
+        <div class="error-bg-code" th:text="${status != null ? status : '404'}">404</div>
+        
+        <div class="empty-state-icon" style="opacity: 1; margin-bottom: 2rem;">
+            <span style="font-size: 5rem; display: block; animation: pulse 2s infinite;">⚠️</span>
+        </div>
+        
+        <div style="position: relative; z-index: 1;">
+            <h1 class="section-title mb-2">Ой! Щось пішло не так</h1>
+            <p class="section-subtitle mb-4" style="max-width: 500px; margin-left: auto; margin-right: auto;"
+               th:text="${message != null ? message : 'Здається, сторінка, яку ви шукаєте, не існує або виникла помилка під час обробки запиту.'}">
+                Сторінку не знайдено або виникла внутрішня помилка.
+            </p>
+            
+            <div class="d-flex justify-center gap-2 mt-4" style="justify-content: center;">
+                <a th:href="@{/}" class="btn btn-primary btn-lg">🏠 На головну</a>
+                <a th:href="@{/menu}" class="btn btn-secondary btn-lg">📋 Перейти до меню</a>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/layout :: mobile-nav}"></div>
+<div th:replace="~{fragments/layout :: footer}"></div>
+
+<!-- WebSocket & Identity Scripts -->
+<div th:replace="~{fragments/layout :: scripts}"></div>
+
+<style>
+    .error-bg-code {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: var(--font-heading);
+        font-size: clamp(10rem, 30vw, 20rem);
+        font-weight: 800;
+        color: var(--gold);
+        opacity: 0.05;
+        line-height: 1;
+        user-select: none;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    /* Pulse animation is already defined in style.css but making sure it feels right here */
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    
+    @media (max-width: 768px) {
+        .empty-state {
+            padding: 4rem 1rem !important;
+            min-height: 50vh !important;
+        }
+    }
+</style>
+
+</body>
+</html>

@@ -17,6 +17,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -51,6 +52,13 @@ public class PaymentController {
         this.orderMapper = orderMapper;
         this.messagingTemplate = messagingTemplate;
         this.loyaltyService = loyaltyService;
+    }
+
+    @GetMapping("/payment/result")
+    public String paymentResult(@RequestParam("orderId") Integer orderId) {
+        // We just redirect to the home page. 
+        // The active order widget (js/cart.js) automatically picks up the updated status via WebSocket or polling.
+        return "redirect:/?paymentResult=success&orderId=" + orderId;
     }
 
     @PostMapping("/api/payment/init")

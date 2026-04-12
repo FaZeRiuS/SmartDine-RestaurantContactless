@@ -27,7 +27,6 @@ async function ensureCsrf() {
     .catch(err => {
       csrfState.inFlight = null;
       // Keep going without CSRF token; requests will likely 403, but UI will show real error.
-      console.warn('CSRF bootstrap error:', err);
       return csrfState;
     });
 

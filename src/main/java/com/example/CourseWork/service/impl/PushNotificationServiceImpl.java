@@ -5,6 +5,7 @@ import com.example.CourseWork.repository.PushSubscriptionRepository;
 import com.example.CourseWork.service.PushNotificationService;
 import nl.martijndwars.webpush.Notification;
 import nl.martijndwars.webpush.PushService;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
@@ -15,6 +16,7 @@ import java.security.Security;
 import java.util.List;
 
 @Service
+@Slf4j
 public class PushNotificationServiceImpl implements PushNotificationService {
 
     private final PushSubscriptionRepository subscriptionRepository;
@@ -40,9 +42,9 @@ public class PushNotificationServiceImpl implements PushNotificationService {
         try {
             Security.addProvider(new BouncyCastleProvider());
             this.pushService = new PushService(publicKey, privateKey, subject);
-            System.out.println(">>> PWA: PushNotificationService initialized successfully");
+            log.info("PWA: PushNotificationService initialized successfully");
         } catch (Exception e) {
-            System.err.println(">>> PWA ERROR: Failed to initialize PushNotificationService: " + e.getMessage());
+            log.error("PWA ERROR: Failed to initialize PushNotificationService: {}", e.getMessage());
         }
     }
 
@@ -74,7 +76,7 @@ public class PushNotificationServiceImpl implements PushNotificationService {
             );
             pushService.send(notification);
         } catch (Exception e) {
-            System.err.println("Failed to send push notification to " + sub.getEndpoint() + ": " + e.getMessage());
+            log.warn("Failed to send push notification to {}: {}", sub.getEndpoint(), e.getMessage());
             if (e.getMessage().contains("410") || e.getMessage().contains("404")) {
                 subscriptionRepository.delete(sub);
             }

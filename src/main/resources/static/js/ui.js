@@ -8,7 +8,40 @@ document.addEventListener('DOMContentLoaded', () => {
         loadLoyaltySummary();
     }
     initPushNotifications();
+    checkUrlParams();
 });
+
+/**
+ * Sends a critical error log to the server for PWA/Lifecycle monitoring.
+ */
+async function logErrorToServer(message) {
+    try {
+        await fetch('/api/notifications/log', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain',
+                'X-XSRF-TOKEN': getCsrfToken()
+            },
+            body: String(message)
+        });
+    } catch (e) {
+        // Silent fail to avoid infinite loops if network is down
+    }
+}
+
+/**
+ * Checks URL for specific parameters (like payment status)
+ */
+function checkUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('paymentResult') === 'success') {
+        showToast('✅ Оплата успішна! Ваше замовлення готується.', 'success');
+        
+        // Clean up the URL without refreshing
+        const newUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, newUrl);
+    }
+}
 
 // ── Shared UI Utilities ──
 
@@ -220,12 +253,10 @@ function initMobileMenu() {
 
 async function initPushNotifications() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.log('>>> PWA: Push messaging is not supported');
         return;
     }
 
     if (Notification.permission === 'denied') {
-        console.log('>>> PWA: Push notification permission denied');
         return;
     }
 
@@ -258,13 +289,12 @@ async function subscribeUserToPush() {
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {
-            // Already subscribed, but check if we need to update the server (e.g. after login)
             sendSubscriptionToServer(subscription);
             return;
         }
 
         if (!window.vapidPublicKey) {
-            console.error('>>> PWA: VAPID public key not found');
+            logErrorToServer('PWA: VAPID public key not found');
             return;
         }
 
@@ -274,10 +304,9 @@ async function subscribeUserToPush() {
             applicationServerKey: applicationServerKey
         });
 
-        console.log('>>> PWA: User subscribed:', newSubscription);
         sendSubscriptionToServer(newSubscription);
     } catch (err) {
-        console.error('>>> PWA: Failed to subscribe user:', err);
+        logErrorToServer('PWA: Failed to subscribe user: ' + err.message);
     }
 }
 
@@ -304,9 +333,8 @@ async function sendSubscriptionToServer(subscription) {
             },
             body: JSON.stringify(payload)
         });
-        console.log('>>> PWA: Subscription synced with server');
     } catch (err) {
-        console.error('>>> PWA: Error syncing subscription with server:', err);
+        logErrorToServer('PWA: Error syncing subscription with server: ' + err.message);
     }
 }
 

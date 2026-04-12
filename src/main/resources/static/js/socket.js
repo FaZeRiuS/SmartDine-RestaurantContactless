@@ -11,11 +11,9 @@ function initWebSocket(userId) {
     }
 
     if (stompClient && stompClient.active) {
-        console.log('WebSocket already active');
         return;
     }
 
-    console.log('Initializing Modern WebSocket for:', userId);
     
     // Determine the WebSocket URL: ws:// or wss:// based on the current protocol
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
@@ -27,21 +25,16 @@ function initWebSocket(userId) {
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
-        
-        // Optional: debug: (str) => console.log('>>> STOMP DEBUG:', str),
     });
 
     stompClient.onConnect = (frame) => {
-        console.log('STOMP Connected to', brokerURL);
         
         // Subscribe to the topic for this user
         const topic = '/topic/order-updates/' + userId;
-        console.log('>>> SOCKET: Subscribing to topic:', topic);
         
         stompClient.subscribe(topic, (message) => {
             try {
                 const orderUpdate = JSON.parse(message.body);
-                console.log('Real-time Order Update:', orderUpdate);
                 
                 if (typeof renderActiveOrder === 'function') {
                     renderActiveOrder(orderUpdate);
@@ -59,7 +52,6 @@ function initWebSocket(userId) {
 
         // Global orders topic (Staff/Admin updates)
         stompClient.subscribe('/topic/orders', (message) => {
-            console.log('>>> SOCKET: Global Orders Update:', message.body);
             if (typeof loadOrders === 'function') {
                 loadOrders();
             }

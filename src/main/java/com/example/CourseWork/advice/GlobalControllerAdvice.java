@@ -8,9 +8,11 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 @ControllerAdvice
 @lombok.RequiredArgsConstructor
+@Slf4j
 public class GlobalControllerAdvice {
 
     private final com.example.CourseWork.service.LoyaltyService loyaltyService;
@@ -41,7 +43,7 @@ public class GlobalControllerAdvice {
                     model.addAttribute("loyaltyBalance", loyaltyService.getBalance(userId));
                     model.addAttribute("cashbackRate", loyaltyService.resolveCashbackRate(userId));
                 } catch (Exception e) {
-                    // Ignore or log error
+                    log.error("Error fetching loyalty balance for user {}: {}", oidcUser.getSubject(), e.getMessage());
                 }
             }
         }
