@@ -4,57 +4,27 @@ import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"test", "dev"})
-class CustomerJourneyE2ETest {
+class CustomerJourneyE2ETest extends BaseE2ETest {
 
-    @LocalServerPort
-    private int port;
-
-    private static Playwright playwright;
-    private static Browser browser;
-    private BrowserContext context;
     private Page page;
-
-    @BeforeAll
-    static void launchBrowser() {
-        playwright = Playwright.create();
-        browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-    }
-
-    @AfterAll
-    static void closeBrowser() {
-        if (playwright != null) {
-            playwright.close();
-        }
-    }
 
     @BeforeEach
     void createContextAndPage() {
-        context = browser.newContext();
+        BrowserContext context = createTrackedContext();
         page = context.newPage();
-        
-        // Log browser console for debugging
-        page.onConsoleMessage(msg -> System.out.println("BROWSER LOG: " + msg.text()));
-        page.onPageError(err -> System.err.println("BROWSER ERROR: " + err));
-    }
-
-    @AfterEach
-    void closeContext() {
-        if (context != null) {
-            context.close();
-        }
+        setupPageLogging(page, "CUSTOMER");
     }
 
     @Test
     @DisplayName("Customer Journey: Should browse menu, add to cart, and verify cart content")
     void fullCustomerJourney_ShouldSucceed() {
-        String baseUrl = "http://localhost:" + port;
+        String baseUrl = getBaseUrl();
 
         // 1. Navigate to Menu
         page.navigate(baseUrl + "/menu");
@@ -67,6 +37,9 @@ class CustomerJourneyE2ETest {
         Locator salmonCard = page.locator(".dish-card").filter(new Locator.FilterOptions().setHasText("Grilled Salmon")).first();
         assertThat(salmonCard).isVisible();
         
+        // --- SSE Sync: Ensure we are connected before acting (good practice even if not using it for logic here) ---
+        waitForSseConnection(page);
+
         Locator addToCartBtn = salmonCard.locator(".add-to-cart-btn");
         addToCartBtn.click();
 

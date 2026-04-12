@@ -124,12 +124,6 @@
 			<artifactId>javase</artifactId>
 			<version>3.5.3</version>
 		</dependency>
-		<!-- WebSocket support -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-websocket</artifactId>
-		</dependency>
-
 		<!-- Chart.js (WebJar) for Admin dashboard charts -->
 		<dependency>
 			<groupId>org.webjars.npm</groupId>

@@ -62,8 +62,7 @@ public class SecurityConfig {
                 // We accept LiqPay callbacks without CSRF (signed by LiqPay).
                 .ignoringRequestMatchers(
                     new AntPathRequestMatcher("/api/payment/callback"),
-                    new AntPathRequestMatcher("/api/notifications/subscribe"),
-                    new AntPathRequestMatcher("/ws/**")
+                    new AntPathRequestMatcher("/api/notifications/subscribe")
                 )
             )
             .authorizeHttpRequests(auth -> auth
@@ -88,7 +87,6 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/menus/**", "/api/dishes/**").permitAll()
                 .requestMatchers("/api/cart/**").permitAll()
                 .requestMatchers("/api/user/me").permitAll()
-                .requestMatchers("/ws/**").permitAll()
                 // Order API: allow guests (KeycloakUtil creates GUEST_<sessionId>)
                 .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
                 .requestMatchers("/api/orders/my-active").permitAll()
@@ -99,6 +97,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/orders/*/pay").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/orders/*/call-waiter").permitAll()
                 .requestMatchers("/api/notifications/**").permitAll()
+                .requestMatchers("/api/sse/subscribe/**").permitAll()
                 // Staff pages
                 .requestMatchers("/staff/**").hasAnyRole("WAITER", "CHEF", "ADMINISTRATOR")
                 // Admin pages

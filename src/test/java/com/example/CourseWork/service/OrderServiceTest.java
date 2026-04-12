@@ -18,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -37,18 +36,29 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings("null")
 class OrderServiceTest {
 
-    @Mock private OrderRepository orderRepository;
-    @Mock private DishRepository dishRepository;
-    @Mock private CartRepository cartRepository;
-    @Mock private OrderMapper orderMapper;
-    @Mock private PaymentService paymentService;
-    @Mock private SimpMessagingTemplate messagingTemplate;
-    @Mock private OrderServiceReviewRepository orderServiceReviewRepository;
-    @Mock private OrderDishReviewRepository orderDishReviewRepository;
-    @Mock private PushNotificationService pushNotificationService;
+    @Mock
+    private OrderRepository orderRepository;
+    @Mock
+    private DishRepository dishRepository;
+    @Mock
+    private CartRepository cartRepository;
+    @Mock
+    private OrderMapper orderMapper;
+    @Mock
+    private PaymentService paymentService;
+    @Mock
+    private SseService sseService;
+    @Mock
+    private OrderServiceReviewRepository orderServiceReviewRepository;
+    @Mock
+    private OrderDishReviewRepository orderDishReviewRepository;
+    @Mock
+    private PushNotificationService pushNotificationService;
 
-    @Mock private Authentication authentication;
-    @Mock private SecurityContext securityContext;
+    @Mock
+    private Authentication authentication;
+    @Mock
+    private SecurityContext securityContext;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -63,7 +73,7 @@ class OrderServiceTest {
     void setUp() {
         mockedKeycloakUtil = Mockito.mockStatic(KeycloakUtil.class);
         mockedSecurityContextHolder = Mockito.mockStatic(SecurityContextHolder.class);
-        
+
         lenient().when(SecurityContextHolder.getContext()).thenReturn(securityContext);
         lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
     }
@@ -107,7 +117,7 @@ class OrderServiceTest {
 
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
         mockedKeycloakUtil.when(KeycloakUtil::getCurrentUser).thenReturn(createMockUser(USER_ID));
-        
+
         // Mock staff role
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_WAITER"))).when(authentication).getAuthorities();
 
@@ -129,7 +139,7 @@ class OrderServiceTest {
 
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
         mockedKeycloakUtil.when(KeycloakUtil::getCurrentUser).thenReturn(createMockUser(USER_ID));
-        
+
         // Mock no staff roles
         doReturn(Collections.emptyList()).when(authentication).getAuthorities();
 

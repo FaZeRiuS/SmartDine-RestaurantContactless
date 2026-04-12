@@ -134,9 +134,7 @@
 
 <!-- ═══ SCRIPTS FRAGMENT ═══ -->
 <div th:fragment="scripts">
-    <!-- Real-time updates -->
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.2.1/bundles/stomp.umd.min.js"></script>
+    <!-- Order/staff notifications: js/sse.js (initSse → EventSource /api/sse/subscribe/...) -->
     
     <!-- Scripts -->
     <script th:inline="javascript">
@@ -147,38 +145,42 @@
     <script th:src="@{/js/csrf.js}"></script>
     <script th:src="@{/js/ui.js}"></script>
     <script th:src="@{/js/cart.js}"></script>
-    <script th:src="@{/js/socket.js}"></script>
+    <script th:src="@{/js/sse.js}"></script>
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
             // Ensure XSRF-TOKEN cookie exists before any POST/PUT/DELETE from JS.
             fetch('/api/csrf', { credentials: 'same-origin' }).catch(() => {});
-            fetch('/api/user/me')
-                .then(res => res.json())
-                .then(data => {
-                    window.currentUserId = data.id;
-                    if (typeof initWebSocket === 'function') {
-                        initWebSocket(data.id);
-                    }
-                    if (typeof window.refreshCartUI === 'function') {
-                        window.refreshCartUI();
-                    }
-                })
-                .catch(err => {
-                    console.error('>>> IDENTITY: Error synchronizing identity:', err);
-                    if (typeof window.refreshCartUI === 'function') {
-                        window.refreshCartUI();
-                    }
-                });
 
-            // PWA Service Worker Registration
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then(reg => console.log('>>> PWA: Service Worker registered!', reg.scope))
-                        .catch(err => console.error('>>> PWA: Service Worker registration failed:', err));
-                });
+            function bootstrapIdentityAndSse() {
+                fetch('/api/user/me')
+                    .then(res => res.json())
+                    .then(data => {
+                        window.currentUserId = data.id;
+                        if (typeof initSse === 'function') {
+                            initSse(data.id);
+                        }
+                        if (typeof window.refreshCartUI === 'function') {
+                            window.refreshCartUI();
+                        }
+                    })
+                    .catch(err => {
+                        console.error('>>> IDENTITY: Error synchronizing identity:', err);
+                        if (typeof window.refreshCartUI === 'function') {
+                            window.refreshCartUI();
+                        }
+                    });
             }
+
+            // Register SW early (same tick as identity) so it often activates before SSE; we do not await
+            // serviceWorker.ready — it can stall in some embedded/headless clients and would block SSE entirely.
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('>>> PWA: Service Worker registered!', reg.scope))
+                    .catch(err => console.error('>>> PWA: Service Worker registration failed:', err));
+            }
+
+            bootstrapIdentityAndSse();
         });
     </script>
 </div>

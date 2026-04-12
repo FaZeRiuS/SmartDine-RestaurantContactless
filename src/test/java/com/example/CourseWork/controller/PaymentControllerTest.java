@@ -8,11 +8,12 @@ import com.example.CourseWork.mapper.OrderMapper;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.LiqPayService;
+import com.example.CourseWork.service.LoyaltyService;
+import com.example.CourseWork.service.SseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.util.Optional;
 
@@ -35,7 +36,10 @@ class PaymentControllerTest extends BaseControllerTest {
     private OrderMapper orderMapper;
 
     @MockitoBean
-    private SimpMessagingTemplate messagingTemplate;
+    private SseService sseService;
+
+    @MockitoBean
+    private LoyaltyService loyaltyService;
 
     @Test
     void initPayment_ShouldReturnCheckoutView() throws Exception {

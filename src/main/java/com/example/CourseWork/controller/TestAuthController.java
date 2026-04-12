@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -32,30 +31,41 @@ public class TestAuthController {
 
     @GetMapping("/login-as-staff")
     public String loginAsStaff(HttpServletRequest request) {
-        // 1. Create Mock OIDC User with ADMINISTRATOR role
+        return createMockAuth(request, "mock-staff-id", "test-staff-admin", "staff@smartdine.com", "ROLE_ADMINISTRATOR");
+    }
+
+    @GetMapping("/login-as-guest")
+    public String loginAsGuest(HttpServletRequest request) {
+        // Guests usually don't have roles, but we need a session context
+        return createMockAuth(request, "mock-guest-id", "test-guest", "guest@smartdine.com");
+    }
+
+    @GetMapping("/login-as-customer")
+    public String loginAsCustomer(HttpServletRequest request) {
+        return createMockAuth(request, "mock-customer-id", "test-customer", "customer@smartdine.com", "ROLE_CUSTOMER");
+    }
+
+    private String createMockAuth(HttpServletRequest request, String id, String username, String email, String... roles) {
         Map<String, Object> claims = Map.of(
-            "sub", "mock-staff-id",
-            "preferred_username", "test-staff-admin",
-            "email", "staff@smartdine.com"
+            "sub", id,
+            "preferred_username", username,
+            "email", email
         );
         OidcIdToken idToken = new OidcIdToken("fake-token", Instant.now(), Instant.now().plusSeconds(3600), claims);
         
-        List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMINISTRATOR"));
+        List<SimpleGrantedAuthority> authorities = java.util.Arrays.stream(roles)
+                .map(SimpleGrantedAuthority::new)
+                .collect(java.util.stream.Collectors.toList());
         
         OidcUser oidcUser = new DefaultOidcUser(authorities, idToken);
-
-        // 2. Create Authentication object
         Authentication auth = new UsernamePasswordAuthenticationToken(oidcUser, null, authorities);
-
-        // 3. Set into SecurityContext
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
-        SecurityContextHolder.setContext(context);
-
-        // 4. Persist in Session so Playwright can maintain state
+        
         HttpSession session = request.getSession(true);
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+        SecurityContextHolder.setContext(context);
 
-        return "Successfully logged in as STAFF (ADMINISTRATOR)";
+        return "Successfully logged in as " + username + " with roles " + authorities;
     }
 }

@@ -224,6 +224,7 @@ public class DataSeeder {
                 order1.setUserId("dummy-id-1");
                 order1.setCreatedAt(LocalDateTime.now().minusDays(1));
                 order1.setStatus(OrderStatus.COMPLETED);
+                order1.setPaymentStatus(PaymentStatus.SUCCESS);
 
                 OrderItem item1 = new OrderItem();
                 item1.setDish(mainDishes.get(1)); // Beef Steak
@@ -244,6 +245,7 @@ public class DataSeeder {
                 order2.setUserId("dummy-id-2");
                 order2.setCreatedAt(LocalDateTime.now().minusHours(2));
                 order2.setStatus(OrderStatus.COMPLETED);
+                order2.setPaymentStatus(PaymentStatus.SUCCESS);
 
                 OrderItem item3 = new OrderItem();
                 item3.setDish(mainDishes.get(1)); // Beef Steak

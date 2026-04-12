@@ -1168,7 +1168,7 @@ async function payOrder() {
     }
 }
 
-// ── Global Refresh Hook for WebSocket ──
+// ── Global refresh hook (also used when SSE triggers cart UI updates) ──
 window.refreshCartUI = function () {
     if (document.getElementById('cartLoading')) {
         loadCart();

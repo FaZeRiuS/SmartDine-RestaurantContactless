@@ -1,12 +1,13 @@
-const CACHE_NAME = 'smartdine-v2';
+const CACHE_NAME = 'smartdine-v4';
 const ASSETS_TO_CACHE = [
   '/css/style.css',
   '/js/ui.js',
   '/js/cart.js',
   '/js/csrf.js',
-  '/images/icons/icon-192.png',
-  '/images/icons/icon-512.png',
-  '/apple-touch-icon.png',
+  '/js/sse.js',
+  '/icons/android-chrome-192x192.png',
+  '/icons/android-chrome-512x512.png',
+  '/icons/apple-touch-icon.png',
   '/favicon.ico',
   '/manifest.json',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Oswald:wght@500;600;700&display=swap'
@@ -42,8 +43,10 @@ self.addEventListener('fetch', event => {
 
   const url = new URL(event.request.url);
 
-  // 1. Skip interception for API and WebSocket calls
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/ws/')) {
+  // 1. Do not intercept API or streaming responses (SSE lives under /api/sse/...)
+  if (url.pathname.startsWith('/api/') ||
+      url.pathname.includes('/sse/') ||
+      event.request.headers.get('Accept') === 'text/event-stream') {
     return;
   }
 
@@ -98,7 +101,7 @@ self.addEventListener('push', event => {
   const title = data.title || 'SmartDine';
   const options = {
     body: data.body || 'Оновлення у замовленні',
-    icon: '/images/icons/icon-192.png',
+    icon: '/icons/android-chrome-192x192.png',
     badge: '/favicon.ico',
     data: {
       url: data.url || '/'

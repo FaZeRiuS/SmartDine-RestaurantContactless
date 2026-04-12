@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 public class SecurityProperties {
 
     /**
-     * Comma-separated list of allowed origins. Example:
-     * app.cors.allowed-origins=https://example.com,https://admin.example.com
+     * Comma-separated allowed origin patterns for Spring CORS ({@link SecurityConfig}, {@link WebConfig}).
+     * Used for cross-origin HTTP (e.g. API from another host/port), not specific to SSE.
      */
     @Value("${app.cors.allowed-origins:http://localhost:8081}")
     private String corsAllowedOrigins;

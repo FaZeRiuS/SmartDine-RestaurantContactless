@@ -12,7 +12,7 @@
 - **Інтерактивне меню**: Перегляд страв з категоріями, фотографіями та детальним описом.
 - **Система замовлень**: Керування кошиком, вибір кількості та миттєве оформлення замовлення.
 - **Онлайн-оплата**: Інтеграція з **LiqPay** для безпечних платежів (карта, Apple Pay, Google Pay).
-- **Реальний час**: Оновлення статусу замовлення в реальному часі через WebSockets.
+- **Реальний час**: Оновлення статусу замовлення через **SSE** (Server-Sent Events, `EventSource`).
 - **Адмін-панель**: Керування меню, категоріями, столиками та перегляд аналітики на дашборді.
 - **Staff Interface**: Спеціальний інтерфейс для офіціантів та кухні для обробки замовлень.
 - **PWA (Progressive Web App)**: Додаток можна встановити на головний екран смартфона.
@@ -26,7 +26,7 @@
 - **Security**: Keycloak (OAuth2, OpenID Connect) для авторизації клієнтів та персоналу.
 - **Database**: PostgreSQL (Production) / H2 (Testing).
 - **Frontend**: HTML5, CSS3 (Modern Vanilla), JavaScript (ES6+), Thymeleaf.
-- **Real-time**: Spring WebSocket (STOMP).
+- **Real-time**: Spring MVC `SseEmitter` + browser `EventSource` (SSE).
 - **Media**: Thumbnailator для оптимізації фото страв.
 - **Testing**: Playwright, JUnit 5, Mockito.
 - **DevOps**: Docker, Docker Compose, Nginx.
@@ -75,7 +75,7 @@ docker-compose up --build
 
 ### Checklist:
 1. **Секрети**: Тільки через змінні оточення (`SPRING_DATASOURCE_PASSWORD`, `KEYCLOAK_CLIENT_SECRET` тощо).
-2. **CORS/WS**: Вкажіть дозволені домени в `app.cors.allowed-origins` замість `*`.
+2. **CORS**: Вкажіть дозволені домени в `app.cors.allowed-origins` (змінна `APP_ALLOWED_ORIGINS`) замість `*`, якщо фронт або API з іншого origin.
 3. **HTTPS**: Використовуйте зворотний проксі (Nginx/Traefik) для термінації SSL.
 4. **Профілі**: Використовуйте `application.properties` з надійними дефолтами для продакшну.
 

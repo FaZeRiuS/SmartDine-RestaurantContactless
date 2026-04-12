@@ -195,7 +195,7 @@ async function dismissWaiterCall(orderId) {
     }
 }
 
-/* // ── Auto-refresh removed in favor of WebSockets ──
+/* // ── Auto-refresh removed in favor of SSE (sse.js) ──
 let refreshInterval = setInterval(loadOrders, 10000); */
 
 // ── Init ──

@@ -11,9 +11,9 @@ import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.LiqPayService;
 import com.example.CourseWork.service.LoyaltyService;
 import com.example.CourseWork.util.KeycloakUtil;
+import com.example.CourseWork.service.SseService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -37,27 +37,27 @@ public class PaymentController {
     private final OrderRepository orderRepository;
     private final LiqPayService liqPayService;
     private final OrderMapper orderMapper;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SseService sseService;
     private final LoyaltyService loyaltyService;
 
     public PaymentController(
             OrderRepository orderRepository,
             LiqPayService liqPayService,
             OrderMapper orderMapper,
-            SimpMessagingTemplate messagingTemplate,
+            SseService sseService,
             LoyaltyService loyaltyService
     ) {
         this.orderRepository = orderRepository;
         this.liqPayService = liqPayService;
         this.orderMapper = orderMapper;
-        this.messagingTemplate = messagingTemplate;
+        this.sseService = sseService;
         this.loyaltyService = loyaltyService;
     }
 
     @GetMapping("/payment/result")
     public String paymentResult(@RequestParam("orderId") Integer orderId) {
         // We just redirect to the home page. 
-        // The active order widget (js/cart.js) automatically picks up the updated status via WebSocket or polling.
+        // The active order widget (js/cart.js) picks up status updates via SSE (sse.js) or its own refresh hooks.
         return "redirect:/?paymentResult=success&orderId=" + orderId;
     }
 
@@ -124,7 +124,7 @@ public class PaymentController {
 
         OrderResponseDto response = orderMapper.toResponseDto(order);
         if (order.getUserId() != null) {
-            messagingTemplate.convertAndSend("/topic/order-updates/" + order.getUserId(), (Object) response);
+            sseService.sendOrderUpdate(order.getUserId(), response);
         }
 
         return ResponseEntity.ok("OK");

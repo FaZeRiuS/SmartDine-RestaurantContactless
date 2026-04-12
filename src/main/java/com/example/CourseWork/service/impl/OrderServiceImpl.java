@@ -7,9 +7,9 @@ import com.example.CourseWork.model.*;
 import com.example.CourseWork.repository.*;
 import com.example.CourseWork.service.OrderService;
 import com.example.CourseWork.service.PaymentService;
+import com.example.CourseWork.service.SseService;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,15 +28,14 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final OrderMapper orderMapper;
     private final PaymentService paymentService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SseService sseService;
     private final OrderServiceReviewRepository orderServiceReviewRepository;
     private final OrderDishReviewRepository orderDishReviewRepository;
     private final com.example.CourseWork.service.PushNotificationService pushNotificationService;
 
     private void notifyUserOfUpdate(String userId, OrderResponseDto order) {
         if (userId != null) {
-            String topic = "/topic/order-updates/" + userId;
-            messagingTemplate.convertAndSend(topic, (Object) order);
+            sseService.sendOrderUpdate(userId, order);
         }
     }
 
@@ -83,7 +82,7 @@ public class OrderServiceImpl implements OrderService {
         // Notify Staff
         pushNotificationService.sendNotificationToRole("ROLE_WAITER", 
             "{\"title\": \"Нове замовлення!\", \"body\": \"Стіл №" + tableNumber + "\", \"url\": \"/staff/orders\"}");
-        messagingTemplate.convertAndSend("/topic/orders", "New order created: " + response.getId());
+        sseService.sendStaffNotification("New order created: " + response.getId());
             
         return response;
     }
@@ -169,7 +168,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         orderRepository.save(order);
-        messagingTemplate.convertAndSend("/topic/orders", "Order updated: " + order.getId());
+        sseService.sendStaffNotification("Order updated: " + order.getId());
         return orderMapper.toResponseDto(order);
     }
 
@@ -195,7 +194,7 @@ public class OrderServiceImpl implements OrderService {
         item.setSpecialRequest(specialRequest);
         
         orderRepository.save(order);
-        messagingTemplate.convertAndSend("/topic/orders", "Order updated: " + order.getId());
+        sseService.sendStaffNotification("Order updated: " + order.getId());
         return orderMapper.toResponseDto(order);
     }
 
@@ -225,7 +224,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         orderRepository.save(order);
-        messagingTemplate.convertAndSend("/topic/orders", "Order updated: " + order.getId());
+        sseService.sendStaffNotification("Order updated: " + order.getId());
         return orderMapper.toResponseDto(order);
     }
 
@@ -283,7 +282,7 @@ public class OrderServiceImpl implements OrderService {
         // Notify Staff
         pushNotificationService.sendNotificationToRole("ROLE_WAITER", 
             "{\"title\": \"Нове замовлення!\", \"body\": \"Стіл №" + tableNumber + "\", \"url\": \"/staff/orders\"}");
-        messagingTemplate.convertAndSend("/topic/orders", "New order confirmed from cart: " + response.getId());
+        sseService.sendStaffNotification("New order confirmed from cart: " + response.getId());
 
         return response;
     }
@@ -332,7 +331,7 @@ public class OrderServiceImpl implements OrderService {
                 "{\"title\": \"Замовлення готове!\", \"body\": \"Стіл №" + order.getTableNumber() + "\", \"url\": \"/staff/orders\"}");
         }
 
-        messagingTemplate.convertAndSend("/topic/orders", "Order status updated: " + order.getId());
+        sseService.sendStaffNotification("Order status updated: " + order.getId());
 
         return response;
     }
@@ -386,7 +385,7 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         OrderResponseDto response = orderMapper.toResponseDto(savedOrder);
         notifyUserOfUpdate(order.getUserId(), response);
-        messagingTemplate.convertAndSend("/topic/orders", "Items added to order: " + order.getId());
+        sseService.sendStaffNotification("Items added to order: " + order.getId());
         return response;
     }
 
@@ -425,7 +424,7 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         OrderResponseDto response = orderMapper.toResponseDto(savedOrder);
         notifyUserOfUpdate(order.getUserId(), response);
-        messagingTemplate.convertAndSend("/topic/orders", "Order paid: " + order.getId());
+        sseService.sendStaffNotification("Order paid: " + order.getId());
         return response;
     }
 
@@ -492,8 +491,8 @@ public class OrderServiceImpl implements OrderService {
 
         OrderResponseDto response = orderMapper.toResponseDto(order);
         
-        // Notify Staff via WebSocket
-        messagingTemplate.convertAndSend("/topic/orders", "Waiter called for Table #" + order.getTableNumber());
+        // Notify Staff via SSE
+        sseService.sendStaffNotification("Waiter called for Table #" + order.getTableNumber());
         
         // Notify Staff via Push
         pushNotificationService.sendNotificationToRole("ROLE_WAITER", 
@@ -514,7 +513,7 @@ public class OrderServiceImpl implements OrderService {
         OrderResponseDto response = orderMapper.toResponseDto(order);
         
         // Notify everyone that the call is dismissed (to update UI)
-        messagingTemplate.convertAndSend("/topic/orders", "Waiter call dismissed for Table #" + order.getTableNumber());
+        sseService.sendStaffNotification("Waiter call dismissed for Table #" + order.getTableNumber());
         notifyUserOfUpdate(order.getUserId(), response);
 
         return response;
