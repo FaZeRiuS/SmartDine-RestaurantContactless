@@ -1,7 +1,6 @@
 package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.service.SseService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
-@Slf4j
 public class SseServiceImpl implements SseService {
 
     // Map of userId -> list of emitters (a user might have multiple tabs open)
@@ -37,13 +35,11 @@ public class SseServiceImpl implements SseService {
             emitter.onCompletion(() -> staffEmitters.remove(emitter));
             emitter.onTimeout(() -> staffEmitters.remove(emitter));
             emitter.onError(e -> staffEmitters.remove(emitter));
-            log.debug("STAFF: New SSE subscription added. Total staff: {}", staffEmitters.size());
         } else {
             userEmitters.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(emitter);
             emitter.onCompletion(() -> removeUserEmitter(userId, emitter));
             emitter.onTimeout(() -> removeUserEmitter(userId, emitter));
             emitter.onError(e -> removeUserEmitter(userId, emitter));
-            log.debug("USER: New SSE subscription added for {}. Total user emitters: {}", userId, userEmitters.get(userId).size());
         }
 
         // Send an initial "connected" event to verify the stream is open
@@ -52,8 +48,8 @@ public class SseServiceImpl implements SseService {
                     .name("connected")
                     .data("SSE connection established")
                     .reconnectTime(10000)); // Hint browser to reconnect every 10s if connection lost
-        } catch (IOException e) {
-            log.warn("Failed to send initial SSE event to {}: {}", userId, e.getMessage());
+        } catch (IOException ignored) {
+            // Client disconnected before first frame; emitter cleanup runs via callbacks
         }
 
         return emitter;
@@ -79,9 +75,8 @@ public class SseServiceImpl implements SseService {
         for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event().name(eventName).data(data));
-            } catch (Exception e) {
-                // If the emitter is broken, it will be removed by its onCompletion/onError hooks
-                log.trace("Failed to send SSE event: {}", e.getMessage());
+            } catch (Exception ignored) {
+                // Broken emitter; onCompletion/onError will detach it
             }
         }
     }
@@ -102,19 +97,16 @@ public class SseServiceImpl implements SseService {
      */
     @Scheduled(fixedRate = 25000)
     public void sendHeartbeat() {
-        staffEmitters.forEach(emitter -> sendHeartbeat(emitter, "staff"));
-        userEmitters.forEach((userId, emitters) -> {
-            emitters.forEach(emitter -> sendHeartbeat(emitter, userId));
-        });
+        staffEmitters.forEach(this::sendHeartbeat);
+        userEmitters.values().forEach(emitters -> emitters.forEach(this::sendHeartbeat));
     }
 
-    private void sendHeartbeat(SseEmitter emitter, String label) {
+    private void sendHeartbeat(SseEmitter emitter) {
         try {
             // SSE comment line (ignored by EventSource). Non-empty comment avoids edge cases with empty frames.
             emitter.send(SseEmitter.event().comment("keep-alive"));
-        } catch (Exception e) {
-            log.trace("Heartbeat failed for {}, removing emitter", label);
-            // The emitter will be removed via its onError/onCompletion handlers
+        } catch (Exception ignored) {
+            // Emitter will be removed via onError/onCompletion
         }
     }
 }
