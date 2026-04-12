@@ -1,8 +1,6 @@
 package com.example.CourseWork.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -10,12 +8,9 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(
-        name = "loyalty_account",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "ux_loyalty_account_user_id", columnNames = {"user_id"})
-        }
-)
+@Table(name = "loyalty_account", uniqueConstraints = {
+        @UniqueConstraint(name = "ux_loyalty_account_user_id", columnNames = { "user_id" })
+})
 public class LoyaltyAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,15 +31,18 @@ public class LoyaltyAccount {
     @PrePersist
     void prePersist() {
         LocalDateTime now = LocalDateTime.now();
-        if (createdAt == null) createdAt = now;
-        if (updatedAt == null) updatedAt = now;
-        if (balance == null) balance = BigDecimal.ZERO;
+        if (createdAt == null)
+            createdAt = now;
+        if (updatedAt == null)
+            updatedAt = now;
+        if (balance == null)
+            balance = BigDecimal.ZERO;
     }
 
     @PreUpdate
     void preUpdate() {
         updatedAt = LocalDateTime.now();
-        if (balance == null) balance = BigDecimal.ZERO;
+        if (balance == null)
+            balance = BigDecimal.ZERO;
     }
 }
-
