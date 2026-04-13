@@ -44,91 +44,82 @@ public class SecurityConfig {
 
     public SecurityConfig(
             SecurityProperties securityProperties,
-            @Value("${spring.security.oauth2.client.provider.keycloak.jwk-set-uri:http://localhost:8080/realms/restaurant-realm/protocol/openid-connect/certs}")
-            String keycloakJwkSetUri
-    ) {
+            @Value("${spring.security.oauth2.client.provider.keycloak.jwk-set-uri:http://localhost:8080/realms/restaurant-realm/protocol/openid-connect/certs}") String keycloakJwkSetUri) {
         this.securityProperties = securityProperties;
         this.keycloakJwkSetUri = keycloakJwkSetUri;
     }
 
     // ─── Single SecurityFilterChain: supports both JWT and OAuth2 Login ───
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, 
-                                                   OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http,
+            OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                // We accept LiqPay callbacks without CSRF (signed by LiqPay).
-                .ignoringRequestMatchers(
-                    new AntPathRequestMatcher("/api/payment/callback"),
-                    new AntPathRequestMatcher("/api/notifications/subscribe")
-                )
-            )
-            .authorizeHttpRequests(auth -> auth
-                // Public static resources & pages
-                .requestMatchers("/", "/menu", "/menu/**", "/cart", "/error",
-                    "/css/**", "/js/**", "/images/**", "/static/**",
-                    "/webjars/**",
-                    "/favicon.ico",
-                    "/apple-touch-icon.png",
-                    "/manifest.json",
-                    "/sw.js",
-                    "/api/test/auth/**").permitAll()
-                // Swagger/OpenAPI endpoints: disabled in prod and blocked here as defense-in-depth
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").denyAll()
-                .requestMatchers("/payment/**").permitAll()
-                // LiqPay callback must be public; payment init is allowed for guests (session-based GUEST_<sessionId>)
-                .requestMatchers(HttpMethod.POST, "/api/payment/callback").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/payment/init").permitAll()
-                // CSRF bootstrap (sets XSRF-TOKEN cookie)
-                .requestMatchers(HttpMethod.GET, "/api/csrf").permitAll()
-                // Public API endpoints (GET/POST for Cart and Active Order)
-                .requestMatchers(HttpMethod.GET, "/api/menus/**", "/api/dishes/**").permitAll()
-                .requestMatchers("/api/cart/**").permitAll()
-                .requestMatchers("/api/user/me").permitAll()
-                // Order API: allow guests (KeycloakUtil creates GUEST_<sessionId>)
-                .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
-                .requestMatchers("/api/orders/my-active").permitAll()
-                .requestMatchers("/api/orders/confirm").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/orders/*/items").permitAll()
-                .requestMatchers(HttpMethod.PUT, "/api/orders/*/items/**").permitAll()
-                .requestMatchers(HttpMethod.DELETE, "/api/orders/*/items/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/orders/*/pay").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/orders/*/call-waiter").permitAll()
-                .requestMatchers("/api/notifications/**").permitAll()
-                .requestMatchers("/api/sse/subscribe/**").permitAll()
-                // Staff pages
-                .requestMatchers("/staff/**").hasAnyRole("WAITER", "CHEF", "ADMINISTRATOR")
-                // Admin pages
-                .requestMatchers("/admin/qr/**").hasRole("ADMINISTRATOR")
-                .requestMatchers("/admin/**").hasAnyRole("CHEF", "ADMINISTRATOR")
-                // Restricted Customer History
-                .requestMatchers("/orders", "/api/orders/history").hasRole("CUSTOMER")
-                // Everything else requires authentication
-                .anyRequest().authenticated()
-            )
-            // JWT Resource Server (for external API clients with Bearer token)
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt
-                    .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                )
-            )
-            // OAuth2 Login (for browser-based Thymeleaf sessions)
-            .oauth2Login(oauth2 -> oauth2
-                .userInfoEndpoint(userInfo -> userInfo
-                    .oidcUserService(oidcUserService)
-                )
-                .defaultSuccessUrl("/", true)
-            )
-            .logout(logout -> logout
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true)
-                .clearAuthentication(true)
-            )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
-            );
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        // We accept LiqPay callbacks without CSRF (signed by LiqPay).
+                        .ignoringRequestMatchers(
+                                new AntPathRequestMatcher("/api/payment/callback"),
+                                new AntPathRequestMatcher("/api/notifications/subscribe")))
+                .authorizeHttpRequests(auth -> auth
+                        // Public static resources & pages
+                        .requestMatchers("/", "/menu", "/menu/**", "/cart", "/error",
+                                "/css/**", "/js/**", "/images/**", "/static/**",
+                                "/webjars/**",
+                                "/favicon.ico",
+                                "/apple-touch-icon.png",
+                                "/manifest.json",
+                                "/sw.js",
+                                "/api/test/auth/**")
+                        .permitAll()
+                        // Swagger/OpenAPI endpoints: disabled in prod and blocked here as
+                        // defense-in-depth
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").denyAll()
+                        .requestMatchers("/payment/**").permitAll()
+                        // LiqPay callback must be public; payment init is allowed for guests
+                        // (session-based GUEST_<sessionId>)
+                        .requestMatchers(HttpMethod.POST, "/api/payment/callback").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/payment/init").permitAll()
+                        // CSRF bootstrap (sets XSRF-TOKEN cookie)
+                        .requestMatchers(HttpMethod.GET, "/api/csrf").permitAll()
+                        // Public API endpoints (GET/POST for Cart and Active Order)
+                        .requestMatchers(HttpMethod.GET, "/api/menus/**", "/api/dishes/**").permitAll()
+                        .requestMatchers("/api/cart/**").permitAll()
+                        .requestMatchers("/api/user/me").permitAll()
+                        // Order API: allow guests (KeycloakUtil creates GUEST_<sessionId>)
+                        .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
+                        .requestMatchers("/api/orders/my-active").permitAll()
+                        .requestMatchers("/api/orders/confirm").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/items").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/orders/*/items/**").permitAll()
+                        .requestMatchers(HttpMethod.DELETE, "/api/orders/*/items/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/pay").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/call-waiter").permitAll()
+                        .requestMatchers("/api/notifications/**").permitAll()
+                        .requestMatchers("/api/sse/subscribe/**").permitAll()
+                        // Staff pages
+                        .requestMatchers("/staff/**").hasAnyRole("WAITER", "CHEF", "ADMINISTRATOR")
+                        // Admin pages
+                        .requestMatchers("/admin/**").hasAnyRole("CHEF", "ADMINISTRATOR")
+                        // Restricted Customer History
+                        .requestMatchers("/orders", "/api/orders/history").hasRole("CUSTOMER")
+                        // Everything else requires authentication
+                        .anyRequest().authenticated())
+                // JWT Resource Server (for external API clients with Bearer token)
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                // OAuth2 Login (for browser-based Thymeleaf sessions)
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .oidcUserService(oidcUserService))
+                        .defaultSuccessUrl("/", true))
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true))
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
     }
@@ -164,9 +155,9 @@ public class SecurityConfig {
         return userRequest -> {
             OidcUser oidcUser = delegate.loadUser(userRequest);
             OAuth2AccessToken accessToken = userRequest.getAccessToken();
-            
+
             List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
-            
+
             try {
                 // Decode the Access Token to get realm_access
                 Jwt jwt = jwtDecoder.decode(accessToken.getTokenValue());
@@ -186,7 +177,8 @@ public class SecurityConfig {
                         if (clientAccess != null && clientAccess.containsKey("roles")) {
                             @SuppressWarnings("unchecked")
                             List<String> roles = (List<String>) clientAccess.get("roles");
-                            roles.forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
+                            roles.forEach(
+                                    role -> authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
                         }
                     });
                 }
@@ -196,9 +188,8 @@ public class SecurityConfig {
 
             // Merge with existing OIDC authorities (SCOPE_openid, etc.)
             var allAuthorities = Stream.concat(
-                oidcUser.getAuthorities().stream().map(a -> new SimpleGrantedAuthority(a.getAuthority())),
-                authorities.stream()
-            ).collect(Collectors.toSet());
+                    oidcUser.getAuthorities().stream().map(a -> new SimpleGrantedAuthority(a.getAuthority())),
+                    authorities.stream()).collect(Collectors.toSet());
 
             log.debug("Authenticated user: {}", oidcUser.getPreferredUsername());
             log.debug("Mapped authorities: {}", allAuthorities);
@@ -214,7 +205,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
