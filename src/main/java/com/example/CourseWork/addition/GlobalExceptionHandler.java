@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.io.IOException;
 import org.springframework.http.MediaType;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 
 @RestControllerAdvice
@@ -140,5 +142,23 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AsyncRequestTimeoutException.class)
     public void handleAsyncRequestTimeoutException(AsyncRequestTimeoutException ex) {
         log.debug("Async request timed out (normal behavior for SSE): {}", ex.getMessage());
+    }
+
+    @ExceptionHandler(AsyncRequestNotUsableException.class)
+    public void handleAsyncRequestNotUsableException(AsyncRequestNotUsableException ex) {
+        // Demoted to debug to reduce noise in logs - common when clients disconnect from SSE.
+        log.debug("Async request not usable (client disconnected): {}", ex.getMessage());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @SuppressWarnings("null")
+    public ResponseEntity<Map<String, String>> handleNoResourceFoundException(NoResourceFoundException ex) {
+        log.warn("Static resource not found: {}", ex.getResourcePath());
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Resource not found");
+        error.put("status", "error");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(error);
     }
 }
