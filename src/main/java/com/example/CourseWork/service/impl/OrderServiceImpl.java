@@ -163,12 +163,12 @@ public class OrderServiceImpl implements OrderService {
                 .reduce(0f, (a, b) -> a + b);
         order.setTotalPrice(total);
 
-        if (order.getItems().isEmpty()) {
-            order.setStatus(OrderStatus.CANCELLED);
-        }
-
         orderRepository.save(order);
-        sseService.sendStaffNotification("Order updated: " + order.getId());
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            sseService.sendStaffNotification("[RELOAD] Order cancelled: " + order.getId());
+        } else {
+            sseService.sendStaffNotification("Order updated: " + order.getId());
+        }
         return orderMapper.toResponseDto(order);
     }
 
@@ -224,7 +224,11 @@ public class OrderServiceImpl implements OrderService {
         }
 
         orderRepository.save(order);
-        sseService.sendStaffNotification("Order updated: " + order.getId());
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            sseService.sendStaffNotification("[RELOAD] Order cancelled: " + order.getId());
+        } else {
+            sseService.sendStaffNotification("Order updated: " + order.getId());
+        }
         return orderMapper.toResponseDto(order);
     }
 
@@ -331,7 +335,11 @@ public class OrderServiceImpl implements OrderService {
                 "{\"title\": \"Замовлення готове!\", \"body\": \"Стіл №" + order.getTableNumber() + "\", \"url\": \"/staff/orders\"}");
         }
 
-        sseService.sendStaffNotification("Order status updated: " + order.getId());
+        if (updatedOrder.getStatus() == OrderStatus.COMPLETED || updatedOrder.getStatus() == OrderStatus.CANCELLED) {
+            sseService.sendStaffNotification("[RELOAD] Order status updated: " + order.getId());
+        } else {
+            sseService.sendStaffNotification("Order status updated: " + order.getId());
+        }
 
         return response;
     }
@@ -424,7 +432,12 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder = orderRepository.save(order);
         OrderResponseDto response = orderMapper.toResponseDto(savedOrder);
         notifyUserOfUpdate(order.getUserId(), response);
-        sseService.sendStaffNotification("Order paid: " + order.getId());
+        
+        if (savedOrder.getStatus() == OrderStatus.COMPLETED) {
+            sseService.sendStaffNotification("[RELOAD] Order paid and completed: " + order.getId());
+        } else {
+            sseService.sendStaffNotification("Order paid: " + order.getId());
+        }
         return response;
     }
 

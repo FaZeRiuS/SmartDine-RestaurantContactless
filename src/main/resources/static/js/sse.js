@@ -42,19 +42,30 @@ function startSseConnection(userId) {
             }
 
             handleOrderNotification(orderUpdate);
+
+            // AUTO-REFRESH: Reload the page if the order reaches a final state
+            if (orderUpdate.status === 'COMPLETED' || orderUpdate.status === 'CANCELLED') {
+                setTimeout(() => window.location.reload(), 2000);
+            }
         } catch {
             // ignore malformed payload
         }
     });
 
-    eventSource.addEventListener('staff-update', () => {
-        if (typeof loadOrders === 'function') {
+    eventSource.addEventListener('staff-update', (event) => {
+        const msg = event.data || "";
+        if (msg.includes("[RELOAD]")) {
+            setTimeout(() => window.location.reload(), 1500);
+        } else if (typeof loadOrders === 'function') {
             loadOrders();
         }
     });
 
-    eventSource.addEventListener('staff-notification', () => {
-        if (typeof loadOrders === 'function') {
+    eventSource.addEventListener('staff-notification', (event) => {
+        const msg = event.data || "";
+        if (msg.includes("[RELOAD]")) {
+            setTimeout(() => window.location.reload(), 1500);
+        } else if (typeof loadOrders === 'function') {
             loadOrders();
         }
     });
