@@ -101,8 +101,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/sse/subscribe/**").permitAll()
                         // Staff pages
                         .requestMatchers("/staff/**").hasAnyRole("WAITER", "CHEF", "ADMINISTRATOR")
-                        // Admin pages
-                        .requestMatchers("/admin/**").hasAnyRole("CHEF", "ADMINISTRATOR")
+                        // Admin-only pages
+                        .requestMatchers("/admin/dashboard", "/admin/orders", "/admin/qr/**").hasRole("ADMINISTRATOR")
+                        // Menu editor for Chefs and Admins
+                        .requestMatchers("/admin/menu").hasAnyRole("CHEF", "ADMINISTRATOR")
+                        // General admin access (fallback)
+                        .requestMatchers("/admin/**").hasRole("ADMINISTRATOR")
                         // Restricted Customer History
                         .requestMatchers("/orders", "/api/orders/history").hasRole("CUSTOMER")
                         // Everything else requires authentication

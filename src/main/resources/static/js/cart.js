@@ -636,6 +636,11 @@ function renderActiveOrder(order) {
     const container = document.getElementById('activeOrderContainer');
     if (!container) return;
 
+    if (order.status === 'COMPLETED' || order.status === 'CANCELLED') {
+        resetActiveOrderWidget();
+        return;
+    }
+
     const idEl = document.getElementById('activeOrderId');
     const statusEl = document.getElementById('activeOrderStatus');
     const paymentStatusEl = document.getElementById('activePaymentStatus');

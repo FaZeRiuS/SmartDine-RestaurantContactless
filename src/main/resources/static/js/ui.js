@@ -288,7 +288,18 @@ async function initPushNotifications() {
 
 async function subscribeUserToPush() {
     try {
-        const registration = await navigator.serviceWorker.ready;
+        console.time('>>> PWA: Push Check');
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            return;
+        }
+
+        // 1. Try to get existing registration first for speed
+        let registration = await navigator.serviceWorker.getRegistration();
+        // 2. If no registration OR it's not active yet, wait for ready
+        if (!registration || !registration.active) {
+            registration = await navigator.serviceWorker.ready;
+        }
+
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {

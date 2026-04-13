@@ -14,8 +14,7 @@ const ASSETS_TO_CACHE = [
   '/icons/android-chrome-512x512.png',
   '/icons/apple-touch-icon.png',
   '/favicon.ico',
-  '/manifest.json',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Oswald:wght@500;600;700&display=swap'
+  '/manifest.json'
 ];
 
 // Install Event
