@@ -70,7 +70,9 @@ public class SecurityConfig {
                                 "/apple-touch-icon.png",
                                 "/manifest.json",
                                 "/sw.js",
-                                "/api/test/auth/**")
+                                "/api/test/auth/**",
+                                "/auth/**",
+                                "/icons/**")
                         .permitAll()
                         // Swagger/OpenAPI endpoints: disabled in prod and blocked here as
                         // defense-in-depth
