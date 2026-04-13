@@ -165,14 +165,23 @@
             // 1. Warm up CSRF
             fetch('/api/csrf', { credentials: 'same-origin' }).catch(() => {});
 
-            // 2. Centralized Identity & UI Boot
+            // 2. Service Worker Registration (Fire and forget, runs in background)
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('>>> PWA: Service Worker registered!', reg.scope))
+                    .catch(err => console.error('>>> PWA: SW failed:', err));
+            }
+
+            // 3. Centralized Identity & UI Boot
             async function bootstrapApp() {
+                console.time('>>> BOOTSTRAP: Total Time');
                 try {
                     const res = await fetch('/api/user/me');
                     if (!res.ok) throw new Error('Identity failed');
                     const data = await res.json();
                     
                     window.currentUserId = data.id;
+                    console.log('>>> BOOTSTRAP: Identity loaded: ' + data.id);
                     
                     // Initialize components in sequence
                     if (typeof initSharedUI === 'function') initSharedUI();
@@ -183,14 +192,9 @@
                     console.warn('>>> BOOTSTRAP: Reduced functionality mode:', err.message);
                     if (typeof initSharedUI === 'function') initSharedUI();
                     if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
+                } finally {
+                    console.timeEnd('>>> BOOTSTRAP: Total Time');
                 }
-            }
-
-            // 3. Service Worker
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('>>> PWA: Service Worker registered!', reg.scope))
-                    .catch(err => console.error('>>> PWA: SW failed:', err));
             }
 
             bootstrapApp();

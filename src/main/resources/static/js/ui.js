@@ -268,7 +268,7 @@ async function initPushNotifications() {
     // For now, we'll try to subscribe if already granted, or just check.
     if (Notification.permission === 'granted') {
         subscribeUserToPush();
-    } else {
+    } else if (Notification.permission === 'default') {
         // Soft prompt or wait for action. 
         // Showing a toast as a soft prompt:
         setTimeout(() => {
