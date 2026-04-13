@@ -23,4 +23,11 @@ public interface SseService {
      * @param message The message content.
      */
     void sendStaffNotification(String message);
+
+    /**
+     * Sends a notification message to a specific user.
+     * @param userId The ID of the recipient user.
+     * @param message The message content.
+     */
+    void sendUserNotification(String userId, String message);
 }

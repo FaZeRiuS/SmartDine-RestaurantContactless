@@ -89,7 +89,7 @@
                     <li class="nav-divider"></li>
 
                     <!-- Authenticated links -->
-                    <li sec:authorize="hasRole('CUSTOMER')">
+                    <li sec:authorize="hasRole('CUSTOMER') and !hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
                         <a th:href="@{/orders}" th:classappend="${currentUri == '/orders' ? 'active' : ''}">Мої замовлення</a>
                     </li>
 

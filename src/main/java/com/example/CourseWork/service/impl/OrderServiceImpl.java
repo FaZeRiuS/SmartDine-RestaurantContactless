@@ -36,6 +36,11 @@ public class OrderServiceImpl implements OrderService {
     private void notifyUserOfUpdate(String userId, OrderResponseDto order) {
         if (userId != null) {
             sseService.sendOrderUpdate(userId, order);
+            
+            // If the order reaches a terminal state, send a robust reload signal
+            if (order.getStatus() == OrderStatus.COMPLETED || order.getStatus() == OrderStatus.CANCELLED) {
+                sseService.sendUserNotification(userId, "[RELOAD] Order " + order.getId() + " is finalized (" + order.getStatus() + ")");
+            }
         }
     }
 

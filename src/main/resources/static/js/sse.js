@@ -70,6 +70,13 @@ function startSseConnection(userId) {
         }
     });
 
+    eventSource.addEventListener('order-notification', (event) => {
+        const msg = event.data || "";
+        if (msg.includes("[RELOAD]")) {
+            setTimeout(() => window.location.reload(), 1500);
+        }
+    });
+
     eventSource.onerror = () => {
         if (eventSource.readyState === EventSource.CONNECTING) {
             return;

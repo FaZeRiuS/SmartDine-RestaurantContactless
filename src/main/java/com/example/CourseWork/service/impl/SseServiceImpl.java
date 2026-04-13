@@ -69,6 +69,14 @@ public class SseServiceImpl implements SseService {
     public void sendStaffNotification(String message) {
         sendToEmitters(staffEmitters, "staff-notification", message);
     }
+    
+    @Override
+    public void sendUserNotification(String userId, String message) {
+        List<SseEmitter> emitters = userEmitters.get(userId);
+        if (emitters != null) {
+            sendToEmitters(emitters, "order-notification", message);
+        }
+    }
 
     @SuppressWarnings("null")
     private void sendToEmitters(List<SseEmitter> emitters, String eventName, Object data) {
