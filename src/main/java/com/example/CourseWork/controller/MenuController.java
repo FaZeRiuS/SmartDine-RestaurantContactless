@@ -5,6 +5,7 @@ import com.example.CourseWork.dto.MenuDto;
 import com.example.CourseWork.dto.MenuWithDishesDto;
 import com.example.CourseWork.service.MenuService;
 import com.example.CourseWork.service.QrCodeService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -33,13 +34,13 @@ public class MenuController {
 
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     @PostMapping
-    public ResponseEntity<MenuResponseDto> createMenu(@RequestBody MenuDto dto) {
+    public ResponseEntity<MenuResponseDto> createMenu(@Valid @RequestBody MenuDto dto) {
         return ResponseEntity.ok(menuService.createMenu(dto));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     @PutMapping("/{id}")
-    public ResponseEntity<MenuResponseDto> updateMenu(@PathVariable Integer id, @RequestBody MenuDto dto) {
+    public ResponseEntity<MenuResponseDto> updateMenu(@PathVariable Integer id, @Valid @RequestBody MenuDto dto) {
         return ResponseEntity.ok(menuService.updateMenu(id, dto));
     }
 

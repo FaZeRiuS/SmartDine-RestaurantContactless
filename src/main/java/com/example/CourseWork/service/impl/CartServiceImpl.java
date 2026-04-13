@@ -2,10 +2,13 @@ package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.dto.CartItemDto;
 import com.example.CourseWork.dto.CartResponseDto;
+import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.mapper.CartMapper;
 import com.example.CourseWork.model.Cart;
 import com.example.CourseWork.model.CartItem;
 import com.example.CourseWork.model.Dish;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.NotFoundException;
 import com.example.CourseWork.repository.CartRepository;
 import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.service.CartService;
@@ -14,10 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
@@ -40,6 +43,15 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public CartResponseDto addItemToCart(String userId, CartItemDto itemDto) {
+        if (itemDto == null || itemDto.getDishId() == null) {
+            throw new BadRequestException(ErrorMessages.BAD_REQUEST);
+        }
+        if (itemDto.getQuantity() == null || itemDto.getQuantity() <= 0) {
+            throw new BadRequestException(ErrorMessages.INVALID_QUANTITY);
+        }
+
+        Integer dishId = itemDto.getDishId();
+
         Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setUserId(userId);
@@ -47,15 +59,16 @@ public class CartServiceImpl implements CartService {
             return cartRepository.save(newCart);
         });
 
-        Dish dish = dishRepository.findById(itemDto.getDishId())
-                .orElseThrow(() -> new RuntimeException("Dish not found"));
+        @SuppressWarnings("null")
+        Dish dish = dishRepository.findById(dishId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
 
         if (Boolean.FALSE.equals(dish.getIsAvailable())) {
-            throw new RuntimeException("Dish is not available");
+            throw new BadRequestException(ErrorMessages.DISH_NOT_AVAILABLE);
         }
         CartItem existingItem = cart.getItems().stream()
                 .filter(item -> item.getDish().getId().equals(dish.getId()) &&
-                        java.util.Objects.equals(item.getSpecialRequest(), itemDto.getSpecialRequest()))
+                        Objects.equals(item.getSpecialRequest(), itemDto.getSpecialRequest()))
                 .findFirst()
                 .orElse(null);
 
@@ -79,12 +92,12 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartResponseDto updateCartItemQuantity(String userId, Integer itemId, Integer quantity) {
         Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_NOT_FOUND));
 
         CartItem item = cart.getItems().stream()
                 .filter(i -> i.getId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_ITEM_NOT_FOUND));
 
         if (quantity <= 0) {
             cart.getItems().remove(item);
@@ -100,12 +113,12 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartResponseDto updateCartItemSpecialRequest(String userId, Integer itemId, String specialRequest) {
         Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_NOT_FOUND));
 
         CartItem item = cart.getItems().stream()
                 .filter(i -> i.getId().equals(itemId))
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_ITEM_NOT_FOUND));
 
         item.setSpecialRequest(specialRequest);
         cartRepository.save(cart);
@@ -116,7 +129,7 @@ public class CartServiceImpl implements CartService {
     @Override
     public CartResponseDto removeCartItem(String userId, Integer itemId) {
         Cart cart = cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_NOT_FOUND));
 
         cart.getItems().removeIf(i -> i.getId().equals(itemId));
         cartRepository.save(cart);

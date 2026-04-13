@@ -1,6 +1,7 @@
 package com.example.CourseWork.dto;
 
 import lombok.Data;
+import java.math.BigDecimal;
 
 @Data
 public class OrderItemResponseDto {
@@ -8,7 +9,7 @@ public class OrderItemResponseDto {
     private Integer dishId;
     private String dishName;
     private Integer quantity;
-    private float price;
+    private BigDecimal price;
     private String specialRequest;
     private Integer rating;
 }

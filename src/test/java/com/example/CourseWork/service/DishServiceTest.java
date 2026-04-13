@@ -8,12 +8,16 @@ import com.example.CourseWork.model.Menu;
 import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.impl.DishServiceImpl;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
+import java.math.BigDecimal;
 import java.util.*;
 
 @SuppressWarnings("null")
@@ -49,7 +53,7 @@ class DishServiceTest {
         dish.setId(1);
         dish.setName("Pizza");
         dish.setDescription("Delicious pizza with cheese");
-        dish.setPrice(9.99f);
+        dish.setPrice(new BigDecimal("9.99"));
         dish.setIsAvailable(true);
         dish.setMenus(List.of(menu));
 
@@ -57,7 +61,7 @@ class DishServiceTest {
         responseDto.setId(1);
         responseDto.setName("Pizza");
         responseDto.setDescription("Delicious pizza with cheese");
-        responseDto.setPrice(9.99f);
+        responseDto.setPrice(new BigDecimal("9.99"));
         responseDto.setIsAvailable(true);
         responseDto.setMenuIds(List.of(1));
 
@@ -76,7 +80,8 @@ class DishServiceTest {
     void testGetDishById_DishNotFound() {
         Mockito.when(dishRepository.findById(1)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> dishService.getDishById(1));
+        NotFoundException ex = assertThrows(NotFoundException.class, () -> dishService.getDishById(1));
+        assertEquals(ErrorMessages.DISH_NOT_FOUND, ex.getMessage());
     }
 
     @Test
@@ -119,7 +124,7 @@ class DishServiceTest {
         DishDto dishDto = new DishDto();
         dishDto.setName("Pasta");
         dishDto.setDescription("Delicious pasta with tomato sauce");
-        dishDto.setPrice(12.99f);
+        dishDto.setPrice(new BigDecimal("12.99"));
         dishDto.setIsAvailable(true);
         dishDto.setMenuIds(List.of(1));
 
@@ -131,7 +136,7 @@ class DishServiceTest {
         dishEntity.setId(1);
         dishEntity.setName("Pasta");
         dishEntity.setDescription("Delicious pasta with tomato sauce");
-        dishEntity.setPrice(12.99f);
+        dishEntity.setPrice(new BigDecimal("12.99"));
         dishEntity.setIsAvailable(true);
         dishEntity.setMenus(List.of(menu));
 
@@ -139,7 +144,7 @@ class DishServiceTest {
         responseDto.setId(1);
         responseDto.setName("Pasta");
         responseDto.setDescription("Delicious pasta with tomato sauce");
-        responseDto.setPrice(12.99f);
+        responseDto.setPrice(new BigDecimal("12.99"));
         responseDto.setIsAvailable(true);
         responseDto.setMenuIds(List.of(1));
 
@@ -152,7 +157,7 @@ class DishServiceTest {
         assertNotNull(result);
         assertEquals("Pasta", result.getName());
         assertEquals("Delicious pasta with tomato sauce", result.getDescription());
-        assertEquals(12.99f, result.getPrice());
+        assertThat(result.getPrice()).isEqualByComparingTo("12.99");
         assertTrue(result.getIsAvailable());
         assertTrue(result.getMenuIds().contains(1));
     }

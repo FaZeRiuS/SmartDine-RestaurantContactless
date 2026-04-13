@@ -3,6 +3,8 @@ package com.example.CourseWork.service.impl;
 import com.example.CourseWork.config.LiqPayConfig;
 import com.example.CourseWork.dto.LiqPayCallbackDto;
 import com.example.CourseWork.dto.LiqPayCheckoutFormDto;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.service.LiqPayService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,7 +39,7 @@ public class LiqPayServiceImpl implements LiqPayService {
     public LiqPayCheckoutFormDto prepareCheckout(Order order) {
         String liqpayOrderId = "order_" + order.getId() + "_" + System.currentTimeMillis();
 
-        BigDecimal total = BigDecimal.valueOf(order.getTotalPrice()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = (order.getTotalPrice() == null ? BigDecimal.ZERO : order.getTotalPrice()).setScale(2, RoundingMode.HALF_UP);
         BigDecimal discount = (order.getLoyaltyDiscount() == null ? BigDecimal.ZERO : order.getLoyaltyDiscount())
                 .setScale(2, RoundingMode.HALF_UP);
         if (discount.compareTo(BigDecimal.ZERO) < 0) discount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
@@ -63,7 +65,7 @@ public class LiqPayServiceImpl implements LiqPayService {
         try {
             json = objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to build LiqPay JSON payload: " + e.getMessage(), e);
+            throw new IllegalStateException("Failed to build LiqPay JSON payload", e);
         }
 
         String data = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
@@ -97,7 +99,7 @@ public class LiqPayServiceImpl implements LiqPayService {
             String json = new String(decoded, StandardCharsets.UTF_8);
             return objectMapper.readValue(json, LiqPayCallbackDto.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to decode LiqPay callback data: " + e.getMessage(), e);
+            throw new BadRequestException(ErrorMessages.INVALID_LIQPAY_CALLBACK_DATA);
         }
     }
 
@@ -108,7 +110,7 @@ public class LiqPayServiceImpl implements LiqPayService {
             byte[] hash = sha1.digest(input.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hash);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to build LiqPay signature: " + e.getMessage(), e);
+            throw new IllegalStateException("Failed to build LiqPay signature", e);
         }
     }
 }

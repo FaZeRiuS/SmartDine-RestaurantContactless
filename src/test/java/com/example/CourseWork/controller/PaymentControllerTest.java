@@ -8,9 +8,11 @@ import com.example.CourseWork.mapper.OrderMapper;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.LiqPayService;
-import com.example.CourseWork.service.LoyaltyService;
 import com.example.CourseWork.service.SseService;
+import com.example.CourseWork.service.PaymentCallbackService;
+import com.example.CourseWork.service.PaymentCheckoutService;
 import org.junit.jupiter.api.Test;
+import java.math.BigDecimal;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
@@ -19,6 +21,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -39,7 +42,10 @@ class PaymentControllerTest extends BaseControllerTest {
     private SseService sseService;
 
     @MockitoBean
-    private LoyaltyService loyaltyService;
+    private PaymentCallbackService paymentCallbackService;
+
+    @MockitoBean
+    private PaymentCheckoutService paymentCheckoutService;
 
     @Test
     void initPayment_ShouldReturnCheckoutView() throws Exception {
@@ -48,21 +54,21 @@ class PaymentControllerTest extends BaseControllerTest {
         order.setId(1);
         order.setUserId("user-123");
         order.setPaymentStatus(PaymentStatus.PENDING);
-        
+
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
-        
+
         LiqPayCheckoutFormDto form = new LiqPayCheckoutFormDto(
                 "https://liqpay.ua/api/3/checkout",
                 "some-data",
                 "some-sig",
-                "order_1_123456"
-        );
-        when(liqPayService.prepareCheckout(any())).thenReturn(form);
+                "order_1_123456");
+        when(paymentCheckoutService.prepareCheckout(1)).thenReturn(form);
 
         // Act & Assert
         mockMvc.perform(post("/api/payment/init")
-                        .with(withUser("user-123", "CUSTOMER"))
-                        .param("orderId", "1"))
+                .with(withUser("user-123", "CUSTOMER"))
+                .with(csrf())
+                .param("orderId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/liqpay-checkout"))
                 .andExpect(model().attributeExists("actionUrl", "data", "signature"));
@@ -74,16 +80,19 @@ class PaymentControllerTest extends BaseControllerTest {
         Order order = new Order();
         order.setId(1);
         order.setUserId("user-123");
-        
+
         when(orderRepository.findById(1)).thenReturn(Optional.of(order));
 
         // Act & Assert
         // User is "other-user", but order belongs to "user-123"
+        when(paymentCheckoutService.prepareCheckout(1))
+                .thenThrow(new com.example.CourseWork.exception.BadRequestException("Request failed"));
+
         mockMvc.perform(post("/api/payment/init")
-                        .with(withUser("other-user", "CUSTOMER"))
-                        .param("orderId", "1"))
-                .andExpect(status().isInternalServerError()) // Current error handling returns 500 for unauthorized orders in PaymentController
-                .andExpect(jsonPath("$.message").value("Request failed"));
+                .with(withUser("other-user", "CUSTOMER"))
+                .with(csrf())
+                .param("orderId", "1"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -95,10 +104,10 @@ class PaymentControllerTest extends BaseControllerTest {
         order.setPaymentStatus(PaymentStatus.PENDING);
         order.setStatus(OrderStatus.READY);
         order.setUserId(userId.toString());
-        order.setTotalPrice(500.0f);
+        order.setTotalPrice(BigDecimal.valueOf(500.0));
 
         when(orderRepository.findById(100)).thenReturn(Optional.of(order));
-        
+
         LiqPayCallbackDto callback = new LiqPayCallbackDto();
         callback.setOrderId("order_100_123456");
         callback.setStatus("success");
@@ -106,18 +115,15 @@ class PaymentControllerTest extends BaseControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/payment/callback")
-                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("data", "valid-data")
-                        .param("signature", "valid-sig"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("data", "valid-data")
+                .param("signature", "valid-sig"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("OK"));
 
-        verify(orderRepository).save(argThat(o -> 
-            o.getPaymentStatus() == PaymentStatus.SUCCESS && 
-            o.getStatus() == OrderStatus.COMPLETED
-        ));
-        verify(loyaltyService).earnPointsInternal(eq(userId), any(), contains("LIQPAY:order:100"));
+        verify(paymentCallbackService).handleCallbackSuccess(any());
+        verify(sseService).sendOrderUpdate(eq(userId.toString()), any());
     }
 
     @Test
@@ -128,9 +134,10 @@ class PaymentControllerTest extends BaseControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/payment/callback")
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                        .param("data", "bad-data")
-                        .param("signature", "bad-sig"))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("data", "bad-data")
+                .param("signature", "bad-sig"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Invalid signature"));
     }

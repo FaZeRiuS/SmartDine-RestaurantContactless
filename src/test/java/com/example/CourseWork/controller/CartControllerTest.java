@@ -13,6 +13,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,6 +47,7 @@ class CartControllerTest extends BaseControllerTest {
         // Act & Assert
         mockMvc.perform(post("/api/cart/items")
                         .with(withUser("user-1", "CUSTOMER"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"dishId\": 1, \"quantity\": 1}"))
                 .andExpect(status().isOk());
@@ -59,7 +61,8 @@ class CartControllerTest extends BaseControllerTest {
 
         // Act & Assert
         mockMvc.perform(delete("/api/cart/items/100")
-                        .with(withUser("user-1", "CUSTOMER")))
+                        .with(withUser("user-1", "CUSTOMER"))
+                        .with(csrf()))
                 .andExpect(status().isOk());
     }
 }

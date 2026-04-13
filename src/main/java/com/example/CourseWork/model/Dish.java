@@ -5,21 +5,31 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 public class Dish {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Integer id;
 
     @NotBlank(message = "Dish name cannot be blank")
     @Size(max = 255)
     @Column(nullable = false)
+    @ToString.Include
     private String name;
 
     @Size(max = 1000)
@@ -27,15 +37,18 @@ public class Dish {
 
     @NotNull(message = "Price is required")
     @Positive(message = "Price must be positive")
-    @Column(nullable = false)
-    private Float price;
+    @Column(nullable = false, precision = 19, scale = 2)
+    @ToString.Include
+    private BigDecimal price;
 
     @Size(max = 512)
     @Column(name = "image_url", length = 512)
+    @ToString.Include
     private String imageUrl;
 
     @NotNull
     @Column(name = "is_available", nullable = false)
+    @ToString.Include
     private Boolean isAvailable = true;
 
     @ManyToMany(fetch = FetchType.EAGER)

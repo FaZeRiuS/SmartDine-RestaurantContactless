@@ -16,6 +16,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -52,12 +53,14 @@ class MenuControllerTest extends BaseControllerTest {
         // Act & Assert - Unauthorized (No user)
         mockMvc.perform(post("/api/menus")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\": \"New Menu\"}"))
-                .andExpect(status().isForbidden());
+                        .content("{\"name\": \"New Menu\"}")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized());
 
         // Act & Assert - Authorized as ADMIN
         mockMvc.perform(post("/api/menus")
-                        .with((org.springframework.test.web.servlet.request.RequestPostProcessor) withUser("admin-1", "ADMINISTRATOR"))
+                        .with(withUser("admin-1", "ADMINISTRATOR"))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"New Menu\"}"))
                 .andExpect(status().isOk())

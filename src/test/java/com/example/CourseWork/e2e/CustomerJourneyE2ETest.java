@@ -26,7 +26,8 @@ class CustomerJourneyE2ETest extends BaseE2ETest {
     void fullCustomerJourney_ShouldSucceed() {
         String baseUrl = getBaseUrl();
 
-        // 1. Navigate to Menu
+        // 1. Guest Logins and navigates to Menu
+        loginAsGuest(page);
         page.navigate(baseUrl + "/menu");
         page.waitForLoadState(LoadState.LOAD);
 
@@ -42,6 +43,9 @@ class CustomerJourneyE2ETest extends BaseE2ETest {
 
         Locator addToCartBtn = salmonCard.locator(".add-to-cart-btn");
         addToCartBtn.click();
+        
+        // --- Stabilization: wait a bit after click ---
+        page.waitForTimeout(1000);
 
         // 3. Wait for Success Toast
         Locator toast = page.locator("#toastContainer");
@@ -50,6 +54,9 @@ class CustomerJourneyE2ETest extends BaseE2ETest {
         // 4. Navigate to Cart
         page.navigate(baseUrl + "/cart");
         page.waitForLoadState(LoadState.LOAD);
+        
+        // Wait for cart items to render
+        page.waitForSelector("#cartItems .cart-item", new Page.WaitForSelectorOptions().setTimeout(5000));
 
         // Verify we are on the cart page
         assertThat(page).hasTitle(org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> java.util.regex.Pattern.compile(".*Кошик.*", java.util.regex.Pattern.CASE_INSENSITIVE)));
@@ -57,6 +64,7 @@ class CustomerJourneyE2ETest extends BaseE2ETest {
         // 5. Verify "Grilled Salmon" is in the cart
         // Using hasCount automatically waits for the element to appear
         Locator cartItem = page.locator("#cartItems").locator(".cart-item").filter(new Locator.FilterOptions().setHasText("Grilled Salmon"));
+        assertThat(cartItem).isVisible();
         assertThat(cartItem).hasCount(1);
 
         // 6. Verify total price (Grilled Salmon is 24.99 in DataSeeder)

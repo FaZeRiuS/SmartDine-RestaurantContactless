@@ -25,7 +25,8 @@ class StaffJourneyE2ETest extends BaseE2ETest {
         // Setup logging using base helper
         setupPageLogging(guestPage, "GUEST");
 
-        // 1. Guest adds "Beef Steak" to cart
+        // 1. Guest Logins and adds "Beef Steak" to cart
+        loginAsGuest(guestPage);
         guestPage.navigate(baseUrl + "/menu");
         guestPage.waitForLoadState(LoadState.LOAD);
         
@@ -35,6 +36,9 @@ class StaffJourneyE2ETest extends BaseE2ETest {
         Locator beefCard = guestPage.locator(".dish-card").filter(new Locator.FilterOptions().setHasText("Beef Steak"))
                 .first();
         beefCard.locator(".add-to-cart-btn").click();
+        
+        // --- Stabilization: wait a bit after click ---
+        guestPage.waitForTimeout(1000);
 
         // Wait for confirmation toast to ensure item is added to DB
         assertThat(guestPage.locator("#toastContainer")).containsText("додано");
@@ -42,6 +46,9 @@ class StaffJourneyE2ETest extends BaseE2ETest {
         // 2. Guest goes to cart and confirms order
         guestPage.navigate(baseUrl + "/cart");
         guestPage.waitForLoadState(LoadState.LOAD);
+        
+        // Wait for cart items to render
+        guestPage.waitForSelector("#cartItems .cart-item", new Page.WaitForSelectorOptions().setTimeout(5000));
 
         // Wait for cart to load items (which makes the button visible)
         Locator confirmBtn = guestPage.locator("#confirmOrderBtn");

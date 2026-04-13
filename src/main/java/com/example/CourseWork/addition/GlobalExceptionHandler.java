@@ -1,6 +1,10 @@
 package com.example.CourseWork.addition;
 
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ForbiddenException;
 import com.example.CourseWork.exception.InsufficientPointsException;
+import com.example.CourseWork.exception.NotFoundException;
+import com.example.CourseWork.exception.UnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,98 +38,99 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @SuppressWarnings("null")
-    public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error -> {
-            errors.put(error.getField(), error.getDefaultMessage());
+            fieldErrors.put(error.getField(), error.getDefaultMessage());
         });
-        errors.put("status", "error");
+        Map<String, Object> details = new HashMap<>();
+        details.put("fieldErrors", fieldErrors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(errors);
+                .body(ApiErrorResponse.of("Validation failed", details));
     }
 
     @ExceptionHandler(InsufficientPointsException.class)
     @SuppressWarnings("null")
-    public ResponseEntity<Map<String, String>> handleInsufficientPoints(InsufficientPointsException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", exposeErrorDetails ? ex.getMessage() : "Недостатньо балів");
-        error.put("status", "error");
+    public ResponseEntity<ApiErrorResponse> handleInsufficientPoints(InsufficientPointsException ex) {
+        String message = exposeErrorDetails ? ex.getMessage() : "Недостатньо балів";
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(error);
+                .body(ApiErrorResponse.of(message));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     @SuppressWarnings("null")
-    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException ex) {
+    public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Access denied: {}", ex.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "Access denied");
-        error.put("status", "error");
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(error);
+                .body(ApiErrorResponse.of("Access denied"));
     }
 
-    @ExceptionHandler(RuntimeException.class)
+    @ExceptionHandler(UnauthorizedException.class)
     @SuppressWarnings("null")
-    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", exposeErrorDetails ? ex.getMessage() : "Request failed");
-        error.put("status", "error");
-
-        HttpStatus status;
-        String message = ex.getMessage();
-
-        if (message != null) {
-            if (message.contains("not found")) {
-                status = HttpStatus.NOT_FOUND;
-            } else if (message.contains("empty")) {
-                status = HttpStatus.BAD_REQUEST;
-            } else if (message.contains("not available")) {
-                status = HttpStatus.SERVICE_UNAVAILABLE;
-            } else {
-                status = HttpStatus.INTERNAL_SERVER_ERROR;
-            }
-        } else {
-            status = HttpStatus.INTERNAL_SERVER_ERROR;
-        }
-
-        // Avoid ERROR + full stack for expected client outcomes (404/400/503); keep ERROR for 5xx surprises.
-        if (status.is4xxClientError() || status == HttpStatus.SERVICE_UNAVAILABLE) {
-            log.warn("Request failed ({}): {}", status.value(), message != null ? message : ex.getClass().getSimpleName());
-        } else {
-            log.error("Runtime error: ", ex);
-        }
-
-        return ResponseEntity.status(status)
+    public ResponseEntity<ApiErrorResponse> handleUnauthorized(UnauthorizedException ex) {
+        String message = exposeErrorDetails ? ex.getMessage() : "Unauthorized";
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(error);
+                .body(ApiErrorResponse.of(message));
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    @SuppressWarnings("null")
+    public ResponseEntity<ApiErrorResponse> handleBadRequest(BadRequestException ex) {
+        String message = exposeErrorDetails ? ex.getMessage() : "Bad request";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiErrorResponse.of(message));
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    @SuppressWarnings("null")
+    public ResponseEntity<ApiErrorResponse> handleNotFound(NotFoundException ex) {
+        String message = exposeErrorDetails ? ex.getMessage() : "Not found";
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiErrorResponse.of(message));
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    @SuppressWarnings("null")
+    public ResponseEntity<ApiErrorResponse> handleForbidden(ForbiddenException ex) {
+        String message = exposeErrorDetails ? ex.getMessage() : "Forbidden";
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiErrorResponse.of(message));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @SuppressWarnings("null")
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        String message = exposeErrorDetails ? ex.getMessage() : "Bad request";
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiErrorResponse.of(message));
     }
 
     @ExceptionHandler(SignatureException.class)
     @SuppressWarnings("null")
-    public ResponseEntity<Map<String, String>> handleSignature(SignatureException ex) {
+    public ResponseEntity<ApiErrorResponse> handleSignature(SignatureException ex) {
         log.warn("Signature validation failed: {}", ex.getMessage());
-        Map<String, String> error = new HashMap<>();
-        error.put("message", exposeErrorDetails ? ex.getMessage() : "Invalid signature");
-        error.put("status", "error");
+        String message = exposeErrorDetails ? ex.getMessage() : "Invalid signature";
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(error);
+                .body(ApiErrorResponse.of(message));
     }
 
     @ExceptionHandler(Exception.class)
     @SuppressWarnings("null")
-    public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
+    public ResponseEntity<ApiErrorResponse> handleGenericException(Exception ex) {
         log.error("Unexpected error: ", ex);
-        Map<String, String> error = new HashMap<>();
-        error.put("message", exposeErrorDetails ? ("An unexpected error occurred: " + ex.getMessage()) : "An unexpected error occurred");
-        error.put("status", "error");
+        String message = exposeErrorDetails ? ex.getMessage() : "Internal server error";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(error);
+                .body(ApiErrorResponse.of(message));
     }
 
     @ExceptionHandler(IOException.class)
@@ -152,13 +157,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     @SuppressWarnings("null")
-    public ResponseEntity<Map<String, String>> handleNoResourceFoundException(NoResourceFoundException ex) {
+    public ResponseEntity<ApiErrorResponse> handleNoResourceFoundException(NoResourceFoundException ex) {
         log.warn("Static resource not found: {}", ex.getResourcePath());
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "Resource not found");
-        error.put("status", "error");
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(error);
+                .body(ApiErrorResponse.of("Resource not found"));
     }
 }

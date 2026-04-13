@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GlobalControllerAdvice {
 
     private final com.example.CourseWork.service.LoyaltyService loyaltyService;
+    private final com.example.CourseWork.service.security.CurrentUserIdentity currentUserIdentity;
 
     @Value("${vapid.public.key}")
     private String vapidPublicKey;
@@ -39,7 +40,7 @@ public class GlobalControllerAdvice {
             // Fetch loyalty info if CUSTOMER
             if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"))) {
                 try {
-                    java.util.UUID userId = java.util.UUID.fromString(oidcUser.getSubject());
+                    java.util.UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for loyalty");
                     model.addAttribute("loyaltyBalance", loyaltyService.getBalance(userId));
                     model.addAttribute("cashbackRate", loyaltyService.resolveCashbackRate(userId));
                 } catch (Exception e) {

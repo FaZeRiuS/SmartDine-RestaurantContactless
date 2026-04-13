@@ -26,7 +26,7 @@ public class QrCodeServiceImpl implements QrCodeService {
             return pngOutputStream.toByteArray();
         } catch (WriterException | IOException e) {
             log.error("Error while generating QR code for text {}: ", text, e);
-            throw new RuntimeException("Failed to generate QR code", e);
+            throw new IllegalStateException("Failed to generate QR code", e);
         }
     }
 }

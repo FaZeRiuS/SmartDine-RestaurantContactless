@@ -4,6 +4,8 @@ import com.microsoft.playwright.*;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +31,24 @@ public abstract class BaseE2ETest {
 
     @AfterAll
     static void closeBrowser() {
-        if (playwright != null) {
-            playwright.close();
+        try {
+            if (browser != null) {
+                browser.close();
+            }
+        } catch (Exception ignored) {
+            // best-effort shutdown
+        } finally {
+            browser = null;
+        }
+
+        try {
+            if (playwright != null) {
+                playwright.close();
+            }
+        } catch (Exception ignored) {
+            // best-effort shutdown
+        } finally {
+            playwright = null;
         }
     }
 
@@ -71,6 +89,14 @@ public abstract class BaseE2ETest {
      */
     protected void loginAsStaff(Page page) {
         page.navigate(getBaseUrl() + "/api/test/auth/login-as-staff");
+    }
+
+    /**
+     * Uses the guest backdoor for E2E testing.
+     */
+    protected void loginAsGuest(Page page) {
+        page.navigate(getBaseUrl() + "/api/test/auth/login-as-guest");
+        assertThat(page.locator("body")).containsText("Successfully logged in");
     }
 
     /**

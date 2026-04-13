@@ -2,9 +2,13 @@ package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.ForbiddenException;
 import com.example.CourseWork.mapper.OrderMapper;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.OrderRepository;
+import com.example.CourseWork.service.order.component.OrderPaymentPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +34,8 @@ class OrderTipServiceTest {
     private OrderRepository orderRepository;
     @Mock
     private OrderMapper orderMapper;
+    @Mock
+    private OrderPaymentPolicy orderPaymentPolicy;
 
     @InjectMocks
     private OrderTipServiceImpl orderTipService;
@@ -83,9 +89,12 @@ class OrderTipServiceTest {
         // Arrange
         order.setPaymentStatus(PaymentStatus.SUCCESS);
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        doThrow(new BadRequestException(ErrorMessages.ORDER_ALREADY_PAID))
+                .when(orderPaymentPolicy).assertNotPaid(order);
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> orderTipService.setTip(orderId, userId, BigDecimal.TEN));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> orderTipService.setTip(orderId, userId, BigDecimal.TEN));
+        assertEquals(ErrorMessages.ORDER_ALREADY_PAID, ex.getMessage());
     }
 
     @Test
@@ -93,8 +102,11 @@ class OrderTipServiceTest {
         // Arrange
         order.setUserId("other-user");
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        doThrow(new ForbiddenException(ErrorMessages.ACCESS_DENIED))
+                .when(orderPaymentPolicy).assertOwner(order, userId.toString());
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> orderTipService.setTip(orderId, userId, BigDecimal.TEN));
+        ForbiddenException ex = assertThrows(ForbiddenException.class, () -> orderTipService.setTip(orderId, userId, BigDecimal.TEN));
+        assertEquals(ErrorMessages.ACCESS_DENIED, ex.getMessage());
     }
 }

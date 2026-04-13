@@ -9,7 +9,7 @@ import com.example.CourseWork.addition.PaymentStatus;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,8 +26,8 @@ class OrderMapperTest {
         order.setUserId("user123");
         order.setStatus(OrderStatus.NEW);
         order.setPaymentStatus(PaymentStatus.PENDING);
-        order.setCreatedAt(LocalDateTime.now());
-        order.setTotalPrice(100.0f);
+        order.setCreatedAt(OffsetDateTime.now());
+        order.setTotalPrice(BigDecimal.valueOf(100.0));
         order.setTableNumber(5);
 
         // Act
@@ -38,7 +38,7 @@ class OrderMapperTest {
         assertThat(result.getUserId()).isEqualTo(order.getUserId());
         assertThat(result.getStatus()).isEqualTo(order.getStatus());
         assertThat(result.getPaymentStatus()).isEqualTo(order.getPaymentStatus());
-        assertThat(result.getTotalPrice()).isEqualTo(order.getTotalPrice());
+        assertThat(result.getTotalPrice()).isEqualByComparingTo(order.getTotalPrice());
         assertThat(result.getTableNumber()).isEqualTo(order.getTableNumber());
     }
 
@@ -46,7 +46,7 @@ class OrderMapperTest {
     void toResponseDto_ShouldCalculateAmountsCorrectly() {
         // Arrange
         Order order = new Order();
-        order.setTotalPrice(100.0f);
+        order.setTotalPrice(BigDecimal.valueOf(100.0));
         order.setLoyaltyDiscount(new BigDecimal("15.50"));
         order.setTipAmount(new BigDecimal("10.00"));
 
@@ -56,16 +56,16 @@ class OrderMapperTest {
         OrderResponseDto result = orderMapper.toResponseDto(order);
 
         // Assert
-        assertThat(result.getLoyaltyDiscount()).isEqualTo(15.5f);
-        assertThat(result.getTipAmount()).isEqualTo(10.0f);
-        assertThat(result.getAmountToPay()).isEqualTo(94.5f);
+        assertThat(result.getLoyaltyDiscount()).isEqualByComparingTo("15.5");
+        assertThat(result.getTipAmount()).isEqualByComparingTo("10.0");
+        assertThat(result.getAmountToPay()).isEqualByComparingTo("94.5");
     }
 
     @Test
     void toResponseDto_ShouldCapDiscountAtTotalPrice() {
         // Arrange
         Order order = new Order();
-        order.setTotalPrice(50.0f);
+        order.setTotalPrice(BigDecimal.valueOf(50.0));
         order.setLoyaltyDiscount(new BigDecimal("60.00")); // Discount > Total
         order.setTipAmount(BigDecimal.ZERO);
 
@@ -73,15 +73,15 @@ class OrderMapperTest {
         OrderResponseDto result = orderMapper.toResponseDto(order);
 
         // Assert
-        assertThat(result.getLoyaltyDiscount()).isEqualTo(50.0f);
-        assertThat(result.getAmountToPay()).isEqualTo(0.0f);
+        assertThat(result.getLoyaltyDiscount()).isEqualByComparingTo("50.0");
+        assertThat(result.getAmountToPay()).isEqualByComparingTo("0.0");
     }
 
     @Test
     void toResponseDto_ShouldHandleNegativeAmounts_AsZero() {
         // Arrange
         Order order = new Order();
-        order.setTotalPrice(100.0f);
+        order.setTotalPrice(BigDecimal.valueOf(100.0));
         order.setLoyaltyDiscount(new BigDecimal("-10.00")); // Should be treated as 0
         order.setTipAmount(new BigDecimal("-5.00"));        // Should be treated as 0
 
@@ -89,9 +89,9 @@ class OrderMapperTest {
         OrderResponseDto result = orderMapper.toResponseDto(order);
 
         // Assert
-        assertThat(result.getLoyaltyDiscount()).isEqualTo(0.0f);
-        assertThat(result.getTipAmount()).isEqualTo(0.0f);
-        assertThat(result.getAmountToPay()).isEqualTo(100.0f);
+        assertThat(result.getLoyaltyDiscount()).isEqualByComparingTo("0.0");
+        assertThat(result.getTipAmount()).isEqualByComparingTo("0.0");
+        assertThat(result.getAmountToPay()).isEqualByComparingTo("100.0");
     }
 
     @Test
@@ -103,7 +103,7 @@ class OrderMapperTest {
         Dish dish = new Dish();
         dish.setId(10);
         dish.setName("Pizza");
-        dish.setPrice(12.5f);
+        dish.setPrice(BigDecimal.valueOf(12.5));
 
         OrderItem item = new OrderItem();
         item.setId(1);
@@ -119,6 +119,6 @@ class OrderMapperTest {
         assertThat(result.getItems()).hasSize(1);
         assertThat(result.getItems().get(0).getDishName()).isEqualTo("Pizza");
         assertThat(result.getItems().get(0).getQuantity()).isEqualTo(2);
-        assertThat(result.getItems().get(0).getPrice()).isEqualTo(12.5f);
+        assertThat(result.getItems().get(0).getPrice()).isEqualByComparingTo("12.5");
     }
 }

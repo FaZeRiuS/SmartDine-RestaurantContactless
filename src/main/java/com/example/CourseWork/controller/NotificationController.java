@@ -3,7 +3,8 @@ package com.example.CourseWork.controller;
 import com.example.CourseWork.dto.PushSubscriptionDto;
 import com.example.CourseWork.model.PushSubscription;
 import com.example.CourseWork.repository.PushSubscriptionRepository;
-import com.example.CourseWork.util.KeycloakUtil;
+import com.example.CourseWork.service.security.CurrentUserIdentity;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -20,17 +21,18 @@ import java.util.stream.Collectors;
 public class NotificationController {
 
     private final PushSubscriptionRepository subscriptionRepository;
+    private final CurrentUserIdentity currentUserIdentity;
 
     @PostMapping("/log")
     public ResponseEntity<Void> logClientError(@RequestBody String message) {
-        String userId = KeycloakUtil.getCurrentUser().getId();
+        String userId = currentUserIdentity.currentUserId();
         log.error("[PWA-ERROR] user: {}, message: {}", userId, message);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/subscribe")
-    public ResponseEntity<Void> subscribe(@RequestBody PushSubscriptionDto dto) {
-        String userId = KeycloakUtil.getCurrentUser().getId();
+    public ResponseEntity<Void> subscribe(@Valid @RequestBody PushSubscriptionDto dto) {
+        String userId = currentUserIdentity.currentUserId();
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String roles = auth.getAuthorities().stream()
@@ -51,7 +53,7 @@ public class NotificationController {
     }
 
     @PostMapping("/unsubscribe")
-    public ResponseEntity<Void> unsubscribe(@RequestBody PushSubscriptionDto dto) {
+    public ResponseEntity<Void> unsubscribe(@Valid @RequestBody PushSubscriptionDto dto) {
         subscriptionRepository.findByEndpoint(dto.getEndpoint())
                 .ifPresent(subscriptionRepository::delete);
         return ResponseEntity.ok().build();

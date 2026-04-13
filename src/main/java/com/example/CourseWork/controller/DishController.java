@@ -4,13 +4,15 @@ import com.example.CourseWork.dto.DishDto;
 import com.example.CourseWork.dto.DishResponseDto;
 import com.example.CourseWork.service.DishService;
 import com.example.CourseWork.service.RecommendationService;
-import com.example.CourseWork.util.KeycloakUtil;
+import com.example.CourseWork.service.security.CurrentUserIdentity;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/dishes")
@@ -18,16 +20,17 @@ import java.util.List;
 public class DishController {
     private final DishService dishService;
     private final RecommendationService recommendationService;
+    private final CurrentUserIdentity currentUserIdentity;
 
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     @PostMapping
-    public ResponseEntity<DishResponseDto> createDish(@RequestBody DishDto dto) {
+    public ResponseEntity<DishResponseDto> createDish(@Valid @RequestBody DishDto dto) {
         return ResponseEntity.ok(dishService.createDish(dto));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     @PutMapping("/{id}")
-    public ResponseEntity<DishResponseDto> updateDish(@PathVariable Integer id, @RequestBody DishDto dto) {
+    public ResponseEntity<DishResponseDto> updateDish(@PathVariable Integer id, @Valid @RequestBody DishDto dto) {
         return ResponseEntity.ok(dishService.updateDish(id, dto));
     }
 
@@ -57,14 +60,14 @@ public class DishController {
     @GetMapping("/recommendations")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<List<DishResponseDto>> getRecommendations() {
-        return ResponseEntity.ok(recommendationService.getRecommendations(KeycloakUtil.getCurrentUser().getId()));
+        return ResponseEntity.ok(recommendationService.getRecommendations(currentUserIdentity.currentUserId()));
     }
 
     @GetMapping("/{id}/smart-combo")
     public ResponseEntity<DishResponseDto> getSmartCombo(
             @PathVariable Integer id,
             @RequestParam(required = false) List<Integer> cartDishIds) {
-        DishResponseDto combo = dishService.getSmartCombo(id, cartDishIds);
-        return combo != null ? ResponseEntity.ok(combo) : ResponseEntity.noContent().build();
+        Optional<DishResponseDto> combo = dishService.getSmartCombo(id, cartDishIds);
+        return combo.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 }

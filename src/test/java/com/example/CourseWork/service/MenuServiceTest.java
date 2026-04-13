@@ -5,6 +5,9 @@ import com.example.CourseWork.mapper.MenuMapper;
 import com.example.CourseWork.model.*;
 import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.impl.MenuServiceImpl;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.NotFoundException;
+import com.example.CourseWork.service.security.CurrentUserIdentity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -30,12 +33,15 @@ class MenuServiceTest {
     @Mock
     private DishRatingService dishRatingService;
 
+    @Mock
+    private CurrentUserIdentity currentUserIdentity;
+
     private MenuServiceImpl menuService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        menuService = new MenuServiceImpl(menuRepository, menuMapper, recommendationService, dishRatingService);
+        menuService = new MenuServiceImpl(menuRepository, menuMapper, recommendationService, dishRatingService, currentUserIdentity);
     }
 
     @Test
@@ -134,6 +140,7 @@ class MenuServiceTest {
 
         when(menuRepository.findById(menuId)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> menuService.updateMenu(menuId, menuDto));
+        NotFoundException ex = assertThrows(NotFoundException.class, () -> menuService.updateMenu(menuId, menuDto));
+        assertEquals(ErrorMessages.MENU_NOT_FOUND, ex.getMessage());
     }
 }

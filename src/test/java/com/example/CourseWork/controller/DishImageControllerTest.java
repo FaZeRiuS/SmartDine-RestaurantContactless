@@ -9,6 +9,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -39,7 +40,8 @@ class DishImageControllerTest extends BaseControllerTest {
         // Act & Assert
         mockMvc.perform(multipart("/api/admin/dishes/1/image")
                         .file(file)
-                        .with(withUser("admin-1", "ADMINISTRATOR")))
+                        .with(withUser("admin-1", "ADMINISTRATOR"))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").exists());
 
@@ -61,7 +63,8 @@ class DishImageControllerTest extends BaseControllerTest {
         // Act & Assert
         mockMvc.perform(multipart("/api/admin/dishes/1/image")
                         .file(file)
-                        .with(withUser("cust-1", "CUSTOMER")))
+                        .with(withUser("cust-1", "CUSTOMER"))
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
     }
 }

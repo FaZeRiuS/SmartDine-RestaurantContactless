@@ -4,10 +4,13 @@ import com.example.CourseWork.addition.OrderStatus;
 import com.example.CourseWork.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -16,6 +19,9 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     List<Order> findAllByStatusOrderByCreatedAtDesc(OrderStatus status);
     List<Order> findByStatusInOrderByCreatedAtDesc(List<OrderStatus> statuses);
     List<Order> findAllByUserIdOrderByCreatedAtDesc(String userId);
+
+    Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
+    Page<Order> findAllByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
     interface TopDishView {
         String getName();
@@ -34,7 +40,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
           AND o.created_at >= :from
           AND o.created_at < :to
         """, nativeQuery = true)
-    Double sumRevenue(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    BigDecimal sumRevenue(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 
     @Query(value = """
         SELECT COUNT(*)
@@ -43,7 +49,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
           AND o.created_at >= :from
           AND o.created_at < :to
         """, nativeQuery = true)
-    Long countSuccessfulOrders(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    Long countSuccessfulOrders(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 
     @Query(value = """
         SELECT COUNT(*)
@@ -60,7 +66,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
           AND o.created_at >= :from
           AND o.created_at < :to
         """, nativeQuery = true)
-    Double avgCheck(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    BigDecimal avgCheck(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 
     @Query(value = """
         SELECT d.name AS name, COALESCE(SUM(oi.quantity), 0) AS quantity
@@ -74,7 +80,7 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         ORDER BY quantity DESC
         LIMIT 5
         """, nativeQuery = true)
-    List<TopDishView> findTopDishes(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    List<TopDishView> findTopDishes(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 
     @Query(value = """
         SELECT CAST(EXTRACT(HOUR FROM o.created_at) AS INT) AS orderHour, COUNT(*) AS count
@@ -85,5 +91,5 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         GROUP BY orderHour
         ORDER BY orderHour
         """, nativeQuery = true)
-    List<HourCountView> countSuccessfulOrdersByHour(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    List<HourCountView> countSuccessfulOrdersByHour(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
 }

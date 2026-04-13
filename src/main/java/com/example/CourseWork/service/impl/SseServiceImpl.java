@@ -1,6 +1,7 @@
 package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.service.SseService;
+import com.example.CourseWork.addition.NotificationMessages;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,10 +23,9 @@ public class SseServiceImpl implements SseService {
     private final List<SseEmitter> staffEmitters = new CopyOnWriteArrayList<>();
 
     @Value("${app.sse.timeout-ms:3600000}")
-    private Long sseTimeout;
+    private long sseTimeout;
 
     @Override
-    @SuppressWarnings("null")
     public SseEmitter subscribe(String userId, boolean isStaff) {
         // Use parameterized timeout (default 1 hour)
         SseEmitter emitter = new SseEmitter(sseTimeout);
@@ -45,8 +45,8 @@ public class SseServiceImpl implements SseService {
         // Send an initial "connected" event to verify the stream is open
         try {
             emitter.send(SseEmitter.event()
-                    .name("connected")
-                    .data("SSE connection established")
+                    .name(NotificationMessages.SSE_EVENT_CONNECTED)
+                    .data(NotificationMessages.SSE_CONNECTED_MESSAGE)
                     .reconnectTime(10000)); // Hint browser to reconnect every 10s if connection lost
         } catch (IOException ignored) {
             // Client disconnected before first frame; emitter cleanup runs via callbacks
@@ -59,22 +59,23 @@ public class SseServiceImpl implements SseService {
     public void sendOrderUpdate(String userId, Object order) {
         List<SseEmitter> emitters = userEmitters.get(userId);
         if (emitters != null) {
-            sendToEmitters(emitters, "order-update", order);
+            sendToEmitters(emitters, NotificationMessages.SSE_EVENT_ORDER_UPDATE, order);
         }
         // Staff should also see these updates if they are on the orders page
-        sendToEmitters(staffEmitters, "staff-update", "Order status changed for user: " + userId);
+        sendToEmitters(staffEmitters, NotificationMessages.SSE_EVENT_STAFF_UPDATE,
+                NotificationMessages.staffUpdateOrderStatusChangedForUser(userId));
     }
 
     @Override
     public void sendStaffNotification(String message) {
-        sendToEmitters(staffEmitters, "staff-notification", message);
+        sendToEmitters(staffEmitters, NotificationMessages.SSE_EVENT_STAFF_NOTIFICATION, message);
     }
     
     @Override
     public void sendUserNotification(String userId, String message) {
         List<SseEmitter> emitters = userEmitters.get(userId);
         if (emitters != null) {
-            sendToEmitters(emitters, "order-notification", message);
+            sendToEmitters(emitters, NotificationMessages.SSE_EVENT_ORDER_NOTIFICATION, message);
         }
     }
 

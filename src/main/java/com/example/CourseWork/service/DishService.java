@@ -4,6 +4,7 @@ import com.example.CourseWork.dto.DishDto;
 import com.example.CourseWork.dto.DishResponseDto;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface DishService {
     DishResponseDto createDish(DishDto dto);
@@ -12,6 +13,6 @@ public interface DishService {
     List<DishResponseDto> getAllAvailableDishes();
     List<DishResponseDto> getAllDishes();
     DishResponseDto getDishById(Integer id);
-    DishResponseDto getSmartCombo(Integer dishId, List<Integer> existingIds);
+    Optional<DishResponseDto> getSmartCombo(Integer dishId, List<Integer> existingIds);
     void updateDishImage(Integer id, String imageUrl);
 }

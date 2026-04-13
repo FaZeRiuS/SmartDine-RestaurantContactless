@@ -155,6 +155,13 @@
         window.isAuthenticated = /*[[${#authentication.name != 'anonymousUser'}]]*/ false;
     </script>
     
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    
+    <!-- HTMX & Extensions -->
+    <script src="https://unpkg.com/htmx.org@1.9.11" defer></script>
+    <script src="https://unpkg.com/htmx.org@1.9.11/dist/ext/sse.js" defer></script>
+    
     <script th:src="@{/js/csrf.js}" defer></script>
     <script th:src="@{/js/ui.js}" defer></script>
     <script th:src="@{/js/cart.js}" defer></script>

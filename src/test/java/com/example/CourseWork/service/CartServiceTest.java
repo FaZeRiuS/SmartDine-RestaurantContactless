@@ -9,6 +9,7 @@ import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.repository.CartRepository;
 import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.service.impl.CartServiceImpl;
+import com.example.CourseWork.exception.BadRequestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -123,14 +124,15 @@ class CartServiceTest {
 
         CartItemDto dto = new CartItemDto();
         dto.setDishId(20);
+        dto.setQuantity(1);
 
         when(cartRepository.findByUserId(USER_ID)).thenReturn(Optional.of(cart));
         when(dishRepository.findById(20)).thenReturn(Optional.of(dish));
 
         // Act & Assert
         assertThatThrownBy(() -> cartService.addItemToCart(USER_ID, dto))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Dish is not available");
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage(com.example.CourseWork.exception.ErrorMessages.DISH_NOT_AVAILABLE);
     }
 
     @Test

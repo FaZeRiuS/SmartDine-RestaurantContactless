@@ -11,7 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -68,7 +69,7 @@ class DishRepositoryAnalyticsTest {
         Dish dish = new Dish();
         dish.setName(name);
         dish.setIsAvailable(available);
-        dish.setPrice(10.0f);
+        dish.setPrice(BigDecimal.valueOf(10.0));
         if (menu != null) {
             dish.setMenus(List.of(menu));
         }
@@ -80,7 +81,7 @@ class DishRepositoryAnalyticsTest {
         order.setUserId("test-user");
         order.setStatus(OrderStatus.COMPLETED);
         order.setPaymentStatus(PaymentStatus.SUCCESS);
-        order.setCreatedAt(LocalDateTime.now());
+        order.setCreatedAt(OffsetDateTime.now());
         
         OrderItem item = new OrderItem();
         item.setOrder(order);

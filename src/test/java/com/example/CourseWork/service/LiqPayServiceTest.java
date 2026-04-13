@@ -47,7 +47,7 @@ class LiqPayServiceTest {
         // Arrange
         Order order = new Order();
         order.setId(123);
-        order.setTotalPrice(100.0f);
+        order.setTotalPrice(BigDecimal.valueOf(100.0));
         order.setLoyaltyDiscount(new BigDecimal("10.00"));
         order.setTipAmount(new BigDecimal("5.50"));
 
@@ -71,7 +71,7 @@ class LiqPayServiceTest {
         // Arrange
         Order order = new Order();
         order.setId(456);
-        order.setTotalPrice(50.0f);
+        order.setTotalPrice(BigDecimal.valueOf(50.0));
         order.setLoyaltyDiscount(new BigDecimal("60.00")); // Discount > Total
         order.setTipAmount(BigDecimal.ZERO);
 

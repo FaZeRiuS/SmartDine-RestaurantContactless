@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,9 +33,9 @@ class DashboardServiceTest {
     @Test
     void getAdminDashboard_ShouldCalculateSummaryCorrectly() {
         // Arrange
-        when(orderRepository.sumRevenue(any(), any())).thenReturn(500.0);
+        when(orderRepository.sumRevenue(any(), any())).thenReturn(BigDecimal.valueOf(500.0));
         when(orderRepository.countSuccessfulOrders(any(), any())).thenReturn(10L);
-        when(orderRepository.avgCheck(any(), any())).thenReturn(50.0);
+        when(orderRepository.avgCheck(any(), any())).thenReturn(BigDecimal.valueOf(50.0));
         when(orderRepository.findTopDishes(any(), any())).thenReturn(Collections.emptyList());
         when(orderRepository.countSuccessfulOrdersByHour(any(), any())).thenReturn(Collections.emptyList());
 
@@ -42,9 +43,9 @@ class DashboardServiceTest {
         DashboardViewDto result = dashboardService.getAdminDashboard();
 
         // Assert
-        assertThat(result.summary().revenueToday()).isEqualTo(500.0);
+        assertThat(result.summary().revenueToday()).isEqualByComparingTo("500.0");
         assertThat(result.summary().successfulOrdersToday()).isEqualTo(10L);
-        assertThat(result.summary().averageCheckLast7Days()).isEqualTo(50.0);
+        assertThat(result.summary().averageCheckLast7Days()).isEqualByComparingTo("50.0");
     }
 
     @Test
@@ -60,9 +61,9 @@ class DashboardServiceTest {
         DashboardViewDto result = dashboardService.getAdminDashboard();
 
         // Assert
-        assertThat(result.summary().revenueToday()).isEqualTo(0.0);
+        assertThat(result.summary().revenueToday()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(result.summary().successfulOrdersToday()).isEqualTo(0L);
-        assertThat(result.summary().averageCheckLast7Days()).isEqualTo(0.0);
+        assertThat(result.summary().averageCheckLast7Days()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test

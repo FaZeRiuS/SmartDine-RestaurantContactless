@@ -32,6 +32,8 @@ class GlobalControllerAdviceTest {
     @Mock
     private HttpServletRequest request;
     @Mock
+    private com.example.CourseWork.service.security.CurrentUserIdentity currentUserIdentity;
+    @Mock
     private SecurityContext securityContext;
     @Mock
     private Authentication authentication;
@@ -42,7 +44,7 @@ class GlobalControllerAdviceTest {
     
     @BeforeEach
     void setUp() {
-        globalControllerAdvice = new GlobalControllerAdvice(loyaltyService);
+        globalControllerAdvice = new GlobalControllerAdvice(loyaltyService, currentUserIdentity);
         ReflectionTestUtils.setField((Object) globalControllerAdvice, "vapidPublicKey", "test-vapid-key");
         SecurityContextHolder.setContext(securityContext);
     }
@@ -70,11 +72,11 @@ class GlobalControllerAdviceTest {
         when(authentication.isAuthenticated()).thenReturn(true);
         when(authentication.getPrincipal()).thenReturn(oidcUser);
         when(oidcUser.getPreferredUsername()).thenReturn("test-user");
-        when(oidcUser.getSubject()).thenReturn(userId.toString());
         
         doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER")))
                 .when(authentication).getAuthorities();
 
+        when(currentUserIdentity.requireCustomerUuid(anyString())).thenReturn(userId);
         when(loyaltyService.getBalance(any(UUID.class))).thenReturn(BigDecimal.valueOf(100.50));
         when(loyaltyService.resolveCashbackRate(any(UUID.class))).thenReturn(new BigDecimal("0.10"));
 

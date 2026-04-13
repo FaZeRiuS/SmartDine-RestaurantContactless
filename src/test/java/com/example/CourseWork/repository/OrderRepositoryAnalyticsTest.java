@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,36 +24,36 @@ class OrderRepositoryAnalyticsTest {
     @Test
     void sumRevenue_ShouldCalculateCorrectly() {
         // Arrange
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         createOrder(100.0, PaymentStatus.SUCCESS, now.minusMinutes(10));
         createOrder(50.0, PaymentStatus.SUCCESS, now.minusMinutes(5));
         createOrder(200.0, PaymentStatus.PENDING, now.minusMinutes(2)); // Should be ignored
 
         // Act
-        Double revenue = orderRepository.sumRevenue(now.minusHours(1), now.plusHours(1));
+        BigDecimal revenue = orderRepository.sumRevenue(now.minusHours(1), now.plusHours(1));
 
         // Assert
-        assertThat(revenue).isEqualTo(150.0);
+        assertThat(revenue).isEqualByComparingTo("150.0");
     }
 
     @Test
     void avgCheck_ShouldCalculateCorrectly() {
         // Arrange
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         createOrder(100.0, PaymentStatus.SUCCESS, now.minusMinutes(10));
         createOrder(200.0, PaymentStatus.SUCCESS, now.minusMinutes(5));
 
         // Act
-        Double avg = orderRepository.avgCheck(now.minusHours(1), now.plusHours(1));
+        BigDecimal avg = orderRepository.avgCheck(now.minusHours(1), now.plusHours(1));
 
         // Assert
-        assertThat(avg).isEqualTo(150.0);
+        assertThat(avg).isEqualByComparingTo("150.0");
     }
 
     @Test
     void countSuccessfulOrdersByHour_ShouldGroupCorrectly() {
         // Arrange
-        LocalDateTime today = LocalDateTime.now().withHour(10).withMinute(0);
+        OffsetDateTime today = OffsetDateTime.now().withHour(10).withMinute(0);
         createOrder(50.0, PaymentStatus.SUCCESS, today);         // Hour 10
         createOrder(60.0, PaymentStatus.SUCCESS, today.plusHours(1)); // Hour 11
         createOrder(70.0, PaymentStatus.SUCCESS, today.plusHours(1)); // Hour 11 (total 2)
@@ -71,9 +72,9 @@ class OrderRepositoryAnalyticsTest {
         assertThat(h11.getCount()).isEqualTo(2L);
     }
 
-    private void createOrder(double total, PaymentStatus payStatus, LocalDateTime createdAt) {
+    private void createOrder(double total, PaymentStatus payStatus, OffsetDateTime createdAt) {
         Order order = new Order();
-        order.setTotalPrice((float) total);
+        order.setTotalPrice(BigDecimal.valueOf(total));
         order.setPaymentStatus(payStatus);
         order.setStatus(OrderStatus.COMPLETED);
         order.setCreatedAt(createdAt);

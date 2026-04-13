@@ -2,9 +2,13 @@ package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.mapper.OrderMapper;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.OrderRepository;
+import com.example.CourseWork.service.LoyaltyService;
+import com.example.CourseWork.service.order.component.OrderPaymentPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,9 +33,11 @@ class OrderLoyaltyServiceTest {
     @Mock
     private OrderRepository orderRepository;
     @Mock
-    private LoyaltyServiceImpl loyaltyService;
+    private LoyaltyService loyaltyService;
     @Mock
     private OrderMapper orderMapper;
+    @Mock
+    private OrderPaymentPolicy orderPaymentPolicy;
 
     @InjectMocks
     private OrderLoyaltyServiceImpl orderLoyaltyService;
@@ -48,7 +54,7 @@ class OrderLoyaltyServiceTest {
         order = new Order();
         order.setId(orderId);
         order.setUserId(userId.toString());
-        order.setTotalPrice(100.0f);
+        order.setTotalPrice(new BigDecimal("100.00"));
         order.setPaymentStatus(PaymentStatus.PENDING);
         order.setLoyaltyDiscount(BigDecimal.ZERO);
     }
@@ -106,8 +112,11 @@ class OrderLoyaltyServiceTest {
         // Arrange
         order.setPaymentStatus(PaymentStatus.SUCCESS);
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        doThrow(new BadRequestException(ErrorMessages.ORDER_ALREADY_PAID))
+                .when(orderPaymentPolicy).assertNotPaid(order);
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> orderLoyaltyService.applyCoverage(orderId, userId, BigDecimal.TEN));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> orderLoyaltyService.applyCoverage(orderId, userId, BigDecimal.TEN));
+        assertEquals(ErrorMessages.ORDER_ALREADY_PAID, ex.getMessage());
     }
 }

@@ -7,64 +7,82 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "orders")
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Integer id;
 
     @NotBlank(message = "User ID is required")
     @Column(name = "user_id", nullable = false)
+    @ToString.Include
     private String userId;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
+    @ToString.Include
     private OrderStatus status;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 50)
+    @ToString.Include
     private PaymentStatus paymentStatus;
 
     @NotNull
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @ToString.Include
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @PositiveOrZero
-    @Column(name = "total_price", nullable = false)
-    private float totalPrice;
+    @Column(name = "total_price", nullable = false, precision = 19, scale = 2)
+    @ToString.Include
+    private BigDecimal totalPrice = BigDecimal.ZERO;
 
     @NotNull
     @PositiveOrZero
     @Column(name = "loyalty_discount", nullable = false, precision = 19, scale = 2)
+    @ToString.Include
     private BigDecimal loyaltyDiscount = BigDecimal.ZERO;
 
     @NotNull
     @PositiveOrZero
     @Column(name = "loyalty_points_spent", nullable = false, precision = 19, scale = 2)
+    @ToString.Include
     private BigDecimal loyaltyPointsSpent = BigDecimal.ZERO;
 
     @NotNull
     @PositiveOrZero
     @Column(name = "tip_amount", nullable = false, precision = 19, scale = 2)
+    @ToString.Include
     private BigDecimal tipAmount = BigDecimal.ZERO;
 
     @Positive
     @Column(name = "table_number")
+    @ToString.Include
     private Integer tableNumber;
 
     @NotNull
     @Column(name = "needs_waiter", nullable = false)
+    @ToString.Include
     private boolean needsWaiter = false;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)

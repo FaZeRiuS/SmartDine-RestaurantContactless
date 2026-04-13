@@ -5,12 +5,18 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(
         name = "order_service_review",
@@ -19,6 +25,8 @@ import java.util.UUID;
 public class OrderServiceReview {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Long id;
 
     @NotNull
@@ -28,36 +36,41 @@ public class OrderServiceReview {
 
     @NotNull
     @Column(name = "user_id", nullable = false)
+    @ToString.Include
     private UUID userId;
 
     @NotNull
     @Min(1)
     @Max(5)
     @Column(nullable = false)
+    @ToString.Include
     private Integer rating;
 
     @Size(max = 2000)
     @Column(name = "comment", columnDefinition = "TEXT")
+    @ToString.Include
     private String comment;
 
     @NotNull
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @ToString.Include
+    private OffsetDateTime createdAt = OffsetDateTime.now();
 
     @NotNull
     @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
+    @ToString.Include
+    private OffsetDateTime updatedAt = OffsetDateTime.now();
 
     @PrePersist
     void prePersist() {
-        LocalDateTime now = LocalDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
         if (createdAt == null) createdAt = now;
         if (updatedAt == null) updatedAt = now;
     }
 
     @PreUpdate
     void preUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = OffsetDateTime.now();
     }
 }
 

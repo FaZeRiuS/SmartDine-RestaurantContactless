@@ -1,9 +1,11 @@
 package com.example.CourseWork.dto.dashboard;
 
+import java.math.BigDecimal;
+
 public record DashboardSummaryDto(
-        double revenueToday,
-        double revenueLast7Days,
+        BigDecimal revenueToday,
+        BigDecimal revenueLast7Days,
         long successfulOrdersToday,
-        double averageCheckLast7Days
+        BigDecimal averageCheckLast7Days
 ) {}
 

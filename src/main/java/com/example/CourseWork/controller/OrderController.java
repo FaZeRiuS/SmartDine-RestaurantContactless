@@ -11,14 +11,18 @@ import com.example.CourseWork.service.OrderLoyaltyService;
 import com.example.CourseWork.service.OrderReviewService;
 import com.example.CourseWork.service.OrderService;
 import com.example.CourseWork.service.OrderTipService;
-import com.example.CourseWork.util.KeycloakUtil;
+import com.example.CourseWork.service.security.CurrentUserIdentity;
+import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -30,17 +34,18 @@ public class OrderController {
     private final OrderLoyaltyService orderLoyaltyService;
     private final OrderReviewService orderReviewService;
     private final OrderTipService orderTipService;
+    private final CurrentUserIdentity currentUserIdentity;
 
     @PostMapping
-    public ResponseEntity<OrderResponseDto> createOrder(@RequestBody OrderRequestDto dto, HttpSession session) {
+    public ResponseEntity<OrderResponseDto> createOrder(@Valid @RequestBody OrderRequestDto dto, HttpSession session) {
         Integer tableNumber = (Integer) session.getAttribute("tableNumber");
-        return ResponseEntity.ok(orderService.createOrder(KeycloakUtil.getCurrentUser().getId(), dto, tableNumber));
+        return ResponseEntity.ok(orderService.createOrder(currentUserIdentity.currentUserId(), dto, tableNumber));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMINISTRATOR')")
-    public ResponseEntity<List<OrderResponseDto>> getAllOrders() {
-        return ResponseEntity.ok(orderService.getAllOrders());
+    public ResponseEntity<Page<OrderResponseDto>> getAllOrders(Pageable pageable) {
+        return ResponseEntity.ok(orderService.getAllOrders(pageable));
     }
 
     @GetMapping("/{id}")
@@ -63,20 +68,20 @@ public class OrderController {
 
     @GetMapping("/my-active")
     public ResponseEntity<OrderResponseDto> getMyActiveOrder() {
-        OrderResponseDto order = orderService.getMyActiveOrder(KeycloakUtil.getCurrentUser().getId());
-        return order != null ? ResponseEntity.ok(order) : ResponseEntity.noContent().build();
+        Optional<OrderResponseDto> order = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
+        return order.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
     }
 
     @GetMapping("/history")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<List<OrderResponseDto>> getOrderHistory() {
-        return ResponseEntity.ok(orderService.getOrderHistory(KeycloakUtil.getCurrentUser().getId()));
+    public ResponseEntity<Page<OrderResponseDto>> getOrderHistory(Pageable pageable) {
+        return ResponseEntity.ok(orderService.getOrderHistory(currentUserIdentity.currentUserId(), pageable));
     }
 
     @PostMapping("/confirm")
     public ResponseEntity<OrderResponseDto> confirmOrderFromCart(HttpSession session) {
         Integer tableNumber = (Integer) session.getAttribute("tableNumber");
-        return ResponseEntity.ok(orderService.confirmOrderFromCart(KeycloakUtil.getCurrentUser().getId(), tableNumber));
+        return ResponseEntity.ok(orderService.confirmOrderFromCart(currentUserIdentity.currentUserId(), tableNumber));
     }
 
     @PutMapping("/{id}/status")
@@ -90,8 +95,8 @@ public class OrderController {
     @PostMapping("/{id}/items")
     public ResponseEntity<OrderResponseDto> addItemsToOrder(
             @PathVariable Integer id,
-            @RequestBody OrderRequestDto dto) {
-        return ResponseEntity.ok(orderService.addItemsToOrder(id, KeycloakUtil.getCurrentUser().getId(), dto));
+            @Valid @RequestBody OrderRequestDto dto) {
+        return ResponseEntity.ok(orderService.addItemsToOrder(id, currentUserIdentity.currentUserId(), dto));
     }
 
     @PutMapping("/{orderId}/items/{itemId}/quantity")
@@ -99,7 +104,7 @@ public class OrderController {
             @PathVariable Integer orderId,
             @PathVariable Integer itemId,
             @RequestParam Integer quantity) {
-        return ResponseEntity.ok(orderService.updateOrderItemQuantity(orderId, KeycloakUtil.getCurrentUser().getId(), itemId, quantity));
+        return ResponseEntity.ok(orderService.updateOrderItemQuantity(orderId, currentUserIdentity.currentUserId(), itemId, quantity));
     }
 
     @PutMapping("/{orderId}/items/{itemId}/special-request")
@@ -107,23 +112,23 @@ public class OrderController {
             @PathVariable Integer orderId,
             @PathVariable Integer itemId,
             @RequestBody(required = false) String specialRequest) {
-        return ResponseEntity.ok(orderService.updateOrderItemSpecialRequest(orderId, KeycloakUtil.getCurrentUser().getId(), itemId, specialRequest == null ? "" : specialRequest));
+        return ResponseEntity.ok(orderService.updateOrderItemSpecialRequest(orderId, currentUserIdentity.currentUserId(), itemId, specialRequest == null ? "" : specialRequest));
     }
 
     @DeleteMapping("/{orderId}/items/{itemId}")
     public ResponseEntity<OrderResponseDto> removeOrderItem(
             @PathVariable Integer orderId,
             @PathVariable Integer itemId) {
-        return ResponseEntity.ok(orderService.removeOrderItem(orderId, KeycloakUtil.getCurrentUser().getId(), itemId));
+        return ResponseEntity.ok(orderService.removeOrderItem(orderId, currentUserIdentity.currentUserId(), itemId));
     }
 
     @PostMapping("/{id}/pay")
     public ResponseEntity<OrderResponseDto> payOrder(
             @PathVariable Integer id,
-            @RequestBody PaymentRequestDto dto) {
+            @Valid @RequestBody PaymentRequestDto dto) {
         String paymentMethodId = dto != null && dto.getPaymentMethodId() != null && !dto.getPaymentMethodId().isEmpty() 
                                  ? dto.getPaymentMethodId() : "pm_card_visa";
-        return ResponseEntity.ok(orderService.payOrder(id, KeycloakUtil.getCurrentUser().getId(), paymentMethodId));
+        return ResponseEntity.ok(orderService.payOrder(id, currentUserIdentity.currentUserId(), paymentMethodId));
     }
 
     @PostMapping("/{id}/loyalty/apply")
@@ -132,7 +137,7 @@ public class OrderController {
             @PathVariable Integer id,
             @RequestBody(required = false) ApplyLoyaltyDto dto
     ) {
-        UUID userId = UUID.fromString(KeycloakUtil.getCurrentUser().getId());
+        UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
         return ResponseEntity.ok(orderLoyaltyService.applyCoverage(id, userId, dto != null ? dto.getAmount() : null));
     }
 
@@ -140,9 +145,9 @@ public class OrderController {
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Void> submitReview(
             @PathVariable Integer id,
-            @RequestBody OrderReviewRequestDto dto
+            @Valid @RequestBody OrderReviewRequestDto dto
     ) {
-        UUID userId = UUID.fromString(KeycloakUtil.getCurrentUser().getId());
+        UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
         orderReviewService.submitReview(id, userId, dto);
         return ResponseEntity.ok().build();
     }
@@ -150,9 +155,9 @@ public class OrderController {
     @PostMapping("/{id}/tip")
     public ResponseEntity<OrderResponseDto> setTip(
             @PathVariable Integer id,
-            @RequestBody(required = false) TipDto dto
+            @Valid @RequestBody(required = false) TipDto dto
     ) {
-        UUID userId = UUID.fromString(KeycloakUtil.getCurrentUser().getId());
+        UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
         return ResponseEntity.ok(orderTipService.setTip(id, userId, dto != null ? dto.getAmount() : null));
     }
 
@@ -166,4 +171,5 @@ public class OrderController {
     public ResponseEntity<OrderResponseDto> dismissWaiterCall(@PathVariable Integer id) {
         return ResponseEntity.ok(orderService.dismissWaiterCall(id));
     }
+
 }

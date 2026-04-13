@@ -78,15 +78,15 @@ async function loadLoyaltySummary() {
         const rate = typeof data.cashbackRate === 'number' ? data.cashbackRate : parseFloat(data.cashbackRate);
 
         if (Number.isFinite(loyaltyBalanceCache)) {
-            if (balanceEl) balanceEl.textContent = loyaltyBalanceCache.toFixed(2);
-            headerBalanceEls.forEach(el => el.textContent = loyaltyBalanceCache.toFixed(2));
+            if (balanceEl) balanceEl.textContent = Number(loyaltyBalanceCache).toFixed(2);
+            headerBalanceEls.forEach(el => el.textContent = Number(loyaltyBalanceCache).toFixed(2));
         } else {
             if (balanceEl) balanceEl.textContent = '—';
             headerBalanceEls.forEach(el => el.textContent = '—');
         }
 
         if (headerRateEls.length > 0 && Number.isFinite(rate)) {
-            headerRateEls.forEach(el => el.textContent = (rate * 100).toFixed(0));
+            headerRateEls.forEach(el => el.textContent = (Number(rate) * 100).toFixed(0));
         }
     } catch (e) {
         if (balanceEl) balanceEl.textContent = '—';

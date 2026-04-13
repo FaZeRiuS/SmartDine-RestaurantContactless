@@ -79,7 +79,7 @@
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<version>1.18.38</version>
-<!--			<scope>provided</scope>-->
+			<scope>provided</scope>
 		</dependency>
 <!--		<dependency>-->
 <!--			<groupId>org.springdoc</groupId>-->
@@ -137,19 +137,6 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
-		<!-- LiqPay for Payments -->
-		<dependency>
-			<groupId>com.liqpay</groupId>
-			<artifactId>liqpay-sdk</artifactId>
-			<version>0.8-SNAPSHOT</version>
-		</dependency>
-		<!-- JAXB API — required by LiqPay SDK on Java 11+ -->
-		<dependency>
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<version>2.3.1</version>
-		</dependency>
-
 		<!-- Web Push Notifications -->
 		<dependency>
 			<groupId>nl.martijndwars</groupId>
@@ -186,13 +173,6 @@
 			<version>0.4.20</version>
 		</dependency>
 	</dependencies>
-
-	<repositories>
-		<repository>
-			<id>liqpay-repo</id>
-			<url>https://github.com/liqpay/sdk-java/raw/repository</url>
-		</repository>
-	</repositories>
 
 	<build>
 		<plugins>

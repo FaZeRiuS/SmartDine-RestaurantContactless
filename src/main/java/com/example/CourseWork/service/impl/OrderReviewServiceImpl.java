@@ -1,8 +1,9 @@
 package com.example.CourseWork.service.impl;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.OrderReviewRequestDto;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.NotFoundException;
 import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.model.OrderDishReview;
@@ -12,6 +13,7 @@ import com.example.CourseWork.repository.OrderDishReviewRepository;
 import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.repository.OrderServiceReviewRepository;
 import com.example.CourseWork.service.OrderReviewService;
+import com.example.CourseWork.service.order.component.OrderPaymentPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,30 +30,24 @@ public class OrderReviewServiceImpl implements OrderReviewService {
     private final DishRepository dishRepository;
     private final OrderServiceReviewRepository orderServiceReviewRepository;
     private final OrderDishReviewRepository orderDishReviewRepository;
+    private final OrderPaymentPolicy orderPaymentPolicy;
 
     @Override
     @Transactional
     public void submitReview(Integer orderId, UUID userId, OrderReviewRequestDto dto) {
-        if (orderId == null) throw new IllegalArgumentException("orderId is required");
-        if (userId == null) throw new IllegalArgumentException("userId is required");
-        if (dto == null) throw new IllegalArgumentException("review body is required");
+        if (orderId == null) throw new BadRequestException(ErrorMessages.ORDER_ID_REQUIRED);
+        if (userId == null) throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
+        if (dto == null) throw new BadRequestException(ErrorMessages.REVIEW_BODY_REQUIRED);
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
-        if (order.getUserId() == null || !order.getUserId().equals(userId.toString())) {
-            throw new RuntimeException("Unauthorized: Order does not belong to the user");
-        }
-        if (!PaymentStatus.SUCCESS.equals(order.getPaymentStatus())) {
-            throw new RuntimeException("Order is not paid");
-        }
-        if (!(OrderStatus.READY.equals(order.getStatus()) || OrderStatus.COMPLETED.equals(order.getStatus()))) {
-            throw new RuntimeException("Order is not ready for review");
-        }
+        orderPaymentPolicy.assertOwner(order, userId.toString());
+        orderPaymentPolicy.assertReviewable(order);
 
         Integer serviceRating = dto.getServiceRating();
         if (serviceRating == null || serviceRating < 1 || serviceRating > 5) {
-            throw new RuntimeException("Invalid service rating");
+            throw new BadRequestException(ErrorMessages.INVALID_SERVICE_RATING);
         }
 
         OrderServiceReview serviceReview = orderServiceReviewRepository.findByOrderId(orderId)
@@ -92,14 +88,14 @@ public class OrderReviewServiceImpl implements OrderReviewService {
                 Integer rating = dr.getRating();
                 if (dishId == null || rating == null) continue;
                 if (rating < 1 || rating > 5) {
-                    throw new RuntimeException("Invalid dish rating");
+                    throw new BadRequestException(ErrorMessages.INVALID_DISH_RATING);
                 }
                 if (!allowedDishIds.contains(dishId)) {
                     continue;
                 }
 
                 Dish dish = dishRepository.findById(dishId)
-                        .orElseThrow(() -> new RuntimeException("Dish not found: " + dishId));
+                        .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
 
                 OrderDishReview dishReview = new OrderDishReview();
                 dishReview.setOrder(order);

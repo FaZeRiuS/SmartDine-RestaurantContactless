@@ -325,7 +325,7 @@ function showSmartComboModal(dish) {
 
     // Content
     const content = document.createElement('div');
-    content.innerHTML = `<span style="font-weight:600; font-size: 1.1rem;">${dish.name}</span> <span style="color: #60a5fa; font-weight: 700; margin-left: 4px;">${dish.price.toFixed(2)} ₴</span>`;
+    content.innerHTML = `<span style="font-weight:600; font-size: 1.1rem;">${dish.name}</span> <span style="color: #60a5fa; font-weight: 700; margin-left: 4px;">${Number(dish.price).toFixed(2)} ₴</span>`;
 
     if (dish.description) {
         const desc = document.createElement('div');
@@ -546,7 +546,7 @@ async function checkLastOrder() {
             const lastOrder = validHistory[0];
 
             const priceEl = document.getElementById('lastOrderTotalPrice');
-            if (priceEl) priceEl.textContent = lastOrder.totalPrice.toFixed(2) + ' ₴';
+            if (priceEl) priceEl.textContent = Number(lastOrder.totalPrice).toFixed(2) + ' ₴';
 
             const itemsEl = document.getElementById('lastOrderItems');
             if (itemsEl) {
@@ -694,7 +694,7 @@ function renderActiveOrder(order) {
     const discount = typeof order.loyaltyDiscount === 'number' ? order.loyaltyDiscount : 0;
     const amountToPay = typeof order.amountToPay === 'number' ? order.amountToPay : order.totalPrice;
     const tipAmount = typeof order.tipAmount === 'number' ? order.tipAmount : (parseFloat(order.tipAmount) || 0);
-    if (totalEl) totalEl.textContent = amountToPay.toFixed(2) + ' ₴';
+    if (totalEl) totalEl.textContent = Number(amountToPay).toFixed(2) + ' ₴';
 
     if (itemsEl) {
         // Can only remove/decrement if the order is NEW and Unpaid
@@ -722,7 +722,7 @@ function renderActiveOrder(order) {
                         </div>
                         ${canRemove ? `<button class="btn btn-sm" style="padding: 0.25rem 0.6rem; color: var(--danger-color); background: transparent; border: 1px solid var(--danger-color);" onclick="removeItem(${order.id}, ${item.id}, true)">🗑️</button>` : ''}
                     </div>
-                    <div class="cart-item-price" style="font-weight: 700; color: var(--gold); font-size: 1.1rem; white-space: nowrap;">${(item.price * item.quantity).toFixed(2)} ₴</div>
+                    <div class="cart-item-price" style="font-weight: 700; color: var(--gold); font-size: 1.1rem; white-space: nowrap;">${(Number(item.price) * item.quantity).toFixed(2)} ₴</div>
                 </div>
             </div>
         `).join('');
@@ -753,8 +753,8 @@ function renderActiveOrder(order) {
     if (loyaltySection) {
         if (order.paymentStatus !== 'SUCCESS') {
             if (loyaltyAccordion) loyaltyAccordion.style.display = '';
-            if (loyaltyAppliedEl) loyaltyAppliedEl.textContent = discount.toFixed(2);
-            if (loyaltyInput) loyaltyInput.value = discount > 0 ? discount.toFixed(2) : '';
+            if (loyaltyAppliedEl) loyaltyAppliedEl.textContent = Number(discount).toFixed(2);
+            if (loyaltyInput) loyaltyInput.value = discount > 0 ? Number(discount).toFixed(2) : '';
             if (loyaltyHint) {
                 const rate = loyaltySummaryCache && loyaltySummaryCache.cashbackRate != null
                     ? (parseFloat(loyaltySummaryCache.cashbackRate) * 100)
@@ -774,8 +774,8 @@ function renderActiveOrder(order) {
     if (tipsSection) {
         if (order.paymentStatus !== 'SUCCESS') {
             if (tipsAccordion) tipsAccordion.style.display = '';
-            if (tipAppliedEl) tipAppliedEl.textContent = tipAmount.toFixed(2);
-            if (tipInput) tipInput.value = tipAmount > 0 ? tipAmount.toFixed(2) : '';
+            if (tipAppliedEl) tipAppliedEl.textContent = Number(tipAmount).toFixed(2);
+            if (tipInput) tipInput.value = tipAmount > 0 ? Number(tipAmount).toFixed(2) : '';
             if (tipHint) tipHint.textContent = 'Вкажіть суму чайових або оберіть готовий варіант.';
         } else {
             if (tipsAccordion) tipsAccordion.style.display = 'none';
@@ -977,7 +977,7 @@ function renderCartItems(items) {
 
     let total = 0;
     container.innerHTML = items.map(item => {
-        const subtotal = (item.price || 0) * (item.quantity || 1);
+        const subtotal = Number(item.price || 0) * Number(item.quantity || 1);
         total += subtotal;
         return `
             <div class="cart-item fade-in-up">
@@ -996,13 +996,13 @@ function renderCartItems(items) {
                     <button class="btn btn-sm btn-secondary" style="padding: 0.2rem 0.5rem;" onclick="updateItemQty(null, ${item.id}, ${item.quantity + 1}, false)">+</button>
                     <button class="btn btn-sm" style="padding: 0.2rem 0.5rem; color: var(--danger-color); background: transparent; border: 1px solid var(--danger-color);" onclick="removeItem(null, ${item.id}, false)">🗑️</button>
                 </div>
-                <div class="cart-item-price">${subtotal.toFixed(2)} ₴</div>
+                <div class="cart-item-price">${Number(subtotal).toFixed(2)} ₴</div>
             </div>
         `;
     }).join('');
 
     const priceEl = document.getElementById('cartTotalPrice');
-    if (priceEl) priceEl.textContent = total.toFixed(2) + ' ₴';
+    if (priceEl) priceEl.textContent = Number(total).toFixed(2) + ' ₴';
 
     // Change Cart page button text
     const btn = document.getElementById('confirmOrderBtn');

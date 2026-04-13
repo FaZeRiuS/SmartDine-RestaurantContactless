@@ -4,6 +4,7 @@ import com.example.CourseWork.dto.dashboard.DashboardViewDto;
 import com.example.CourseWork.service.DashboardService;
 import com.example.CourseWork.service.QrCodeService;
 import org.junit.jupiter.api.Test;
+import java.math.BigDecimal;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,7 +28,7 @@ class AdminControllerTest extends BaseControllerTest {
     @Test
     void dashboard_ShouldRequireAdmin() throws Exception {
         // Arrange
-        com.example.CourseWork.dto.dashboard.DashboardSummaryDto summary = new com.example.CourseWork.dto.dashboard.DashboardSummaryDto(0.0, 0.0, 0L, 0.0);
+        com.example.CourseWork.dto.dashboard.DashboardSummaryDto summary = new com.example.CourseWork.dto.dashboard.DashboardSummaryDto(BigDecimal.ZERO, BigDecimal.ZERO, 0L, BigDecimal.ZERO);
         DashboardViewDto dto = new DashboardViewDto(summary, java.util.List.of(), java.util.List.of());
         when(dashboardService.getAdminDashboard()).thenReturn(dto);
 

@@ -1,6 +1,8 @@
 package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.addition.LoyaltyTransactionType;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.InsufficientPointsException;
 import com.example.CourseWork.model.LoyaltyAccount;
 import com.example.CourseWork.model.LoyaltyTransaction;
@@ -42,10 +44,10 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     @Transactional
     public void earnPointsInternal(UUID userId, BigDecimal orderAmount, String reference) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
         }
         if (orderAmount == null) {
-            throw new IllegalArgumentException("orderAmount is required");
+            throw new BadRequestException(ErrorMessages.ORDER_AMOUNT_REQUIRED);
         }
         if (orderAmount.compareTo(BigDecimal.ZERO) <= 0) {
             return;
@@ -73,10 +75,10 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     @Transactional
     public void creditPointsInternal(UUID userId, BigDecimal points, String reference) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
         }
         if (points == null) {
-            throw new IllegalArgumentException("points is required");
+            throw new BadRequestException(ErrorMessages.POINTS_REQUIRED);
         }
         BigDecimal toCredit = normalizeMoney(points);
         if (toCredit.compareTo(BigDecimal.ZERO) <= 0) {
@@ -121,10 +123,10 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     @Transactional
     public void spendPointsInternal(UUID userId, BigDecimal amount, String reference) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
         }
         if (amount == null) {
-            throw new IllegalArgumentException("amount is required");
+            throw new BadRequestException(ErrorMessages.AMOUNT_REQUIRED);
         }
 
         BigDecimal toSpend = normalizeMoney(amount);
@@ -166,7 +168,7 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     @Transactional(readOnly = true)
     public BigDecimal getBalance(UUID userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
         }
         return loyaltyAccountRepository.findByUserId(userId)
                 .map(a -> normalizeMoney(a.getBalance()))
@@ -182,7 +184,7 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     @Transactional(readOnly = true)
     public Long getSuccessfulOrdersCount(UUID userId) {
         if (userId == null) {
-            throw new IllegalArgumentException("userId is required");
+            throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
         }
         return orderRepository.countSuccessfulOrdersByUserId(userId.toString());
     }

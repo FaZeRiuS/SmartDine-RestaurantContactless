@@ -1,10 +1,13 @@
 package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.dto.*;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.NotFoundException;
 import com.example.CourseWork.mapper.MenuMapper;
 import com.example.CourseWork.model.Menu;
 import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.MenuService;
+import com.example.CourseWork.service.security.CurrentUserIdentity;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,21 +18,19 @@ import java.util.stream.Collectors;
 import java.time.LocalTime;
 
 import com.example.CourseWork.service.RecommendationService;
-import com.example.CourseWork.util.KeycloakUtil;
-import com.example.CourseWork.model.KeycloakUser;
 import com.example.CourseWork.service.DishRatingService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class MenuServiceImpl implements MenuService {
 
     private final MenuRepository menuRepository;
     private final MenuMapper menuMapper;
     private final RecommendationService recommendationService;
     private final DishRatingService dishRatingService;
+    private final CurrentUserIdentity currentUserIdentity;
 
     @Transactional
     @Override
@@ -57,10 +58,10 @@ public class MenuServiceImpl implements MenuService {
                 .map(menuMapper::toMenuWithDishesDto)
                 .collect(Collectors.toCollection(ArrayList::new));
                 
-        // Inject recommendations menu if user is authenticated
-        KeycloakUser user = KeycloakUtil.getCurrentUserOrNull();
-        if (user != null) {
-            List<DishResponseDto> recommendedDishes = recommendationService.getRecommendations(user.getId());
+        // Inject recommendations menu for authenticated users; for guests show popular dishes
+        if (!currentUserIdentity.isGuest()) {
+            String userId = currentUserIdentity.currentUserId();
+            List<DishResponseDto> recommendedDishes = recommendationService.getRecommendations(userId);
             if (recommendedDishes != null && !recommendedDishes.isEmpty()) {
                 MenuWithDishesDto recommendationsMenu = new MenuWithDishesDto();
                 recommendationsMenu.setId(-1);
@@ -102,8 +103,9 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public MenuResponseDto updateMenu(Integer id, MenuDto dto) {
+        @SuppressWarnings("null")
         Menu menu = menuRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("The menu is currently not available"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.MENU_NOT_FOUND));
         menu.setName(dto.getName());
         menu.setStartTime(dto.getStartTime());
         menu.setEndTime(dto.getEndTime());
@@ -112,9 +114,12 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public void deleteMenu(Integer id) {
-        if (!menuRepository.existsById(id)) {
-            throw new RuntimeException("The menu is currently not available");
+        @SuppressWarnings("null")
+        boolean exists = menuRepository.existsById(id);
+        if (!exists) {
+            throw new NotFoundException(ErrorMessages.MENU_NOT_FOUND);
         }
         menuRepository.deleteById(id);
     }

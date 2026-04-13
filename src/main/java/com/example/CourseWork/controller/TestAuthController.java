@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.List;
@@ -30,22 +31,24 @@ import java.util.Map;
 public class TestAuthController {
 
     @GetMapping("/login-as-staff")
-    public String loginAsStaff(HttpServletRequest request) {
-        return createMockAuth(request, "mock-staff-id", "test-staff-admin", "staff@smartdine.com", "ROLE_ADMINISTRATOR");
+    public String loginAsStaff(HttpServletRequest request, HttpServletResponse response) {
+        return createMockAuth(request, response, "00000000-0000-0000-0000-000000000000", "test-staff-admin", "staff@smartdine.com", "ROLE_ADMINISTRATOR");
     }
 
     @GetMapping("/login-as-guest")
-    public String loginAsGuest(HttpServletRequest request) {
-        // Guests usually don't have roles, but we need a session context
-        return createMockAuth(request, "mock-guest-id", "test-guest", "guest@smartdine.com");
+    public String loginAsGuest(HttpServletRequest request, HttpServletResponse response) {
+        // Use a fresh identity per E2E run to avoid leaking cart/orders state across tests in the same JVM.
+        String id = java.util.UUID.randomUUID().toString();
+        String suffix = id.substring(0, 8);
+        return createMockAuth(request, response, id, "test-guest-" + suffix, "guest-" + suffix + "@smartdine.com");
     }
 
     @GetMapping("/login-as-customer")
-    public String loginAsCustomer(HttpServletRequest request) {
-        return createMockAuth(request, "mock-customer-id", "test-customer", "customer@smartdine.com", "ROLE_CUSTOMER");
+    public String loginAsCustomer(HttpServletRequest request, HttpServletResponse response) {
+        return createMockAuth(request, response, "00000000-0000-0000-0000-000000000002", "test-customer", "customer@smartdine.com", "ROLE_CUSTOMER");
     }
 
-    private String createMockAuth(HttpServletRequest request, String id, String username, String email, String... roles) {
+    private String createMockAuth(HttpServletRequest request, HttpServletResponse response, String id, String username, String email, String... roles) {
         Map<String, Object> claims = Map.of(
             "sub", id,
             "preferred_username", username,
@@ -62,9 +65,12 @@ public class TestAuthController {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);
         
+        SecurityContextHolder.setContext(context);
+
+        // Spring Security 6+: persist the context explicitly so the session is authenticated on subsequent requests.
         HttpSession session = request.getSession(true);
         session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-        SecurityContextHolder.setContext(context);
+        new HttpSessionSecurityContextRepository().saveContext(context, request, response);
 
         return "Successfully logged in as " + username + " with roles " + authorities;
     }

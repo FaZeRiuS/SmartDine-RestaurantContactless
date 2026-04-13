@@ -21,7 +21,7 @@ public class OrderMapper {
         dto.setPaymentStatus(order.getPaymentStatus());
         dto.setCreatedAt(order.getCreatedAt());
         dto.setTotalPrice(order.getTotalPrice());
-        BigDecimal total = BigDecimal.valueOf(order.getTotalPrice()).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal total = normalize(order.getTotalPrice());
         BigDecimal discount = (order.getLoyaltyDiscount() == null ? BigDecimal.ZERO : order.getLoyaltyDiscount())
                 .setScale(2, RoundingMode.HALF_UP);
         if (discount.compareTo(BigDecimal.ZERO) < 0) discount = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
@@ -30,9 +30,9 @@ public class OrderMapper {
                 .setScale(2, RoundingMode.HALF_UP);
         if (tip.compareTo(BigDecimal.ZERO) < 0) tip = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
         BigDecimal payable = total.subtract(discount).add(tip).setScale(2, RoundingMode.HALF_UP);
-        dto.setLoyaltyDiscount(discount.floatValue());
-        dto.setAmountToPay(payable.floatValue());
-        dto.setTipAmount(tip.floatValue());
+        dto.setLoyaltyDiscount(discount);
+        dto.setAmountToPay(payable);
+        dto.setTipAmount(tip);
         dto.setTableNumber(order.getTableNumber());
         dto.setNeedsWaiter(order.isNeedsWaiter());
 
@@ -49,5 +49,10 @@ public class OrderMapper {
 
         dto.setItems(items);
         return dto;
+    }
+
+    private static BigDecimal normalize(BigDecimal value) {
+        BigDecimal v = value == null ? BigDecimal.ZERO : value;
+        return v.setScale(2, RoundingMode.HALF_UP);
     }
 } 

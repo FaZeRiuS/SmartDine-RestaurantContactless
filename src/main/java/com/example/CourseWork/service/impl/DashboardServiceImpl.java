@@ -9,8 +9,11 @@ import com.example.CourseWork.service.DashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,16 +28,16 @@ public class DashboardServiceImpl implements DashboardService {
     @Override
     public DashboardViewDto getAdminDashboard() {
         LocalDate today = LocalDate.now();
-        LocalDateTime startOfToday = today.atStartOfDay();
-        LocalDateTime startOfTomorrow = today.plusDays(1).atStartOfDay();
+        OffsetDateTime startOfToday = today.atStartOfDay().atOffset(ZoneOffset.UTC);
+        OffsetDateTime startOfTomorrow = today.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
 
-        LocalDateTime startOf7Days = today.minusDays(6).atStartOfDay(); // inclusive window: today + previous 6 days
+        OffsetDateTime startOf7Days = today.minusDays(6).atStartOfDay().atOffset(ZoneOffset.UTC); // inclusive window: today + previous 6 days
 
-        double revenueToday = safeDouble(orderRepository.sumRevenue(startOfToday, startOfTomorrow));
-        double revenueLast7 = safeDouble(orderRepository.sumRevenue(startOf7Days, startOfTomorrow));
+        BigDecimal revenueToday = safeMoney(orderRepository.sumRevenue(startOfToday, startOfTomorrow));
+        BigDecimal revenueLast7 = safeMoney(orderRepository.sumRevenue(startOf7Days, startOfTomorrow));
 
         long successfulOrdersToday = safeLong(orderRepository.countSuccessfulOrders(startOfToday, startOfTomorrow));
-        double avgCheckLast7 = safeDouble(orderRepository.avgCheck(startOf7Days, startOfTomorrow));
+        BigDecimal avgCheckLast7 = safeMoney(orderRepository.avgCheck(startOf7Days, startOfTomorrow));
 
         DashboardSummaryDto summary = new DashboardSummaryDto(
                 revenueToday,
@@ -62,8 +65,11 @@ public class DashboardServiceImpl implements DashboardService {
         return new DashboardViewDto(summary, topDishes, hourly);
     }
 
-    private static double safeDouble(Double v) {
-        return v == null ? 0.0 : v;
+    private static BigDecimal safeMoney(BigDecimal v) {
+        if (v == null) {
+            return BigDecimal.ZERO;
+        }
+        return v.setScale(2, RoundingMode.HALF_UP);
     }
 
     private static long safeLong(Long v) {

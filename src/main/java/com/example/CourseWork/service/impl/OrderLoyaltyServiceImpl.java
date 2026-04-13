@@ -1,10 +1,14 @@
 package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.NotFoundException;
 import com.example.CourseWork.mapper.OrderMapper;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.OrderLoyaltyService;
+import com.example.CourseWork.service.order.component.OrderPaymentPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,24 +27,21 @@ public class OrderLoyaltyServiceImpl implements OrderLoyaltyService {
     private final OrderRepository orderRepository;
     private final com.example.CourseWork.service.LoyaltyService loyaltyService;
     private final OrderMapper orderMapper;
+    private final OrderPaymentPolicy orderPaymentPolicy;
 
     @Override
     @Transactional
     public OrderResponseDto applyCoverage(Integer orderId, UUID userId, BigDecimal desiredAmount) {
-        if (orderId == null) throw new IllegalArgumentException("orderId is required");
-        if (userId == null) throw new IllegalArgumentException("userId is required");
+        if (orderId == null) throw new BadRequestException(ErrorMessages.ORDER_ID_REQUIRED);
+        if (userId == null) throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
-        if (order.getUserId() == null || !order.getUserId().equals(userId.toString())) {
-            throw new RuntimeException("Unauthorized: Order does not belong to the user");
-        }
-        if (order.getPaymentStatus() != null && order.getPaymentStatus().name().equalsIgnoreCase("SUCCESS")) {
-            throw new RuntimeException("Order is already paid");
-        }
+        orderPaymentPolicy.assertOwner(order, userId.toString());
+        orderPaymentPolicy.assertNotPaid(order);
 
-        BigDecimal total = BigDecimal.valueOf(order.getTotalPrice()).setScale(MONEY_SCALE, RoundingMode.HALF_UP);
+        BigDecimal total = normalizeMoney(order.getTotalPrice());
         BigDecimal maxCover = total.multiply(MAX_COVERAGE_RATE).setScale(MONEY_SCALE, RoundingMode.HALF_UP);
 
         BigDecimal desired = normalizeMoney(desiredAmount);

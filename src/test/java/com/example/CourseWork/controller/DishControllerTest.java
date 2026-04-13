@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -52,7 +53,8 @@ class DishControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/dishes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"New Dish\"}")
-                        .with(withUser("cust-1", "CUSTOMER")))
+                        .with(withUser("cust-1", "CUSTOMER"))
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
 
         // Act & Assert - OK for Admin
@@ -60,7 +62,8 @@ class DishControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/dishes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\": \"New Dish\"}")
-                        .with(withUser("admin-1", "ADMINISTRATOR")))
+                        .with(withUser("admin-1", "ADMINISTRATOR"))
+                        .with(csrf()))
                 .andExpect(status().isOk());
     }
 
@@ -87,7 +90,8 @@ class DishControllerTest extends BaseControllerTest {
         DishResponseDto combo = new DishResponseDto();
         combo.setId(2);
         combo.setName("Combo Dish");
-        when(dishService.getSmartCombo(eq(1), any())).thenReturn(combo);
+        when(dishService.getSmartCombo(eq(1), org.mockito.ArgumentMatchers.<java.util.List<Integer>>any()))
+                .thenReturn(java.util.Optional.of(combo));
 
         // Act & Assert
         mockMvc.perform(get("/api/dishes/1/smart-combo")

@@ -3,12 +3,15 @@ package com.example.CourseWork.service;
 import com.example.CourseWork.addition.OrderStatus;
 import com.example.CourseWork.dto.OrderRequestDto;
 import com.example.CourseWork.dto.OrderResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderService {
     OrderResponseDto createOrder(String userId, OrderRequestDto dto, Integer tableNumber);
-    List<OrderResponseDto> getAllOrders();
+    Page<OrderResponseDto> getAllOrders(Pageable pageable);
     OrderResponseDto getOrderById(Integer id);
     List<OrderResponseDto> getNewOrders();
     List<OrderResponseDto> getActiveOrders();
@@ -19,8 +22,8 @@ public interface OrderService {
     OrderResponseDto updateOrderItemQuantity(Integer orderId, String userId, Integer itemId, Integer quantity);
     OrderResponseDto updateOrderItemSpecialRequest(Integer orderId, String userId, Integer itemId, String specialRequest);
     OrderResponseDto removeOrderItem(Integer orderId, String userId, Integer itemId);
-    OrderResponseDto getMyActiveOrder(String userId);
-    List<OrderResponseDto> getOrderHistory(String userId);
+    Optional<OrderResponseDto> getMyActiveOrder(String userId);
+    Page<OrderResponseDto> getOrderHistory(String userId, Pageable pageable);
     OrderResponseDto callWaiter(Integer orderId);
     OrderResponseDto dismissWaiterCall(Integer orderId);
 }

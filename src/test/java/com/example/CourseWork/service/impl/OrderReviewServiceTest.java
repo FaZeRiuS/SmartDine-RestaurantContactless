@@ -3,6 +3,9 @@ package com.example.CourseWork.service.impl;
 import com.example.CourseWork.addition.OrderStatus;
 import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.OrderReviewRequestDto;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.ForbiddenException;
 import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.model.OrderItem;
@@ -10,6 +13,7 @@ import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.repository.OrderDishReviewRepository;
 import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.repository.OrderServiceReviewRepository;
+import com.example.CourseWork.service.order.component.OrderPaymentPolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -39,6 +44,8 @@ class OrderReviewServiceTest {
     private OrderServiceReviewRepository orderServiceReviewRepository;
     @Mock
     private OrderDishReviewRepository orderDishReviewRepository;
+    @Mock
+    private OrderPaymentPolicy orderPaymentPolicy;
 
     @InjectMocks
     private OrderReviewServiceImpl orderReviewService;
@@ -94,10 +101,13 @@ class OrderReviewServiceTest {
         // Arrange
         order.setPaymentStatus(PaymentStatus.PENDING);
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        doThrow(new BadRequestException(ErrorMessages.ORDER_NOT_PAID))
+                .when(orderPaymentPolicy).assertReviewable(order);
         OrderReviewRequestDto dto = new OrderReviewRequestDto();
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> orderReviewService.submitReview(orderId, userId, dto));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> orderReviewService.submitReview(orderId, userId, dto));
+        assertEquals(ErrorMessages.ORDER_NOT_PAID, ex.getMessage());
     }
 
     @Test
@@ -105,10 +115,13 @@ class OrderReviewServiceTest {
         // Arrange
         order.setStatus(OrderStatus.PREPARING);
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        doThrow(new BadRequestException(ErrorMessages.ORDER_NOT_READY_FOR_REVIEW))
+                .when(orderPaymentPolicy).assertReviewable(order);
         OrderReviewRequestDto dto = new OrderReviewRequestDto();
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> orderReviewService.submitReview(orderId, userId, dto));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> orderReviewService.submitReview(orderId, userId, dto));
+        assertEquals(ErrorMessages.ORDER_NOT_READY_FOR_REVIEW, ex.getMessage());
     }
 
     @Test
@@ -116,10 +129,13 @@ class OrderReviewServiceTest {
         // Arrange
         order.setUserId(UUID.randomUUID().toString());
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        doThrow(new ForbiddenException(ErrorMessages.ACCESS_DENIED))
+                .when(orderPaymentPolicy).assertOwner(order, userId.toString());
         OrderReviewRequestDto dto = new OrderReviewRequestDto();
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> orderReviewService.submitReview(orderId, userId, dto));
+        ForbiddenException ex = assertThrows(ForbiddenException.class, () -> orderReviewService.submitReview(orderId, userId, dto));
+        assertEquals(ErrorMessages.ACCESS_DENIED, ex.getMessage());
     }
 
     @Test

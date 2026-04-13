@@ -2,6 +2,8 @@ package com.example.CourseWork.service.impl;
 
 import com.example.CourseWork.dto.DishDto;
 import com.example.CourseWork.dto.DishResponseDto;
+import com.example.CourseWork.exception.ErrorMessages;
+import com.example.CourseWork.exception.NotFoundException;
 import com.example.CourseWork.mapper.DishMapper;
 import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.model.Menu;
@@ -14,10 +16,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
-@SuppressWarnings("null")
 public class DishServiceImpl implements DishService {
 
     private final DishRepository dishRepository;
@@ -27,9 +30,10 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public DishResponseDto createDish(DishDto dto) {
-        List<Menu> menus = menuRepository.findAllById(dto.getMenuIds());
-        if (menus.isEmpty() && dto.getMenuIds() != null && !dto.getMenuIds().isEmpty()) {
-            throw new RuntimeException("Menus not found");
+        List<Integer> menuIds = dto.getMenuIds() == null ? Collections.emptyList() : dto.getMenuIds();
+        List<Menu> menus = menuIds.isEmpty() ? Collections.emptyList() : menuRepository.findAllById(menuIds);
+        if (menus.isEmpty() && !menuIds.isEmpty()) {
+            throw new NotFoundException(ErrorMessages.MENUS_NOT_FOUND);
         }
 
         Dish dish = new Dish();
@@ -45,12 +49,14 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public DishResponseDto updateDish(Integer id, DishDto dto) {
+        @SuppressWarnings("null")
         Dish dish = dishRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Dish not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
 
-        List<Menu> menus = menuRepository.findAllById(dto.getMenuIds());
-        if (menus.isEmpty() && dto.getMenuIds() != null && !dto.getMenuIds().isEmpty()) {
-            throw new RuntimeException("Menus not found");
+        List<Integer> menuIds = dto.getMenuIds() == null ? Collections.emptyList() : dto.getMenuIds();
+        List<Menu> menus = menuIds.isEmpty() ? Collections.emptyList() : menuRepository.findAllById(menuIds);
+        if (menus.isEmpty() && !menuIds.isEmpty()) {
+            throw new NotFoundException(ErrorMessages.MENUS_NOT_FOUND);
         }
 
         dish.setName(dto.getName());
@@ -64,6 +70,7 @@ public class DishServiceImpl implements DishService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public void deleteDish(Integer id) {
         dishRepository.deleteById(id);
     }
@@ -89,35 +96,37 @@ public class DishServiceImpl implements DishService {
     }
 
     @Override
+    @SuppressWarnings("null")
     public DishResponseDto getDishById(Integer id) {
         Dish dish = dishRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Dish not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
         DishResponseDto dto = dishMapper.toResponseDto(dish);
         dishRatingService.enrichWithRatings(java.util.List.of(dto));
         return dto;
     }
 
     @Override
-    public DishResponseDto getSmartCombo(Integer dishId, List<Integer> existingIds) {
+    public Optional<DishResponseDto> getSmartCombo(Integer dishId, List<Integer> existingIds) {
         Dish dish = dishRepository.findSmartComboForDish(dishId)
                 .orElseGet(() -> dishRepository.findPopularComboFallback(dishId).orElse(null));
                 
         if (dish != null && existingIds != null && !existingIds.isEmpty()) {
             boolean sharesMenu = dishRepository.checkIfSharesMenu(dish.getId(), existingIds);
             if (sharesMenu) {
-                return null;
+                return Optional.empty();
             }
         }
         
-        if (dish == null) return null;
+        if (dish == null) return Optional.empty();
         DishResponseDto dto = dishMapper.toResponseDto(dish);
         dishRatingService.enrichWithRatings(java.util.List.of(dto));
-        return dto;
+        return Optional.of(dto);
     }
     @Override
     public void updateDishImage(Integer id, String imageUrl) {
+        @SuppressWarnings("null")
         Dish dish = dishRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Dish not found"));
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
         dish.setImageUrl(imageUrl);
         dishRepository.save(dish);
     }

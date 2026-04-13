@@ -4,13 +4,21 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
+    @ToString.Include
     private Integer id;
 
     @NotNull
@@ -26,9 +34,11 @@ public class CartItem {
     @NotNull
     @Min(1)
     @Column(nullable = false)
+    @ToString.Include
     private Integer quantity = 1;
 
     @Size(max = 255)
     @Column(name = "special_request")
+    @ToString.Include
     private String specialRequest;
 }
