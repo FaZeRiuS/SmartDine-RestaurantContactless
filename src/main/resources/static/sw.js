@@ -113,7 +113,28 @@ self.addEventListener('push', event => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      // 1. Check if any window of our app is currently focused
+      const isUserActiveOnSite = windowClients.some(client => {
+        if (!client.focused) return false;
+        
+        const url = new URL(client.url);
+        // suppression paths: staff pages, orders, cart, or main landing (where active order widget lives)
+        return url.pathname.startsWith('/staff/') || 
+               url.pathname === '/orders' || 
+               url.pathname === '/cart' ||
+               url.pathname === '/';
+      });
+
+      // 2. If user is active and looking at a relevant page, skip native push
+      if (isUserActiveOnSite) {
+        console.log('[Service Worker] Suppression: User is focused on relevant page, skipping native notification');
+        return;
+      }
+
+      // 3. Otherwise, show the native notification
+      return self.registration.showNotification(title, options);
+    })
   );
 });
 
