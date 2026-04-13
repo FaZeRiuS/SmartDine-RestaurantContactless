@@ -1,0 +1,229 @@
+/* admin.css */
+/* ── Staff & Admin Order Cards ────────────────────────── */
+.order-section {
+    margin-bottom: 3rem;
+}
+
+.order-section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.orders-board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+    align-items: start;
+}
+
+.order-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: all var(--transition);
+}
+
+.order-card:hover {
+    border-color: var(--border-gold);
+    box-shadow: var(--shadow-sm);
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.order-id {
+    font-weight: 700;
+    font-size: 1rem;
+    font-family: var(--font-price);
+    letter-spacing: 0.5px;
+}
+
+.order-card-body {
+    padding: 1rem 1.25rem;
+}
+
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.order-item-row span:first-child {
+    color: var(--text-primary);
+}
+
+.order-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.25rem;
+    border-top: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.order-info-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 150px;
+}
+
+.order-actions-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    flex: 2 1 auto;
+    min-width: 0;
+}
+
+.order-actions-container .btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex: 1 1 140px;
+    max-width: 180px;
+    margin: 0 !important;
+    /* Remove redundant margins causing offsets */
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+}
+
+.order-total {
+    font-weight: 700;
+    color: var(--gold);
+}
+
+.order-time {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+
+/* ── Admin Tables & Panels ────────────────────────────── */
+.data-table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+.data-table tr:hover td {
+    background: var(--bg-card);
+}
+
+.admin-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--gap-lg);
+}
+
+.admin-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-panel-title {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.admin-panel-body {
+    padding: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Order history admin cells */
+.order-id-cell {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.order-price-cell {
+    font-weight: 600;
+    color: var(--gold);
+}
+
+.order-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.order-detail-items-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.order-review-block {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+}
+
+.order-review-header {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.order-review-comment {
+    line-height: 1.4;
+    font-style: italic;
+}
+
+

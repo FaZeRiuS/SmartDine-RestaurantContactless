@@ -1,6 +1,11 @@
-const CACHE_NAME = 'smartdine-v4';
+const CACHE_NAME = 'smartdine-v6';
 const ASSETS_TO_CACHE = [
-  '/css/style.css',
+  '/css/base.css',
+  '/css/layout.css',
+  '/css/components.css',
+  '/css/pages.css',
+  '/css/responsive.css',
+  '/css/dashboard.css',
   '/js/ui.js',
   '/js/cart.js',
   '/js/csrf.js',
