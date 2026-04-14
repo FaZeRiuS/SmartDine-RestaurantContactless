@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS orders (
     user_id VARCHAR(255) NOT NULL,
     status VARCHAR(50) NOT NULL,
     payment_status VARCHAR(50) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
     total_price REAL NOT NULL DEFAULT 0 CHECK (total_price >= 0),
     table_number INT CHECK (table_number > 0),
     loyalty_discount NUMERIC(19, 2) NOT NULL DEFAULT 0 CHECK (loyalty_discount >= 0),
@@ -86,8 +86,8 @@ CREATE TABLE IF NOT EXISTS loyalty_account (
     id BIGSERIAL PRIMARY KEY,
     user_id UUID NOT NULL UNIQUE,
     balance NUMERIC(19, 2) NOT NULL DEFAULT 0 CHECK (balance >= 0),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS loyalty_transaction (
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS loyalty_transaction (
     amount NUMERIC(19, 2) NOT NULL CHECK (amount >= 0),
     balance_after NUMERIC(19, 2) NOT NULL CHECK (balance_after >= 0),
     reference VARCHAR(255),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_loyalty_transaction_reference
@@ -114,8 +114,8 @@ CREATE TABLE IF NOT EXISTS order_service_review (
     user_id UUID NOT NULL,
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
     comment TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT ux_order_service_review_order_id UNIQUE (order_id)
 );
 
@@ -128,8 +128,8 @@ CREATE TABLE IF NOT EXISTS order_dish_review (
     dish_id INT NOT NULL REFERENCES dish(id) ON DELETE CASCADE,
     user_id UUID NOT NULL,
     rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT ux_order_dish_review_order_dish UNIQUE (order_id, dish_id)
 );
 
