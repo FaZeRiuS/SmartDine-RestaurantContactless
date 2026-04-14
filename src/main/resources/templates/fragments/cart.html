@@ -106,38 +106,44 @@
 </div>
 
 <!-- Toast notification (OOB append). Expects: message, toastType; optional recommendDish (Smart Combo) -->
-<div th:fragment="toast">
-    <div hx-swap-oob="beforeend:#toastContainer"
-         class="toast"
-         th:classappend="${(toastType != null ? toastType : 'toast-success') + (recommendDish != null ? ' toast-rich' : '')}">
-        
-        <div class="toast-body-main">
-            <span th:text="${message != null ? message : 'Дію виконано'}">OK</span>
-            <button type="button"
-                    class="toast-action"
-                    th:if="${recommendDish == null && (toastType == null || #strings.contains(toastType, 'success'))}"
-                    onclick="window.location.href='/cart'">
-                Кошик
-            </button>
+<!-- Toast notification (OOB). Expects: message, toastType; optional recommendDish (Smart Combo) -->
+<div th:fragment="toast" 
+     hx-swap-oob="beforeend:#toastContainer"
+     class="toast"
+     th:classappend="${(toastType != null ? ' ' + toastType : ' toast-success') + (recommendDish != null ? ' toast-rich' : '')}">
+    
+    <div class="toast-body-main">
+        <div class="d-flex align-center gap-2">
+            <span class="text-lg">🛒</span>
+            <span th:text="${message != null ? message : 'Страву додано!'}">OK</span>
         </div>
-
-        <div th:if="${recommendDish != null}" class="toast-combo-offer">
-            <div class="text-xs text-muted mb-2">Разом смакує краще:</div>
-            <div class="d-flex align-center justify-between gap-3">
-                <strong class="text-sm" th:text="${recommendDish.name}">Страва</strong>
-                <form hx-post="/htmx/cart/items" hx-swap="none" class="m-0">
-                    <input type="hidden" name="dishId" th:value="${recommendDish.id}">
-                    <input type="hidden" name="quantity" value="1">
-                    <input type="hidden" name="specialRequest" value="">
-                    <button type="submit" class="toast-action">Додати</button>
-                </form>
-            </div>
-        </div>
+        <button type="button"
+                class="toast-action"
+                th:if="${recommendDish == null}"
+                onclick="window.location.href='/cart'">
+            Кошик
+        </button>
     </div>
 
-    <!-- Keep the badge in sync on any toast response. -->
-    <span th:replace="~{fragments/cart :: widget}"></span>
+    <div th:if="${recommendDish != null}" class="toast-combo-offer">
+        <div class="text-xs text-muted mb-2">Разом смакує краще:</div>
+        <div class="d-flex align-center justify-between gap-3">
+            <strong class="text-sm" th:text="${recommendDish.name}">Страва</strong>
+            <form hx-post="/htmx/cart/items" hx-swap="none" class="m-0">
+                <input type="hidden" name="dishId" th:value="${recommendDish.id}">
+                <input type="hidden" name="quantity" value="1">
+                <input type="hidden" name="specialRequest" value="">
+                <button type="submit" class="toast-action">Додати</button>
+            </form>
+        </div>
+        <div class="mt-2 text-right">
+            <a href="/cart" class="text-xs text-white underline opacity-70 hover-opacity-100">Перейти до кошика</a>
+        </div>
+    </div>
 </div>
+
+<!-- Keep the badge in sync on any toast response. -->
+<span th:fragment="cartSync" th:replace="~{fragments/cart :: widget}"></span>
 
 </body>
 </html>

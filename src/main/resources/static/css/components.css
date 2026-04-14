@@ -438,11 +438,13 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    pointer-events: none;
+    pointer-events: none; /* Allow clicks through empty space */
 }
 
 .toast {
-    pointer-events: all;
+    pointer-events: all; /* Catch clicks on the toast itself */
+    cursor: default;
+    z-index: 10001;
     padding: 14px 24px;
     border-radius: var(--radius-lg);
     font-size: 0.95rem;
