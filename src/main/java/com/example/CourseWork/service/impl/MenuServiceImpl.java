@@ -58,27 +58,29 @@ public class MenuServiceImpl implements MenuService {
                 .map(menuMapper::toMenuWithDishesDto)
                 .collect(Collectors.toCollection(ArrayList::new));
                 
-        // Inject recommendations menu for authenticated users; for guests show popular dishes
-        if (!currentUserIdentity.isGuest()) {
-            String userId = currentUserIdentity.currentUserId();
-            List<DishResponseDto> recommendedDishes = recommendationService.getRecommendations(userId);
-            if (recommendedDishes != null && !recommendedDishes.isEmpty()) {
-                MenuWithDishesDto recommendationsMenu = new MenuWithDishesDto();
-                recommendationsMenu.setId(-1);
-                recommendationsMenu.setName("Recommendations for You");
-                recommendationsMenu.setDishes(recommendedDishes);
-                // Add to the front so it's the first menu they see
-                dtos.add(0, recommendationsMenu);
-            }
-        } else {
-            // For anonymous users, get popular dishes using a dummy ID to bypass user tag matching but keep popularity scoring
-            List<DishResponseDto> popularDishes = recommendationService.getRecommendations("anonymous-user");
-            if (popularDishes != null && !popularDishes.isEmpty()) {
-                MenuWithDishesDto popularMenu = new MenuWithDishesDto();
-                popularMenu.setId(-2);
-                popularMenu.setName("Popular Dishes");
-                popularMenu.setDishes(popularDishes);
-                dtos.add(0, popularMenu);
+        // Inject recommendations menu for customer UI only (never for staff/admin).
+        if (!isStaff) {
+            if (!currentUserIdentity.isGuest()) {
+                String userId = currentUserIdentity.currentUserId();
+                List<DishResponseDto> recommendedDishes = recommendationService.getRecommendations(userId);
+                if (recommendedDishes != null && !recommendedDishes.isEmpty()) {
+                    MenuWithDishesDto recommendationsMenu = new MenuWithDishesDto();
+                    recommendationsMenu.setId(-1);
+                    recommendationsMenu.setName("Recommendations for You");
+                    recommendationsMenu.setDishes(recommendedDishes);
+                    // Add to the front so it's the first menu they see
+                    dtos.add(0, recommendationsMenu);
+                }
+            } else {
+                // For anonymous users, get popular dishes using a dummy ID to bypass user tag matching but keep popularity scoring
+                List<DishResponseDto> popularDishes = recommendationService.getRecommendations("anonymous-user");
+                if (popularDishes != null && !popularDishes.isEmpty()) {
+                    MenuWithDishesDto popularMenu = new MenuWithDishesDto();
+                    popularMenu.setId(-2);
+                    popularMenu.setName("Popular Dishes");
+                    popularMenu.setDishes(popularDishes);
+                    dtos.add(0, popularMenu);
+                }
             }
         }
 
