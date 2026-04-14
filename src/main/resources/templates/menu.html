@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Меню — SmartDine</title>
     <meta name="description" content="Повне меню ресторану SmartDine. Переглядайте категорії, обирайте страви та додавайте у кошик.">
-    <link rel="stylesheet" th:href="@{/css/public-bundle.css(v=2)}">
+    <th:block th:replace="~{fragments/public-bundle-styles :: publicBundleLinks}"></th:block>
     <link rel="stylesheet" th:href="@{/css/admin.css}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
 </head>
 <body>

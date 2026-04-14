@@ -12,7 +12,7 @@
     <link rel="preload" as="image" fetchpriority="high"
           th:if="${lcpPreloadImageUrl != null}"
           th:href="${lcpPreloadImageUrl}">
-    <link rel="stylesheet" th:href="@{/css/public-bundle.css(v=2)}">
+    <th:block th:replace="~{fragments/public-bundle-styles :: publicBundleLinks}"></th:block>
     <link rel="stylesheet" th:href="@{/css/admin.css}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
 </head>
 <body>

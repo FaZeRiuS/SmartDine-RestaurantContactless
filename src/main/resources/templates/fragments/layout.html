@@ -17,16 +17,15 @@
     
     <!-- Preload Critical CSS -->
     <link rel="preload" th:href="@{/images/logo.png}" as="image" fetchpriority="high">
-    <link rel="preload" th:href="@{/css/public-bundle.css(v=2)}" as="style">
-    
+
     <link rel="apple-touch-icon" th:href="@{/icons/apple-touch-icon.png}">
     <link rel="icon" type="image/png" sizes="32x32" th:href="@{/icons/favicon-32x32.png}">
     <link rel="icon" type="image/png" sizes="16x16" th:href="@{/icons/favicon-16x16.png}">
     <link rel="shortcut icon" type="image/x-icon" th:href="@{/favicon.ico}">
     <link rel="manifest" th:href="@{/manifest.json(v=1.3)}">
     
-    <!-- Loaded CSS (bundled at build from base+layout+components+pages+responsive) -->
-    <link rel="stylesheet" th:href="@{/css/public-bundle.css(v=2)}">
+    <!-- Public CSS bundle (non-blocking load; critical shell in critical-css fragment) -->
+    <th:block th:replace="~{fragments/public-bundle-styles :: publicBundleLinks}"></th:block>
     <link rel="stylesheet" th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
     <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
 </head>

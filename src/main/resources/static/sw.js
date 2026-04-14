@@ -1,5 +1,5 @@
 // Bump this to force clients to pick up fresh CSS/JS after UI changes.
-const CACHE_NAME = 'smartdine-v14';
+const CACHE_NAME = 'smartdine-v15';
 const ASSETS_TO_CACHE = [
   '/css/public-bundle.css',
   '/css/admin.css',
