@@ -14,6 +14,7 @@ import com.example.CourseWork.service.DishService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Optional;
@@ -43,6 +44,7 @@ public class DishServiceImpl implements DishService {
         dish.setIsAvailable(dto.getIsAvailable());
         dish.setImageUrl(dto.getImageUrl());
         dish.setMenus(menus);
+        dish.setTags(dto.getTags() == null ? new ArrayList<>() : new ArrayList<>(dto.getTags()));
 
         return dishMapper.toResponseDto(dishRepository.save(dish));
     }
@@ -65,6 +67,7 @@ public class DishServiceImpl implements DishService {
         dish.setIsAvailable(dto.getIsAvailable());
         dish.setImageUrl(dto.getImageUrl());
         dish.setMenus(menus);
+        dish.setTags(dto.getTags() == null ? new ArrayList<>() : new ArrayList<>(dto.getTags()));
 
         return dishMapper.toResponseDto(dishRepository.save(dish));
     }

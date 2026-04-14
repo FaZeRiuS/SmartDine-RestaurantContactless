@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Активні замовлення — SmartDine</title>
     <meta name="description" content="Панель управління замовленнями для персоналу SmartDine">
-        <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/base.css}">
     <link rel="stylesheet" th:href="@{/css/layout.css}">
     <link rel="stylesheet" th:href="@{/css/components.css}">
     <link rel="stylesheet" th:href="@{/css/pages.css}">
@@ -23,46 +23,19 @@
     <div class="container">
         <div class="section-header">
             <div>
-                <h1 class="section-title"><span class="title-accent">📦</span> Активні замовлення</h1>
+                <h1 class="section-title"><span class="title-accent">&#128230;</span> Активні замовлення</h1>
                 <p class="section-subtitle">Управляйте статусами замовлень клієнтів</p>
             </div>
-            <div class="d-flex gap-1 align-center">
-                <span class="text-muted" id="lastUpdate">Оновлення...</span>
-                <button class="btn btn-secondary btn-sm" onclick="loadOrders()" aria-label="Оновити список активних замовлень">🔄 Оновити</button>
+        </div>
+
+        <div id="staffBoardRoot"
+             hx-get="/htmx/staff/orders/board?filter=all"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+            <div class="loading-overlay" id="ordersLoading">
+                <div class="loading-spinner"></div>
+                <span>Завантаження замовлень...</span>
             </div>
-        </div>
-
-        <!-- Status filter tabs -->
-        <div class="menu-tabs">
-            <button class="menu-tab active" onclick="filterOrders('all', this)" aria-label="Показати всі активні замовлення">📋 Усі активні</button>
-            <button class="menu-tab" onclick="filterOrders('NEW', this)" aria-label="Показати лише нові замовлення">🔵 Нові</button>
-            <button class="menu-tab" onclick="filterOrders('PREPARING', this)" aria-label="Показати замовлення, що готуються">🟠 Готуються</button>
-            <button class="menu-tab" onclick="filterOrders('READY', this)" aria-label="Показати готові замовлення">🟢 Готові</button>
-        </div>
-
-        <!-- Loading -->
-        <div class="loading-overlay" id="ordersLoading">
-            <div class="loading-spinner"></div>
-            <span>Завантаження замовлень...</span>
-        </div>
-
-        <!-- Active Orders Section -->
-        <div class="order-section" id="activeOrdersSection">
-            <h2 class="order-section-title"><span class="title-accent">🔥</span> В роботі</h2>
-            <div class="orders-board" id="activeOrdersBoard"></div>
-        </div>
-
-        <!-- Ready Orders Section -->
-        <div class="order-section" id="readyOrdersSection">
-            <h2 class="order-section-title"><span class="title-accent">✅</span> Готові до видачі</h2>
-            <div class="orders-board" id="readyOrdersBoard"></div>
-        </div>
-
-        <!-- Empty state -->
-        <div class="empty-state hidden" id="ordersEmpty">
-            <div class="empty-state-icon">📦</div>
-            <h3>Немає активних замовлень</h3>
-            <p class="text-muted">Нові замовлення з'являться тут автоматично</p>
         </div>
     </div>
 </section>

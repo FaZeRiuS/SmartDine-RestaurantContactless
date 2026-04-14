@@ -1,117 +1,67 @@
-/* ═══════════════════════════════════════════════════════
-   SmartDine — Admin JS (Menu & Dish CRUD operations)
-   ═══════════════════════════════════════════════════════ */
+/* SmartDine — Admin JS (Menu & Dish CRUD; table refresh via HTMX) */
 
+function refreshMenusTable() {
+    const el = document.getElementById('adminMenusRoot');
+    if (!el || typeof htmx === 'undefined') return;
+    const url = el.getAttribute('hx-get');
+    if (!url) return;
+    htmx.ajax('GET', url, { target: '#adminMenusRoot', swap: 'innerHTML' });
+}
 
-
-// ── Modal helpers ──
-
-
-// ═══════════════════════════════════
-// ── MENU CRUD ──
-// ═══════════════════════════════════
+function configureMenuSaveForm() {
+    const form = document.getElementById('menuSaveForm');
+    if (!form) return;
+    form.removeAttribute('hx-post');
+    form.removeAttribute('hx-put');
+    const id = document.getElementById('menuEditId').value;
+    if (id) {
+        form.setAttribute('hx-put', '/htmx/admin/menus/' + id);
+    } else {
+        form.setAttribute('hx-post', '/htmx/admin/menus');
+    }
+}
 
 function openMenuModal(data = null) {
-    document.getElementById('menuEditId').value = data ? data.id : '';
-    document.getElementById('menuName').value = data ? data.name : '';
-    document.getElementById('menuStartTime').value = data && data.start !== 'null' ? data.start : '';
-    document.getElementById('menuEndTime').value = data && data.end !== 'null' ? data.end : '';
-    document.getElementById('menuModalTitle').textContent = data ? 'Редагувати меню' : 'Нове меню';
+    document.getElementById('menuEditId').value = data && data.id ? data.id : '';
+    document.getElementById('menuName').value = data && data.name ? data.name : '';
+    document.getElementById('menuStartTime').value =
+        data && data.start && data.start !== 'null' ? data.start : '';
+    document.getElementById('menuEndTime').value =
+        data && data.end && data.end !== 'null' ? data.end : '';
+    document.getElementById('menuModalTitle').textContent = data && data.id ? 'Редагувати меню' : 'Нове меню';
+    configureMenuSaveForm();
     openModal('menuModal');
 }
 
-async function saveMenu() {
-    const id = document.getElementById('menuEditId').value;
-    const name = document.getElementById('menuName').value.trim();
-    const startTime = document.getElementById('menuStartTime').value || null;
-    const endTime = document.getElementById('menuEndTime').value || null;
+function refreshDishesTable() {
+    const el = document.getElementById('adminDishesRoot');
+    if (!el || typeof htmx === 'undefined') return;
+    const url = el.getAttribute('hx-get');
+    if (!url) return;
+    htmx.ajax('GET', url, { target: '#adminDishesRoot', swap: 'innerHTML' });
+}
 
-    if (!name) {
-        showToast('Введіть назву меню', 'error');
-        return;
-    }
-
-    const body = { name, startTime, endTime };
-    const url = id ? `/api/menus/${id}` : '/api/menus';
-    const method = id ? 'PUT' : 'POST';
-
-    try {
-        const res = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(body)
-        });
-
-        if (!res.ok) throw new Error('Помилка ' + res.status);
-
-        showToast(`✅ Меню "${name}" ${id ? 'оновлено' : 'створено'}`, 'success');
-        closeModal('menuModal');
-        setTimeout(() => location.reload(), 800);
-    } catch (err) {
-        showToast('❌ ' + err.message, 'error');
+function configureDishSaveForm() {
+    const form = document.getElementById('dishSaveForm');
+    if (!form) return;
+    form.removeAttribute('hx-post');
+    form.removeAttribute('hx-put');
+    const id = document.getElementById('dishEditId').value;
+    if (id) {
+        form.setAttribute('hx-put', '/htmx/admin/dishes/' + id);
+    } else {
+        form.setAttribute('hx-post', '/htmx/admin/dishes');
     }
 }
 
-async function deleteMenu(id) {
-    if (!confirm('Видалити це меню?')) return;
-
+async function openDishModalById(id) {
     try {
-        const res = await fetch(`/api/menus/${id}`, {
-            method: 'DELETE',
-            credentials: 'same-origin'
-        });
-
+        const res = await fetch('/api/dishes/' + id, { credentials: 'same-origin' });
         if (!res.ok) throw new Error('Помилка ' + res.status);
-
-        showToast('✅ Меню видалено', 'success');
-        setTimeout(() => location.reload(), 800);
+        const dish = await res.json();
+        openDishModalWithData(dish);
     } catch (err) {
-        showToast('❌ ' + err.message, 'error');
-    }
-}
-
-// ═══════════════════════════════════
-// ── DISH CRUD ──
-// ═══════════════════════════════════
-
-async function loadDishes() {
-    const loading = document.getElementById('dishesLoading');
-    const table = document.getElementById('dishesTable');
-
-    try {
-        const res = await fetch('/api/dishes/all', { credentials: 'same-origin' });
-        if (!res.ok) throw new Error('Помилка ' + res.status);
-
-        const dishes = await res.json();
-        loading.style.display = 'none';
-        table.style.display = '';
-
-        const tbody = document.getElementById('dishesTableBody');
-        tbody.innerHTML = dishes.map(dish => `
-            <tr>
-                <td style="font-weight:700;color:var(--text-primary)">${dish.id}</td>
-                <td style="font-weight:600;color:var(--text-primary)">${dish.name}</td>
-                <td style="color:var(--gold);font-weight:600;white-space:nowrap">${dish.price.toFixed(2)} ₴</td>
-                <td>${dish.isAvailable ? '<span style="color:var(--accent-green)">✅</span>' : '<span style="color:var(--accent-red)">❌</span>'}</td>
-                <td>
-                    <div class="dish-tags" style="margin:0">
-                        ${(dish.tags || []).map(t => `<span class="dish-tag">${t}</span>`).join('')}
-                    </div>
-                </td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <button class="btn btn-secondary btn-sm"
-                                onclick='openDishModalWithData(${JSON.stringify(dish)})'>✏️</button>
-                        <button class="btn btn-danger btn-sm"
-                                onclick="deleteDish(${dish.id})">🗑️</button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-    } catch (err) {
-        loading.style.display = 'none';
-        showToast('❌ Не вдалось завантажити страви: ' + err.message, 'error');
+        showToast('Не вдалося завантажити страву: ' + err.message, 'error');
     }
 }
 
@@ -127,6 +77,7 @@ function openDishModal() {
     document.getElementById('dishImageFile').value = '';
     document.getElementById('dishImagePreview').style.display = 'none';
     document.getElementById('dishModalTitle').textContent = 'Нова страва';
+    configureDishSaveForm();
     openModal('dishModal');
 }
 
@@ -138,7 +89,7 @@ function openDishModalWithData(dish) {
     document.getElementById('dishTags').value = (dish.tags || []).join(', ');
     document.getElementById('dishMenuIds').value = (dish.menuIds || []).join(', ');
     document.getElementById('dishAvailable').checked = dish.isAvailable !== false;
-    
+
     const imageUrl = dish.imageUrl || '';
     document.getElementById('dishImageUrl').value = imageUrl;
     document.getElementById('dishImageFile').value = '';
@@ -149,73 +100,15 @@ function openDishModalWithData(dish) {
     } else {
         preview.style.display = 'none';
     }
-    
+
     document.getElementById('dishModalTitle').textContent = 'Редагувати страву';
+    configureDishSaveForm();
     openModal('dishModal');
 }
 
-async function saveDish() {
-    const id = document.getElementById('dishEditId').value;
-    const name = document.getElementById('dishName').value.trim();
-    const description = document.getElementById('dishDescription').value.trim();
-    const price = parseFloat(document.getElementById('dishPrice').value);
-    const menuIdsStr = document.getElementById('dishMenuIds').value;
-    const isAvailable = document.getElementById('dishAvailable').checked;
-
-    const tags = document.getElementById('dishTags').value
-        ? document.getElementById('dishTags').value.split(',').map(s => s.trim()).filter(s => s !== '')
-        : [];
-
-    if (!name || isNaN(price)) {
-        showToast('Заповніть назву та ціну', 'error');
-        return;
-    }
-
-    const menuIds = menuIdsStr
-        ? menuIdsStr.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n))
-        : [];
-
-    const imageUrl = document.getElementById('dishImageUrl').value;
-    const body = { name, description, price, isAvailable, menuIds, tags, imageUrl };
-    const url = id ? `/api/dishes/${id}` : '/api/dishes';
-    const method = id ? 'PUT' : 'POST';
-
-    try {
-        const res = await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(body)
-        });
-
-        if (!res.ok) throw new Error('Помилка ' + res.status);
-
-        showToast(`✅ Страву "${name}" ${id ? 'оновлено' : 'створено'}`, 'success');
-        closeModal('dishModal');
-        loadDishes();
-    } catch (err) {
-        showToast('❌ ' + err.message, 'error');
-    }
-}
-
-async function deleteDish(id) {
-    if (!confirm('Видалити цю страву?')) return;
-
-    try {
-        const res = await fetch(`/api/dishes/${id}`, {
-            method: 'DELETE',
-            credentials: 'same-origin'
-        });
-
-        if (!res.ok) throw new Error('Помилка ' + res.status);
-
-        showToast('✅ Страву видалено', 'success');
-        loadDishes();
-    } catch (err) {
-        showToast('❌ ' + err.message, 'error');
-    }
-}
-
+/**
+ * Image upload: stays on fetch (multipart); not migrated to HTMX.
+ */
 async function uploadDishImage() {
     const fileInput = document.getElementById('dishImageFile');
     if (!fileInput.files || fileInput.files.length === 0) return;
@@ -229,21 +122,20 @@ async function uploadDishImage() {
             method: 'POST',
             body: formData,
             credentials: 'same-origin'
-            // NOTE: Fetch with FormData automatically sets multipart/form-data and boundary
         });
 
         if (!res.ok) throw new Error('Помилка завантаження ' + res.status);
 
         const data = await res.json();
         document.getElementById('dishImageUrl').value = data.imageUrl;
-        
+
         const preview = document.getElementById('dishImagePreview');
         preview.querySelector('img').src = data.imageUrl;
         preview.style.display = 'block';
 
-        showToast('✅ Фото завантажено', 'success');
+        showToast('\u2705 \u0424\u043e\u0442\u043e \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e', 'success');
     } catch (err) {
-        showToast('❌ ' + err.message, 'error');
+        showToast('\u274c ' + err.message, 'error');
         fileInput.value = '';
     }
 }
@@ -253,6 +145,3 @@ function removeDishImage() {
     document.getElementById('dishImageFile').value = '';
     document.getElementById('dishImagePreview').style.display = 'none';
 }
-
-// ── Init ──
-document.addEventListener('DOMContentLoaded', loadDishes);

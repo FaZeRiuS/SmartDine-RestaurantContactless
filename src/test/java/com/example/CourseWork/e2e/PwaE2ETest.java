@@ -17,7 +17,7 @@ class PwaE2ETest extends BaseE2ETest {
 
     @BeforeEach
     void createContextAndPage() {
-        context = createTrackedContext();
+        context = createTrackedContext(false);
         page = context.newPage();
         page.setDefaultNavigationTimeout(45_000);
         setupPageLogging(page, "PWA");

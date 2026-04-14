@@ -70,10 +70,17 @@
                 </a>
             </div>
             
-            <div class="burger-menu-container" sec:authorize="isAuthenticated()">
-                <button class="menu-toggle" id="menuToggle" aria-label="Меню">☰</button>
+            <div class="burger-menu-container" sec:authorize="isAuthenticated()" x-data="{ open: false }">
+                <button class="menu-toggle"
+                        type="button"
+                        aria-label="Меню"
+                        @click.stop="open = !open"
+                        x-text="open ? '✕' : '☰'">☰</button>
                 
-                <ul class="navbar-burger" id="burgerNav">
+                <ul class="navbar-burger"
+                    :class="open ? 'open' : ''"
+                    @click="open = false"
+                    @click.outside="open = false">
                     <!-- User Info Section (Burger) -->
                     <li class="burger-user-info">
                         <a th:href="@{/profile}" class="header-profile-btn">
@@ -129,7 +136,11 @@
     <a th:href="@{/cart}" class="mobile-nav-item" th:classappend="${currentUri == '/cart' ? 'active' : ''}">
         <span class="mobile-nav-icon">
             🛒
-            <span class="cart-badge-mobile" id="mobile-cart-count">0</span>
+            <span class="cart-badge-mobile"
+                  id="mobile-cart-count"
+                  hx-get="/htmx/cart/widget"
+                  hx-trigger="load"
+                  hx-swap="none">0</span>
         </span>
         <span class="mobile-nav-label">Кошик</span>
     </a>
@@ -164,13 +175,18 @@
     
     <script th:src="@{/js/csrf.js}" defer></script>
     <script th:src="@{/js/ui.js}" defer></script>
+    <script th:src="@{/js/htmx-bridge.js}" defer></script>
     <script th:src="@{/js/cart.js}" defer></script>
     <script th:src="@{/js/sse.js}" defer></script>
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Warm up CSRF
-            fetch('/api/csrf', { credentials: 'same-origin' }).catch(() => {});
+            // 1. Warm up CSRF (same as csrf.js ensure — sets token before first HTMX load trigger)
+            if (window.__csrf && typeof window.__csrf.ensure === 'function') {
+                window.__csrf.ensure().catch(function () { /* ignore */ });
+            } else {
+                fetch('/api/csrf', { credentials: 'same-origin' }).catch(function () { /* ignore */ });
+            }
 
             // 2. Service Worker Registration (Fire and forget, runs in background)
             if ('serviceWorker' in navigator) {

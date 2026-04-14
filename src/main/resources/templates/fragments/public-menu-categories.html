@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="categoryBodies">
+    <th:block th:each="menu, stat : ${menus}">
+        <div class="menu-category fade-in-up"
+             th:data-menu-id="${menu.id}"
+             th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
+
+            <h3 class="menu-category-title" th:if="${menuView == 'index'}">
+                <span th:text="${menu.name}">Category</span>
+                <span class="menu-category-time"
+                      th:if="${menu.startTime != null && menu.endTime != null}"
+                      th:text="${#temporals.format(menu.startTime, 'HH:mm')} + ' — ' + ${#temporals.format(menu.endTime, 'HH:mm')}">
+                </span>
+            </h3>
+            <h2 class="menu-category-title" th:if="${menuView == 'menu'}">
+                <span th:text="${menu.name}">Category</span>
+                <span class="menu-category-time"
+                      th:if="${menu.startTime != null && menu.endTime != null}"
+                      th:text="'&#128336; ' + ${#temporals.format(menu.startTime, 'HH:mm')} + ' — ' + ${#temporals.format(menu.endTime, 'HH:mm')}">
+                </span>
+            </h2>
+
+            <div class="dishes-grid" th:if="${menu.dishes != null && !menu.dishes.isEmpty()}">
+                <div class="dish-card" th:each="dish : ${menu.dishes}"
+                     th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+
+                    <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
+
+                    <div class="dish-image-container">
+                        <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
+                             th:src="${dish.imageUrl}"
+                             th:alt="${dish.name}"
+                             loading="lazy"
+                             decoding="async"
+                             class="dish-image">
+                        <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
+                            <span th:if="${dish.tags != null && dish.tags.contains('meat')}">&#129385;</span>
+                            <span th:if="${dish.tags != null && dish.tags.contains('seafood')}">&#128031;</span>
+                            <span th:if="${dish.tags != null && dish.tags.contains('sweet')}">&#127856;</span>
+                            <span th:if="${dish.tags != null && dish.tags.contains('drink')}">&#127865;</span>
+                            <span th:unless="${dish.tags != null && (dish.tags.contains('meat') || dish.tags.contains('seafood') || dish.tags.contains('sweet') || dish.tags.contains('drink'))}">&#127869;&#65039;</span>
+                        </div>
+                    </div>
+
+                    <div class="dish-card-content">
+                        <div class="dish-card-header">
+                            <span class="dish-name" th:text="${dish.name}">Dish</span>
+                            <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' &#8372;'">0 UAH</span>
+                        </div>
+
+                        <th:block th:if="${menuView == 'menu'}">
+                            <div class="dish-rating text-muted"
+                                 th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
+                                &#9733; <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
+                                <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
+                            </div>
+                            <div class="dish-rating text-muted"
+                                 th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
+                                &#9733; Немає оцінок
+                            </div>
+                        </th:block>
+
+                        <p class="dish-description" th:text="${dish.description}">Description</p>
+
+                        <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
+                            <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
+                        </div>
+
+                        <div class="dish-actions">
+                            <form hx-post="/htmx/cart/items" hx-swap="none">
+                                <input type="hidden" name="dishId" th:value="${dish.id}">
+                                <input type="hidden" name="quantity" value="1">
+                                <input type="hidden" name="specialRequest" value="">
+                                <button class="btn btn-primary add-to-cart-btn"
+                                        type="submit"
+                                        th:aria-label="|Додати ${dish.name} у кошик|">
+                                    &#128722; У кошик
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-muted mt-1"
+               th:if="${menuView == 'index' and (menu.dishes == null || menu.dishes.isEmpty())}">
+                У цій категорії поки немає страв
+            </p>
+            <div class="empty-state p-3"
+                 th:if="${menuView == 'menu' and (menu.dishes == null || menu.dishes.isEmpty())}">
+                <p class="text-muted">У цій категорії поки немає страв</p>
+            </div>
+        </div>
+    </th:block>
+</th:block>
+</body>
+</html>

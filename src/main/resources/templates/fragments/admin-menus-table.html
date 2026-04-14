@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="menusTable">
+    <table class="data-table" id="menusTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Назва</th>
+            <th>Час роботи</th>
+            <th>Кількість страв</th>
+            <th>Дії</th>
+        </tr>
+        </thead>
+        <tbody id="menusTableBody">
+        <tr th:if="${menus == null or menus.isEmpty()}">
+            <td colspan="5" class="text-muted">Категорій меню ще немає. Натисніть «Нове меню».</td>
+        </tr>
+        <tr th:each="menu : ${menus}">
+            <td th:text="${menu.id}">1</td>
+            <td class="order-id-cell" th:text="${menu.name}">Menu</td>
+            <td>
+                <span th:if="${menu.startTime != null && menu.endTime != null}"
+                      th:text="${#temporals.format(menu.startTime, 'HH:mm')} + ' — ' + ${#temporals.format(menu.endTime, 'HH:mm')}"></span>
+                <span th:unless="${menu.startTime != null && menu.endTime != null}" class="text-muted">Весь день</span>
+            </td>
+            <td th:text="${menu.dishes != null ? menu.dishes.size() : 0}">0</td>
+            <td>
+                <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            th:data-id="${menu.id}"
+                            th:data-name="${menu.name}"
+                            th:data-start="${menu.startTime != null ? #temporals.format(menu.startTime, 'HH:mm') : ''}"
+                            th:data-end="${menu.endTime != null ? #temporals.format(menu.endTime, 'HH:mm') : ''}"
+                            onclick="openMenuModal(this.dataset)"
+                            aria-label="Редагувати категорію"
+                            th:utext="'&#x270F;&#xFE0F;'">E</button>
+                    <button type="button" class="btn btn-danger btn-sm"
+                            th:attr="hx-delete=|/htmx/admin/menus/${menu.id}|,
+                                     hx-target='#adminMenusRoot',
+                                     hx-swap='innerHTML',
+                                     hx-confirm='Видалити це меню?'"
+                            aria-label="Видалити категорію"
+                            th:utext="'&#x1F5D1;&#xFE0F;'">D</button>
+                </div>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

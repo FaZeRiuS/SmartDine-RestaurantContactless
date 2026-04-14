@@ -2,9 +2,13 @@ package com.example.CourseWork.controller;
 
 import com.example.CourseWork.dto.DishResponseDto;
 import com.example.CourseWork.dto.MenuWithDishesDto;
+import com.example.CourseWork.dto.CartResponseDto;
+import com.example.CourseWork.dto.CartItemDetailDto;
+import com.example.CourseWork.service.CartService;
 import com.example.CourseWork.service.DishService;
 import com.example.CourseWork.service.MenuService;
 import com.example.CourseWork.service.RecommendationService;
+import com.example.CourseWork.service.security.CurrentUserIdentity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.http.HttpSession;
 
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,17 +31,23 @@ public class PageController {
     private final MenuService menuService;
     private final DishService dishService;
     private final RecommendationService recommendationService;
+    private final CartService cartService;
+    private final CurrentUserIdentity currentUserIdentity;
     private final String keycloakPublicUrl;
 
     public PageController(
             MenuService menuService,
             DishService dishService,
             RecommendationService recommendationService,
+            CartService cartService,
+            CurrentUserIdentity currentUserIdentity,
             @Value("${keycloak.public-url:http://localhost:8080}") String keycloakPublicUrl
     ) {
         this.menuService = menuService;
         this.dishService = dishService;
         this.recommendationService = recommendationService;
+        this.cartService = cartService;
+        this.currentUserIdentity = currentUserIdentity;
         this.keycloakPublicUrl = keycloakPublicUrl;
     }
 
@@ -110,6 +121,17 @@ public class PageController {
 
         model.addAttribute("menus", displayMenus);
         model.addAttribute("selectedMenuId", id);
+
+        List<MenuWithDishesDto> menusForBody;
+        if (id != null) {
+            menusForBody = displayMenus.stream()
+                    .filter(m -> id.equals(m.getId()))
+                    .collect(Collectors.toList());
+        } else {
+            menusForBody = displayMenus;
+        }
+        model.addAttribute("menusForBody", menusForBody);
+
         return "menu";
     }
 
@@ -125,11 +147,32 @@ public class PageController {
         Integer tableNumber = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", tableNumber);
 
+        CartResponseDto cart = cartService.getCartByUserId(currentUserIdentity.currentUserId());
+        model.addAttribute("cart", cart);
+        model.addAttribute("cartCount", cartCount(cart));
+        model.addAttribute("cartTotal", cartTotal(cart));
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof OidcUser oidcUser) {
             model.addAttribute("userId", oidcUser.getSubject());
         }
         return "cart";
+    }
+
+    private static int cartCount(CartResponseDto cart) {
+        if (cart == null || cart.getItems() == null) return 0;
+        return cart.getItems().stream()
+                .filter(i -> i != null && i.getQuantity() != null)
+                .mapToInt(CartItemDetailDto::getQuantity)
+                .sum();
+    }
+
+    private static BigDecimal cartTotal(CartResponseDto cart) {
+        if (cart == null || cart.getItems() == null) return BigDecimal.ZERO;
+        return cart.getItems().stream()
+                .filter(i -> i != null && i.getPrice() != null && i.getQuantity() != null)
+                .map(i -> i.getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @GetMapping("/orders")
@@ -151,10 +194,7 @@ public class PageController {
 
     @GetMapping("/admin/menu")
     @PreAuthorize("hasAnyRole('CHEF','ADMINISTRATOR')")
-    public String adminMenu(Model model) {
-        // Management view shows everything
-        List<MenuWithDishesDto> menus = menuService.getAllMenusWithDishes();
-        model.addAttribute("menus", menus);
+    public String adminMenu() {
         return "admin/menu-editor";
     }
 

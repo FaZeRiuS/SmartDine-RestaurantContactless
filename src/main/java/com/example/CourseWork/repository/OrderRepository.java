@@ -1,6 +1,7 @@
 package com.example.CourseWork.repository;
 
 import com.example.CourseWork.addition.OrderStatus;
+import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -22,6 +24,16 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
 
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
     Page<Order> findAllByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
+
+    Page<Order> findAllByUserIdAndStatusInOrderByCreatedAtDesc(
+            String userId, Collection<OrderStatus> statuses, Pageable pageable);
+
+    Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
+
+    Page<Order> findByPaymentStatusOrderByCreatedAtDesc(PaymentStatus paymentStatus, Pageable pageable);
+
+    Page<Order> findByStatusAndPaymentStatusOrderByCreatedAtDesc(
+            OrderStatus status, PaymentStatus paymentStatus, Pageable pageable);
 
     interface TopDishView {
         String getName();

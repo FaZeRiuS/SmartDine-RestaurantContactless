@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="reviewOverlay" id="reviewModalOverlay" class="modal-overlay active"
+     style="display:flex;align-items:center;justify-content:center;padding:1rem;z-index:9999;">
+ <div class="modal"
+         style="width:100%;max-width:540px;background:rgba(18,18,18,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:1.5rem;max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;">
+            <div>
+                <div style="font-weight:800;font-size:1.1rem;">Залишити відгук</div>
+                <div class="text-muted" style="margin-top:0.15rem;font-size:0.9rem;" th:text="|Замовлення #${order.id}|">#0</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" id="reviewModalCloseBtn">&#x2715;</button>
+        </div>
+        <div style="margin-top:0.75rem;display:flex;justify-content:space-between;gap:1rem;align-items:center;">
+            <div class="text-muted">Сервіс:</div>
+            <div class="star-picker" data-type="service"></div>
+        </div>
+        <div style="margin-top:0.75rem;">
+            <div class="text-muted" style="margin-bottom:0.25rem;">Побажання (опціонально):</div>
+            <textarea class="form-input" id="reviewModalComment" rows="2"
+                      placeholder="Наприклад: все було супер, дякуємо!"
+                      style="width:100%;resize:vertical;"></textarea>
+        </div>
+        <div style="margin-top:0.75rem;">
+            <div class="text-muted" style="margin-bottom:0.25rem;">Страви:</div>
+            <th:block th:if="${order.items != null and !order.items.isEmpty()}">
+                <div th:each="i : ${order.items}"
+                     style="display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-top:0.35rem;">
+                    <div style="font-size:0.95rem;" th:text="${i.dishName}">—</div>
+                    <div class="star-picker" data-type="dish" th:attr="data-dish-id=${i.dishId}"></div>
+                </div>
+            </th:block>
+            <div class="text-muted" th:if="${order.items == null or order.items.isEmpty()}">Немає страв для оцінки</div>
+        </div>
+        <button type="button" class="btn btn-primary w-full mt-1" id="reviewModalSubmitBtn">&#x2705; Надіслати відгук</button>
+        <div class="text-muted" id="reviewModalHint" style="margin-top:0.5rem;font-size:0.85rem;"></div>
+    </div>
+</div>
+</body>
+</html>

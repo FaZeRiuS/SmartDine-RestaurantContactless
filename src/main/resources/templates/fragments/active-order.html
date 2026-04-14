@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+
+<!-- Model: activeOrder (nullable), homeActiveOrderWidget (boolean); loyaltyBalance, cashbackRate -->
+<!-- Inner HTML only: page shell must be <div id="activeOrderContainer" hx-get="..." hx-swap="innerHTML"> -->
+<th:block th:fragment="panel">
+    <th:block th:if="${activeOrder != null}">
+        <div class="active-order-card"
+             th:classappend="${homeActiveOrderWidget} ? ' home-widget fade-in-up' : ''">
+
+            <div class="active-order-header">
+                <h3>
+                    <span class="title-accent" th:unless="${homeActiveOrderWidget}">&#128276;</span>
+                    Ваш статус замовлення #<span id="activeOrderId" th:text="${activeOrder.id}">0</span>
+                </h3>
+                <div class="status-badges-group">
+                    <div class="status-badge-wrapper" id="orderStatusWrapper">
+                        <span id="activeOrderStatus"
+                              class="order-status-badge"
+                              th:classappend="' status-' + ${#strings.toLowerCase(activeOrder.status.name())}"
+                              th:text="${activeOrder.status.name() == 'NEW'} ? 'Нове' :
+                                      (${activeOrder.status.name() == 'PREPARING'} ? 'Готується' :
+                                      (${activeOrder.status.name() == 'READY'} ? 'Готове' :
+                                      (${activeOrder.status.name() == 'COMPLETED'} ? 'Виконано' :
+                                      (${activeOrder.status.name() == 'CANCELLED'} ? 'Скасоване' : ${activeOrder.status}))))">
+                        </span>
+                    </div>
+                    <div class="status-badge-separator"></div>
+                    <div class="status-badge-wrapper" id="paymentStatusWrapper">
+                        <span id="activePaymentStatus"
+                              class="order-status-badge"
+                              th:classappend="' payment-' + ${#strings.toLowerCase(activeOrder.paymentStatus.name())}"
+                              th:text="${activeOrder.paymentStatus.name() == 'PENDING'} ? 'Очікує оплати' :
+                                      (${activeOrder.paymentStatus.name() == 'SUCCESS'} ? 'Оплачено' :
+                                      (${activeOrder.paymentStatus.name() == 'FAILED'} ? 'Помилка оплати' : ${activeOrder.paymentStatus}))">
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div th:classappend="${homeActiveOrderWidget} ? ' active-order-minimal-info' : ''">
+                <div id="activeOrderItems" th:if="${activeOrder.items != null}">
+                    <div class="cart-item" th:each="item : ${activeOrder.items}">
+                        <div class="cart-item-info">
+                            <div class="cart-item-name" th:text="${item.dishName}">Dish</div>
+                            <th:block th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
+                                <input type="text"
+                                       class="form-input cart-item-special-input text-xs w-full mt-1"
+                                       name="specialRequest"
+                                       th:value="${item.specialRequest}"
+                                       placeholder="Особливі побажання..."
+                                       th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/special-request(oid=${activeOrder.id},iid=${item.id},home=${homeActiveOrderWidget})}"
+                                       hx-trigger="blur changed delay:200ms"
+                                       hx-include="this"
+                                       hx-target="#activeOrderContainer"
+                                       hx-swap="innerHTML"/>
+                            </th:block>
+                            <th:block th:unless="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
+                                <div class="cart-item-special"
+                                     th:if="${item.specialRequest != null && !#strings.isEmpty(item.specialRequest)}"
+                                     th:text="${'💬 ' + item.specialRequest}">special</div>
+                            </th:block>
+                        </div>
+                        <div class="cart-item-actions-row d-flex align-center justify-between w-full mt-1 pt-1"
+                             style="border-top: 1px solid rgba(255,255,255,0.03);">
+                            <div class="cart-item-controls d-flex align-center gap-2">
+                                <div class="d-flex align-center gap-1">
+                                    <button type="button"
+                                            class="btn btn-sm btn-secondary"
+                                            th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}"
+                                            th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/quantity(oid=${activeOrder.id},iid=${item.id},quantity=${item.quantity - 1},home=${homeActiveOrderWidget})}"
+                                            hx-target="#activeOrderContainer"
+                                            hx-swap="innerHTML"
+                                            th:disabled="${item.quantity == null || item.quantity <= 1}">−</button>
+                                    <span class="cart-item-qty text-sm fw-600">× <span th:text="${item.quantity}">1</span></span>
+                                    <button type="button"
+                                            class="btn btn-sm btn-secondary"
+                                            th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/quantity(oid=${activeOrder.id},iid=${item.id},quantity=${item.quantity + 1},home=${homeActiveOrderWidget})}"
+                                            hx-target="#activeOrderContainer"
+                                            hx-swap="innerHTML">+</button>
+                                </div>
+                                <button type="button"
+                                        class="btn btn-sm"
+                                        style="color: var(--danger-color); background: transparent; border: 1px solid var(--danger-color);"
+                                        th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}"
+                                        th:attr="hx-delete=@{/htmx/orders/{oid}/items/{iid}(oid=${activeOrder.id},iid=${item.id},home=${homeActiveOrderWidget})}"
+                                        hx-target="#activeOrderContainer"
+                                        hx-swap="innerHTML"
+                                        hx-confirm="Видалити цю страву?">&#128465;&#65039;</button>
+                            </div>
+                            <div class="cart-item-price text-gold fw-700"
+                                 th:text="${item.price != null && item.quantity != null ? #numbers.formatDecimal(item.price * item.quantity, 1, 2) + ' грн' : '—'}">0 грн</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="active-order-footer">
+                <div class="cart-total">
+                    <span th:text="${homeActiveOrderWidget} ? 'Сума до сплати:' : 'До сплати:'">До сплати:</span>
+                    <span id="activeOrderTotalPrice"
+                          th:with="amt=${activeOrder.amountToPay != null ? activeOrder.amountToPay : activeOrder.totalPrice}"
+                          th:text="${amt != null ? #numbers.formatDecimal(amt, 1, 2) + ' грн' : '0.00 грн'}">0.00 грн</span>
+                </div>
+
+                <details id="loyaltyAccordion" class="accordion"
+                         sec:authorize="hasRole('CUSTOMER')"
+                         th:if="${activeOrder.paymentStatus.name() != 'SUCCESS'}">
+                    <summary class="accordion-summary">Бали лояльності</summary>
+                    <div id="loyaltySection" class="cart-summary mt-1 p-1">
+                        <div class="d-flex flex-column gap-1">
+                            <div>
+                                <div class="text-muted text-sm">
+                                    Доступно:
+                                    <span id="loyaltyBalance"
+                                          th:text="${loyaltyBalance != null ? #numbers.formatDecimal(loyaltyBalance, 1, 2) : '—'}">—</span> грн • макс. 50%
+                                </div>
+                                <div class="text-muted text-xs">
+                                    Застосовано:
+                                    <span id="loyaltyApplied"
+                                          th:text="${activeOrder.loyaltyDiscount != null ? #numbers.formatDecimal(activeOrder.loyaltyDiscount, 1, 2) : '0.00'}">0.00</span> грн
+                                </div>
+                            </div>
+                            <form class="d-flex flex-column gap-1"
+                                  th:attr="hx-post=@{/htmx/orders/{id}/loyalty/apply(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                  hx-target="#activeOrderContainer"
+                                  hx-swap="innerHTML">
+                                <input id="loyaltyAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
+                                       name="amount"
+                                       placeholder="Сума грн"
+                                       th:value="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0 ? #numbers.formatDecimal(activeOrder.loyaltyDiscount, 1, 2) : ''}"/>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-primary btn-sm flex-1" type="submit">Застосувати</button>
+                                </div>
+                            </form>
+                            <form th:attr="hx-post=@{/htmx/orders/{id}/loyalty/apply(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                  hx-target="#activeOrderContainer"
+                                  hx-swap="innerHTML">
+                                <input type="hidden" name="amount" value="0"/>
+                                <button class="btn btn-secondary btn-sm w-full" type="submit">Скасувати бали</button>
+                            </form>
+                            <div id="loyaltyHint" class="text-muted text-xs">
+                                <th:block th:if="${cashbackRate != null}">
+                                    Ваш кешбек зараз: <span th:text="${#numbers.formatInteger(cashbackRate * 100, 1)}">1</span>%.
+                                </th:block>
+                                <th:block th:if="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0}">
+                                    Знижка балами застосована.
+                                </th:block>
+                                <th:block th:unless="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0}">
+                                    Вкажіть суму балів, щоб покрити частину замовлення (до 50%).
+                                </th:block>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details id="tipsAccordion" class="accordion"
+                         sec:authorize="hasRole('CUSTOMER')"
+                         th:if="${activeOrder.paymentStatus.name() != 'SUCCESS'}">
+                    <summary class="accordion-summary">Чайові</summary>
+                    <div id="tipsSection" class="cart-summary mt-1 p-1">
+                        <div class="d-flex flex-column gap-1">
+                            <div class="text-muted text-sm">Оберіть варіант чайових або введіть суму:</div>
+                            <div class="d-flex gap-sm flex-wrap align-center">
+                                <form th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                      hx-target="#activeOrderContainer" hx-swap="innerHTML">
+                                    <input type="hidden" name="amount" value="10"/>
+                                    <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn">+10 грн</button>
+                                </form>
+                                <form th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                      hx-target="#activeOrderContainer" hx-swap="innerHTML">
+                                    <input type="hidden" name="amount" value="20"/>
+                                    <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn">+20 грн</button>
+                                </form>
+                                <form th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                      hx-target="#activeOrderContainer" hx-swap="innerHTML">
+                                    <input type="hidden" name="amount" value="50"/>
+                                    <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn">+50 грн</button>
+                                </form>
+                                <form th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                      hx-target="#activeOrderContainer" hx-swap="innerHTML">
+                                    <input type="hidden" name="amount" value="0"/>
+                                    <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn">0 грн</button>
+                                </form>
+                            </div>
+                            <form class="d-flex flex-column gap-1"
+                                  th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                  hx-target="#activeOrderContainer"
+                                  hx-swap="innerHTML">
+                                <input id="tipAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
+                                       name="amount"
+                                       placeholder="Сума грн"
+                                       th:value="${activeOrder.tipAmount != null && activeOrder.tipAmount > 0 ? #numbers.formatDecimal(activeOrder.tipAmount, 1, 2) : ''}"/>
+                                <button class="btn btn-primary btn-sm" type="submit">Застосувати чайові</button>
+                            </form>
+                            <div class="text-muted text-xs">
+                                Застосовано:
+                                <span id="tipApplied"
+                                      th:text="${activeOrder.tipAmount != null ? #numbers.formatDecimal(activeOrder.tipAmount, 1, 2) : '0.00'}">0.00</span> грн
+                            </div>
+                            <div id="tipHint" class="text-muted text-xs">Вкажіть суму чайових або оберіть готовий варіант.</div>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="d-flex gap-1 mt-1">
+                    <div id="paymentActions" class="flex-1"
+                         th:classappend="${activeOrder.paymentStatus.name() != 'SUCCESS'} ? '' : ' hidden'">
+                        <button class="btn btn-primary w-full"
+                                th:classappend="${homeActiveOrderWidget} ? '' : ' btn-lg'"
+                                type="button"
+                                id="payBtn"
+                                onclick="payOrder()">
+                            <span th:text="${homeActiveOrderWidget} ? 'Оплатити зараз' : 'Оплатити замовлення'">Оплатити</span>
+                        </button>
+                    </div>
+
+                    <a th:unless="${homeActiveOrderWidget}" class="btn btn-secondary flex-1" th:href="@{/menu}"
+                       aria-label="Перейти до меню">Додати ще страв</a>
+                    <button th:if="${homeActiveOrderWidget}" type="button" class="btn btn-secondary flex-1"
+                            onclick="document.getElementById('menus-overview').scrollIntoView({behavior: 'smooth'})">
+                        Додати ще страв
+                    </button>
+                </div>
+
+                <div id="callWaiterSection" class="mt-1">
+                    <button type="button" class="btn btn-call-waiter active" disabled
+                            th:if="${activeOrder.needsWaiter}">
+                        Офіціант уже йде до вас...
+                    </button>
+                    <button type="button" class="btn btn-call-waiter"
+                            th:unless="${activeOrder.needsWaiter}"
+                            th:attr="hx-post=@{/htmx/orders/{id}/call-waiter(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                            hx-target="#activeOrderContainer"
+                            hx-swap="innerHTML">
+                        Викликати офіціанта
+                    </button>
+                </div>
+
+                <p class="text-success mt-1"
+                   id="paidMessage"
+                   th:if="${activeOrder.paymentStatus.name() == 'SUCCESS'}"
+                   th:switch="${activeOrder.status.name()}">
+                    <span th:case="'READY'">Страви готові! Смачного!</span>
+                    <span th:case="'COMPLETED'">Замовлення завершено. Дякуємо!</span>
+                    <span th:case="'NEW'">Замовлення оплачено. Очікуйте на приготування!</span>
+                    <span th:case="*">Ваше замовлення готується!</span>
+                </p>
+
+                <div id="orderReviewSection"
+                     th:if="${activeOrder.paymentStatus.name() == 'SUCCESS' and (activeOrder.status.name() == 'READY' or activeOrder.status.name() == 'COMPLETED')}">
+                    <th:block th:if="${activeOrder.serviceRating != null}">
+                        <div class="cart-summary mt-1 p-1">
+                            <div class="fw-800 mb-1">Відгук</div>
+                            <div class="text-muted">Сервіс:
+                                <span th:each="i : ${#numbers.sequence(1, 5)}"
+                                      th:text="${i <= activeOrder.serviceRating} ? '★' : '·'">★</span>
+                            </div>
+                            <div class="text-muted text-sm mt-1"
+                                 th:if="${activeOrder.serviceComment != null && !#strings.isEmpty(activeOrder.serviceComment)}">
+                                Побажання: <span style="white-space: pre-wrap;" th:text="${activeOrder.serviceComment}"></span>
+                            </div>
+                            <div class="text-muted mt-1">Страви:</div>
+                            <div class="d-flex justify-between gap-1 align-center mt-1"
+                                 th:each="ri : ${activeOrder.items}">
+                                <div class="text-sm" th:text="${ri.dishName}">Dish</div>
+                                <div th:if="${ri.rating != null}">
+                                    <span th:each="i : ${#numbers.sequence(1, 5)}"
+                                          th:text="${i <= ri.rating} ? '★' : '·'">★</span>
+                                </div>
+                                <span class="text-muted" th:unless="${ri.rating != null}">—</span>
+                            </div>
+                        </div>
+                    </th:block>
+                    <th:block th:unless="${activeOrder.serviceRating != null}">
+                        <div class="cart-summary mt-1 p-1">
+                            <div class="fw-800 mb-1">Відгук</div>
+                            <div class="text-muted text-sm">Ваше замовлення готове — оцініть сервіс і страви.</div>
+                            <button class="btn btn-primary btn-sm mt-1" type="button"
+                                    onclick="openActiveOrderReviewModal()">⭐ Залишити відгук</button>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            window.__lastActiveOrderForReview = /*[[${activeOrder}]]*/ null;
+            try {
+                if (window.__lastActiveOrderForReview && typeof maybeAutoOpenReviewModal === 'function') {
+                    maybeAutoOpenReviewModal(window.__lastActiveOrderForReview);
+                }
+            } catch (e) { /* ignore */ }
+        </script>
+    </th:block>
+</th:block>
+
+</body>
+</html>

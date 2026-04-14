@@ -12,4 +12,5 @@ public class DishDto {
     private String imageUrl;
     private Boolean isAvailable;
     private List<Integer> menuIds;
+    private List<String> tags;
 }

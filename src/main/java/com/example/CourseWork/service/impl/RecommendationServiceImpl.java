@@ -29,4 +29,24 @@ public class RecommendationServiceImpl implements RecommendationService {
         dishRatingService.enrichWithRatings(dishes);
         return dishes;
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<DishResponseDto> getCrossSellRecommendation(Integer baseDishId, java.util.List<Integer> existingDishIds) {
+        java.util.List<Integer> existing = existingDishIds != null ? existingDishIds : java.util.List.of();
+
+        var result = dishRepository.findSmartComboForDish(baseDishId);
+
+        if (result.isEmpty()) {
+            result = dishRepository.findPopularComboFallback(baseDishId);
+        }
+
+        if (result.isPresent() && existing.contains(result.get().getId())) {
+            return java.util.Optional.empty();
+        }
+
+        java.util.Optional<DishResponseDto> dto = result.map(dishMapper::toResponseDto);
+        dto.ifPresent(d -> dishRatingService.enrichWithRatings(java.util.List.of(d)));
+        return dto;
+    }
 }

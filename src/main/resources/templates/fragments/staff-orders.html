@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Staff board: staffFilter, ordersInProgress, ordersReady, boardEmpty, boardRenderedAt -->
+<div th:fragment="board"
+     id="staffBoardRoot"
+     th:attr="hx-get=@{/htmx/staff/orders/board(filter=${staffFilter})}">
+
+    <div class="d-flex justify-end w-full gap-1 align-center mb-1 flex-wrap">
+            <span class="text-muted" id="lastUpdate"
+                  th:text="'Оновлено: ' + ${boardRenderedAt}">Оновлено</span>
+            <button type="button" class="btn btn-secondary btn-sm"
+                    aria-label="Оновити список активних замовлень"
+                    th:attr="hx-get=@{/htmx/staff/orders/board(filter=${staffFilter})},
+                             hx-target='#staffBoardRoot',
+                             hx-swap='outerHTML'">&#128260; Оновити</button>
+    </div>
+
+    <div class="menu-tabs">
+        <button type="button" class="menu-tab"
+                th:classappend="${staffFilter == 'all'} ? ' active' : ''"
+                th:attr="hx-get=@{/htmx/staff/orders/board(filter=all)},
+                         hx-target='#staffBoardRoot',
+                         hx-swap='outerHTML'">&#128203; Усі активні</button>
+        <button type="button" class="menu-tab"
+                th:classappend="${staffFilter == 'NEW'} ? ' active' : ''"
+                th:attr="hx-get=@{/htmx/staff/orders/board(filter=NEW)},
+                         hx-target='#staffBoardRoot',
+                         hx-swap='outerHTML'">&#128309; Нові</button>
+        <button type="button" class="menu-tab"
+                th:classappend="${staffFilter == 'PREPARING'} ? ' active' : ''"
+                th:attr="hx-get=@{/htmx/staff/orders/board(filter=PREPARING)},
+                         hx-target='#staffBoardRoot',
+                         hx-swap='outerHTML'">&#128992; Готуються</button>
+        <button type="button" class="menu-tab"
+                th:classappend="${staffFilter == 'READY'} ? ' active' : ''"
+                th:attr="hx-get=@{/htmx/staff/orders/board(filter=READY)},
+                         hx-target='#staffBoardRoot',
+                         hx-swap='outerHTML'">&#128994; Готові</button>
+    </div>
+
+    <div class="order-section" id="activeOrdersSection"
+         th:style="${ordersInProgress != null && !ordersInProgress.isEmpty()} ? 'display:block' : 'display:none'">
+        <h2 class="order-section-title"><span class="title-accent">&#128293;</span> В роботі</h2>
+        <div class="orders-board" id="activeOrdersBoard">
+            <th:block th:each="order : ${ordersInProgress}"
+                      th:insert="~{fragments/staff-orders :: orderCard(order=${order})}"/>
+        </div>
+    </div>
+
+    <div class="order-section" id="readyOrdersSection"
+         th:style="${ordersReady != null && !ordersReady.isEmpty()} ? 'display:block' : 'display:none'">
+        <h2 class="order-section-title"><span class="title-accent">&#9989;</span> Готові до видачі</h2>
+        <div class="orders-board" id="readyOrdersBoard">
+            <th:block th:each="order : ${ordersReady}"
+                      th:insert="~{fragments/staff-orders :: orderCard(order=${order})}"/>
+        </div>
+    </div>
+
+    <div class="empty-state" id="ordersEmpty" th:classappend="${boardEmpty} ? '' : ' hidden'">
+        <div class="empty-state-icon">&#128230;</div>
+        <h3>Немає активних замовлень</h3>
+        <p class="text-muted">Нові замовлення з'являться тут автоматично</p>
+    </div>
+</div>
+
+<!-- HTMX response after PUT status: board swap + optional toast (OOB) -->
+<th:block th:fragment="boardAfterStatusUpdate">
+    <div th:replace="~{fragments/staff-orders :: board}"></div>
+    <div th:if="${staffToastMessage != null}"
+         hx-swap-oob="beforeend:#toastContainer"
+         class="toast toast-success"
+         x-data="{}"
+         x-init="setTimeout(() => $el.remove(), 8000)">
+        <div class="toast-body-main">
+            <span th:text="${staffToastMessage}">OK</span>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="orderCard(order)">
+    <div class="order-card fade-in-up"
+         th:classappend="${order.needsWaiter} ? ' waiter-alert' : ''">
+        <div class="order-card-header">
+            <div class="d-flex align-center gap-1 flex-wrap">
+                <span class="order-id">#<span th:text="${order.id}">0</span>
+                    <span class="text-muted order-price-cell"
+                          th:if="${order.tableNumber != null}">&#8226; Стіл №<span th:text="${order.tableNumber}">1</span></span>
+                </span>
+                <span class="waiter-called-badge" th:if="${order.needsWaiter}">Потрібен офіціант!</span>
+            </div>
+            <span class="order-status-badge"
+                  th:classappend="' status-' + ${#strings.toLowerCase(order.status.name())}"
+                  th:text="${order.status.name() == 'NEW'} ? 'Нове' :
+                           (${order.status.name() == 'PREPARING'} ? 'Готується' :
+                           (${order.status.name() == 'READY'} ? 'Готове' :
+                           (${order.status.name() == 'COMPLETED'} ? 'Завершене' :
+                           (${order.status.name() == 'CANCELLED'} ? 'Скасоване' : ${order.status}))))">—</span>
+        </div>
+        <div class="order-card-body">
+            <div class="order-item-row" th:each="item : ${order.items}">
+                <span><span th:text="${item.dishName}">Dish</span> &times; <span th:text="${item.quantity}">1</span></span>
+                <span class="text-muted" th:text="${item.specialRequest != null ? item.specialRequest : ''}"></span>
+            </div>
+        </div>
+        <div class="order-card-footer">
+            <div class="order-info-block">
+                <span class="order-total"
+                      th:text="${order.totalPrice != null ? #numbers.formatDecimal(order.totalPrice, 1, 2) : '0.00'} + ' ₴'"></span>
+                <div class="order-time"
+                     th:text="${order.createdAt != null ? #temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm') : '—'}">—</div>
+            </div>
+            <div class="order-actions-container">
+                <button type="button" class="btn btn-warning btn-sm"
+                        th:if="${order.needsWaiter}"
+                        th:attr="hx-delete=@{/htmx/staff/orders/{id}/call-waiter(id=${order.id},filter=${staffFilter})},
+                                 hx-target='#staffBoardRoot',
+                                 hx-swap='outerHTML'">&#128104;&#8205;&#9794;&#65039; Підійти до столу</button>
+
+                <button type="button" class="btn btn-warning btn-sm"
+                        th:if="${order.status.name() == 'NEW'}"
+                        th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=PREPARING,filter=${staffFilter})},
+                                 hx-target='#staffBoardRoot',
+                                 hx-swap='outerHTML'">&#128293; Готувати</button>
+                <button type="button" class="btn btn-success btn-sm"
+                        th:if="${order.status.name() == 'PREPARING'}"
+                        th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=READY,filter=${staffFilter})},
+                                 hx-target='#staffBoardRoot',
+                                 hx-swap='outerHTML'">&#9989; Готове</button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        th:if="${order.status.name() == 'READY'}"
+                        th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=COMPLETED,filter=${staffFilter})},
+                                 hx-target='#staffBoardRoot',
+                                 hx-swap='outerHTML'">&#127937; Завершити</button>
+
+                <button type="button" class="btn btn-danger btn-sm"
+                        th:if="${order.status.name() == 'NEW' or order.status.name() == 'PREPARING'}"
+                        th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=CANCELLED,filter=${staffFilter})},
+                                 hx-target='#staffBoardRoot',
+                                 hx-swap='outerHTML'">&#10060; Скасувати</button>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+</body>
+</html>

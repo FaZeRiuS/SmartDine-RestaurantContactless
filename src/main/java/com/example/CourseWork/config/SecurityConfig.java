@@ -88,6 +88,8 @@ public class SecurityConfig {
                         // Public API endpoints (GET/POST for Cart and Active Order)
                         .requestMatchers(HttpMethod.GET, "/api/menus/**", "/api/dishes/**").permitAll()
                         .requestMatchers("/api/cart/**").permitAll()
+                        .requestMatchers("/htmx/cart/**", "/htmx/orders/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/htmx/menu/**").permitAll()
                         .requestMatchers("/api/user/me").permitAll()
                         // Order API: allow guests (CurrentUserIdentity creates GUEST_<sessionId>)
                         .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
@@ -100,15 +102,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/call-waiter").permitAll()
                         .requestMatchers("/api/notifications/**").permitAll()
                         .requestMatchers("/api/sse/subscribe/**").permitAll()
-                        // Staff pages
-                        .requestMatchers("/staff/**").hasAnyRole("WAITER", "CHEF", "ADMINISTRATOR")
+                        // Staff pages & HTMX staff fragments
+                        .requestMatchers("/staff/**", "/htmx/staff/**").hasAnyRole("WAITER", "CHEF", "ADMINISTRATOR")
                         // Admin-only pages
                         .requestMatchers("/admin/dashboard", "/admin/orders", "/admin/qr/**").hasRole("ADMINISTRATOR")
-                        // Menu editor for Chefs and Admins
-                        .requestMatchers("/admin/menu").hasAnyRole("CHEF", "ADMINISTRATOR")
+                        // Admin order history HTMX (administrator only; narrower than /htmx/admin/**)
+                        .requestMatchers("/htmx/admin/orders/**").hasRole("ADMINISTRATOR")
+                        // Menu editor for Chefs and Admins (+ HTMX fragments for that page)
+                        .requestMatchers("/admin/menu", "/htmx/admin/**").hasAnyRole("CHEF", "ADMINISTRATOR")
                         // General admin access (fallback)
                         .requestMatchers("/admin/**").hasRole("ADMINISTRATOR")
-                        // Restricted Customer History
+                        // Customer order pages & HTMX fragments
+                        .requestMatchers("/htmx/customer/**").hasRole("CUSTOMER")
                         .requestMatchers("/orders", "/api/orders/history").hasRole("CUSTOMER")
                         // Everything else requires authentication
                         .anyRequest().authenticated())

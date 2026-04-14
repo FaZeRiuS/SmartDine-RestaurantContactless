@@ -35,44 +35,15 @@
                 <button class="btn btn-primary btn-sm" onclick="openMenuModal()" aria-label="Створити нову категорію меню">+ Нове меню</button>
             </div>
             <div class="admin-panel-body">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Назва</th>
-                            <th>Час роботи</th>
-                            <th>Кількість страв</th>
-                            <th>Дії</th>
-                        </tr>
-                    </thead>
-                    <tbody id="menusTableBody">
-                        <tr th:each="menu : ${menus}">
-                            <td th:text="${menu.id}">1</td>
-                            <td class="order-id-cell" th:text="${menu.name}">Menu</td>
-                            <td>
-                                <span th:if="${menu.startTime != null && menu.endTime != null}"
-                                      th:text="${#temporals.format(menu.startTime, 'HH:mm')} + ' — ' + ${#temporals.format(menu.endTime, 'HH:mm')}"></span>
-                                <span th:unless="${menu.startTime != null && menu.endTime != null}" class="text-muted">Весь день</span>
-                            </td>
-                            <td th:text="${menu.dishes != null ? menu.dishes.size() : 0}">0</td>
-                            <td>
-                                <div class="d-flex gap-1">
-                                    <button class="btn btn-secondary btn-sm"
-                                            th:data-id="${menu.id}"
-                                            th:data-name="${menu.name}"
-                                            th:data-start="${menu.startTime}"
-                                            th:data-end="${menu.endTime}"
-                                            onclick="openMenuModal(this.dataset)"
-                                            aria-label="Редагувати категорію">✏️</button>
-                                    <button class="btn btn-danger btn-sm"
-                                            th:data-id="${menu.id}"
-                                            onclick="deleteMenu(this.dataset.id)"
-                                            aria-label="Видалити категорію">🗑️</button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div id="adminMenusRoot"
+                     th:attr="hx-get=@{/htmx/admin/menus/table}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                    <div class="loading-overlay" id="menusLoading">
+                        <div class="loading-spinner"></div>
+                        <span>Завантаження категорій...</span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -83,112 +54,116 @@
                 <button class="btn btn-primary btn-sm" onclick="openDishModal()" aria-label="Додати нову страву">+ Нова страва</button>
             </div>
             <div class="admin-panel-body">
-                <div class="loading-overlay" id="dishesLoading">
-                    <div class="loading-spinner"></div>
-                    <span>Завантаження страв...</span>
+                <div id="adminDishesRoot"
+                     th:attr="hx-get=@{/htmx/admin/dishes/table}"
+                     hx-trigger="load"
+                     hx-swap="innerHTML">
+                    <div class="loading-overlay" id="dishesLoading">
+                        <div class="loading-spinner"></div>
+                        <span>Завантаження страв...</span>
+                    </div>
                 </div>
-                <table class="data-table" id="dishesTable" style="display:none;">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Назва</th>
-                            <th>Ціна</th>
-                            <th>Доступно</th>
-                            <th>Теги</th>
-                            <th>Дії</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dishesTableBody"></tbody>
-                </table>
             </div>
         </div>
 
     </div>
 </section>
 
-<!-- ═══ MENU MODAL ═══ -->
+<!-- ��══ MENU MODAL ��══ -->
 <div class="modal-overlay" id="menuModal">
     <div class="modal">
         <div class="modal-header">
             <h3 class="modal-title" id="menuModalTitle">Нове меню</h3>
-            <button class="modal-close" onclick="closeModal('menuModal')">✕</button>
+            <button type="button" class="modal-close" onclick="closeModal('menuModal')">&#10005;</button>
         </div>
-        <div class="modal-body">
+        <form id="menuSaveForm"
+              hx-target="#adminMenusRoot"
+              hx-swap="innerHTML"
+              hx-on::after-request="if (event.detail.successful) closeModal('menuModal')">
             <input type="hidden" id="menuEditId">
-            <div class="form-group">
-                <label class="form-label" for="menuName">Назва меню</label>
-                <input type="text" class="form-input" id="menuName" placeholder="Наприклад: Основне меню">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="menuName">Назва меню</label>
+                    <input type="text" class="form-input" id="menuName" name="name" required placeholder="Наприклад: Основне меню">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="menuStartTime">Час початку (необов'язково)</label>
+                    <input type="time" class="form-input" id="menuStartTime" name="startTime">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="menuEndTime">Час закінчення (необов'язково)</label>
+                    <input type="time" class="form-input" id="menuEndTime" name="endTime">
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label" for="menuStartTime">Час початку (необов'язково)</label>
-                <input type="time" class="form-input" id="menuStartTime">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('menuModal')">Скасувати</button>
+                <button type="submit" class="btn btn-primary">&#128190; Зберегти</button>
             </div>
-            <div class="form-group">
-                <label class="form-label" for="menuEndTime">Час закінчення (необов'язково)</label>
-                <input type="time" class="form-input" id="menuEndTime">
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('menuModal')">Скасувати</button>
-            <button class="btn btn-primary" onclick="saveMenu()">💾 Зберегти</button>
-        </div>
+        </form>
     </div>
 </div>
 
-<!-- ═══ DISH MODAL ═══ -->
+<!-- ��══ DISH MODAL ��══ -->
 <div class="modal-overlay" id="dishModal">
     <div class="modal">
         <div class="modal-header">
             <h3 class="modal-title" id="dishModalTitle">Нова страва</h3>
-            <button class="modal-close" onclick="closeModal('dishModal')">✕</button>
+            <button type="button" class="modal-close" onclick="closeModal('dishModal')">&#10005;</button>
         </div>
-        <div class="modal-body">
+        <form id="dishSaveForm"
+              hx-target="#adminDishesRoot"
+              hx-swap="innerHTML"
+              hx-on::after-request="if (event.detail.successful) closeModal('dishModal')">
             <input type="hidden" id="dishEditId">
-            <div class="form-group">
-                <label class="form-label" for="dishName">Назва страви</label>
-                <input type="text" class="form-input" id="dishName" placeholder="Наприклад: Стейк з яловичини">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="dishDescription">Опис</label>
-                <textarea class="form-textarea" id="dishDescription" placeholder="Короткий опис страви..."></textarea>
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="dishPrice">Ціна (₴)</label>
-                <input type="number" class="form-input" id="dishPrice" step="0.01" min="0" placeholder="0.00">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="dishTags">Теги (через кому)</label>
-                <input type="text" class="form-input" id="dishTags" placeholder="meat, spicy, bestseller">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="dishMenuIds">Категорії меню (ID через кому)</label>
-                <input type="text" class="form-input" id="dishMenuIds" placeholder="1, 2, 3">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Фото страви</label>
-                <div class="dish-upload-container">
-                    <input type="file" id="dishImageFile" accept="image/*" class="form-input" style="margin-bottom: 0.5rem;" onchange="uploadDishImage()">
-                    <input type="hidden" id="dishImageUrl">
-                    <div id="dishImagePreview" class="mt-1" style="display: none;">
-                        <img src="" alt="Preview" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--border);">
-                        <button class="btn btn-danger btn-sm mt-1" type="button" onclick="removeDishImage()">Видалити фото</button>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="dishName">Назва страви</label>
+                    <input type="text" class="form-input" id="dishName" name="name" required placeholder="Наприклад: Стейк з яловичини">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dishDescription">Опис</label>
+                    <textarea class="form-textarea" id="dishDescription" name="description" placeholder="Короткий опис страви..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dishPrice">Ціна (&#8372;)</label>
+                    <input type="number" class="form-input" id="dishPrice" name="price" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dishTags">Теги (через кому)</label>
+                    <input type="text" class="form-input" id="dishTags" name="tags" placeholder="meat, spicy, bestseller">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dishMenuIds">Категорії меню (ID через кому)</label>
+                    <input type="text" class="form-input" id="dishMenuIds" name="menuIds" placeholder="1, 2, 3">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Фото страви</label>
+                    <div class="dish-upload-container">
+                        <!-- Intentionally not HTMX: multipart upload stays on fetch (see admin.js uploadDishImage). -->
+                        <input type="file" id="dishImageFile" accept="image/*" class="form-input" style="margin-bottom: 0.5rem;" onchange="uploadDishImage()">
+                        <input type="hidden" id="dishImageUrl" name="imageUrl">
+                        <div id="dishImagePreview" class="mt-1" style="display: none;">
+                            <img src="" alt="Preview" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--border);">
+                            <button class="btn btn-danger btn-sm mt-1" type="button" onclick="removeDishImage()">Видалити фото</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-check">
+                        <input type="checkbox" id="dishAvailable" name="isAvailable" value="true" checked>
+                        <label class="form-label mb-0" for="dishAvailable">Доступна для замовлення</label>
                     </div>
                 </div>
             </div>
-            <div class="form-group">
-                <div class="form-check">
-                    <input type="checkbox" id="dishAvailable" checked>
-                    <label class="form-label mb-0" for="dishAvailable">Доступна для замовлення</label>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('dishModal')">Скасувати</button>
+                <button type="submit" class="btn btn-primary">&#128190; Зберегти</button>
             </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('dishModal')">Скасувати</button>
-            <button class="btn btn-primary" onclick="saveDish()">💾 Зберегти</button>
-        </div>
+        </form>
     </div>
 </div>
+
 </main>
 
 <div th:replace="~{fragments/layout :: footer}"></div>

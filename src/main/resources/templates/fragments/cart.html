@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="uk" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Updates the mobile cart badge (OOB). -->
+<span th:fragment="widget"
+      id="mobile-cart-count"
+      class="cart-badge-mobile"
+      hx-swap-oob="true"
+      th:text="${cartCount != null ? cartCount : 0}"
+      th:style="${cartCount != null && cartCount > 0} ? 'display:flex;' : 'display:none;'">
+    0
+</span>
+
+<!-- Cart page content. Expects: cart, cartTotal, cartCount -->
+<div th:fragment="content"
+     id="cartContent">
+
+    <!-- Also update mobile badge when content swaps -->
+    <span th:replace="~{fragments/cart :: widget}"></span>
+
+    <div th:if="${cart == null || cart.items == null || cart.items.isEmpty()}"
+         class="cart-empty"
+         id="cartEmpty">
+        <div class="cart-empty-icon">🛒</div>
+        <h2>Кошик порожній</h2>
+        <p>Додайте страви з меню, щоб зробити замовлення</p>
+        <a th:href="@{/menu}" class="btn btn-primary">📋 Перейти до меню</a>
+    </div>
+
+    <div th:if="${cart != null && cart.items != null && !cart.items.isEmpty()}">
+        <div id="cartItems" class="mb-3">
+            <div class="cart-item" th:each="item : ${cart.items}">
+                <div class="cart-item-info">
+                    <div class="cart-item-name" th:text="${item.dishName}">Dish</div>
+                    <div class="cart-item-special"
+                         th:if="${item.specialRequest != null && !#strings.isEmpty(item.specialRequest)}"
+                         th:text="${item.specialRequest}">
+                        Special request
+                    </div>
+                </div>
+
+                <div class="cart-item-qty">
+                    <div class="qty-control">
+                        <button class="qty-btn"
+                                type="button"
+                                th:attr="hx-put=@{'/htmx/cart/items/' + ${item.id} + '/quantity'(quantity=${item.quantity - 1})}"
+                                hx-target="#cartContent"
+                                hx-swap="innerHTML"
+                                th:disabled="${item.quantity == null || item.quantity <= 1}">
+                            −
+                        </button>
+                        <span th:text="${item.quantity}">1</span>
+                        <button class="qty-btn"
+                                type="button"
+                                th:attr="hx-put=@{'/htmx/cart/items/' + ${item.id} + '/quantity'(quantity=${item.quantity + 1})}"
+                                hx-target="#cartContent"
+                                hx-swap="innerHTML">
+                            +
+                        </button>
+                    </div>
+
+                    <button class="btn btn-secondary btn-sm"
+                            type="button"
+                            th:attr="hx-delete=@{'/htmx/cart/items/' + ${item.id}}"
+                            hx-target="#cartContent"
+                            hx-swap="innerHTML">
+                        🗑️
+                    </button>
+                </div>
+
+                <div class="cart-item-price"
+                     th:text="${item.price != null && item.quantity != null ? #numbers.formatDecimal(item.price * item.quantity, 1, 2) : '—'} + ' ₴'">
+                    0.00 ₴
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-summary mb-4" id="cartSummary">
+            <div class="cart-total">
+                <span>Загальна сума:</span>
+                <span id="cartTotalPrice"
+                      class="cart-total-price"
+                      th:text="${cartTotal != null ? #numbers.formatDecimal(cartTotal, 1, 2) : '0.00'} + ' ₴'">
+                    0.00 ₴
+                </span>
+            </div>
+
+            <div class="cart-actions">
+                <a class="btn btn-secondary" th:href="@{/menu}" aria-label="Повернутися до меню та додати більше страв">
+                    ➕ Додати ще страв
+                </a>
+                <button class="btn btn-primary"
+                        id="confirmOrderBtn"
+                        type="button"
+                        hx-post="/htmx/orders/confirm"
+                        hx-swap="none">
+                    ✅ Оформити замовлення
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification (OOB append). Expects: message, toastType; optional recommendDish (Smart Combo) -->
+<div th:fragment="toast">
+    <div hx-swap-oob="beforeend:#toastContainer"
+         class="toast"
+         th:classappend="${toastType != null ? ' ' + toastType : ' toast-success'}"
+         x-data="{}"
+         x-init="setTimeout(() => $el.remove(), 8000)">
+        <div class="toast-body-main">
+            <span th:text="${message != null ? message : ''}">OK</span>
+        </div>
+        <div th:if="${recommendDish != null}"
+             class="toast-combo-offer mt-2 pt-2"
+             style="border-top: 1px solid rgba(255,255,255,0.12);">
+            <div class="text-sm text-muted mb-1">Разом смакує краще</div>
+            <div class="d-flex align-center justify-between gap-2 flex-wrap">
+                <strong th:text="${recommendDish.name}">Страва</strong>
+                <form hx-post="/htmx/cart/items" hx-swap="none" class="m-0">
+                    <input type="hidden" name="dishId" th:value="${recommendDish.id}">
+                    <input type="hidden" name="quantity" value="1">
+                    <input type="hidden" name="specialRequest" value="">
+                    <button type="submit" class="btn btn-secondary btn-sm">Додати</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keep the badge in sync on any toast response. -->
+    <span th:replace="~{fragments/cart :: widget}"></span>
+</div>
+
+</body>
+</html>

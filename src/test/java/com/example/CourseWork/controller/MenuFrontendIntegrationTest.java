@@ -1,6 +1,8 @@
 package com.example.CourseWork.controller;
 
+import com.example.CourseWork.dto.CartResponseDto;
 import com.example.CourseWork.dto.MenuWithDishesDto;
+import com.example.CourseWork.service.CartService;
 import com.example.CourseWork.service.DishService;
 import com.example.CourseWork.service.MenuService;
 import com.example.CourseWork.service.RecommendationService;
@@ -16,6 +18,7 @@ import org.springframework.test.web.servlet.htmlunit.MockMvcWebClientBuilder;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @WebMvcTest(PageController.class)
@@ -33,6 +36,8 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
     @MockitoBean
     private RecommendationService recommendationService;
 
+    @MockitoBean
+    private CartService cartService;
 
     private WebClient webClient;
 
@@ -40,6 +45,10 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
     void setUp() {
         webClient = MockMvcWebClientBuilder.mockMvcSetup(mockMvc).build();
         webClient.getOptions().setJavaScriptEnabled(false);
+
+        CartResponseDto emptyCart = new CartResponseDto();
+        emptyCart.setItems(List.of());
+        when(cartService.getCartByUserId(any())).thenReturn(emptyCart);
     }
 
     @Test

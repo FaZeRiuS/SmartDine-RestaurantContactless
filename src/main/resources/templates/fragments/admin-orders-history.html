@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Full swap target: table area + pagination -->
+<div th:fragment="ordersBlock">
+    <div th:if="${ordersPage == null or ordersPage.isEmpty()}" class="empty-state" id="historyEmpty">
+        <div class="empty-state-icon">&#x1F4CA;</div>
+        <h3>Немає замовлень</h3>
+        <p class="text-muted">За обраними фільтрами нічого не знайдено</p>
+    </div>
+    <div th:unless="${ordersPage == null or ordersPage.isEmpty()}" class="admin-panel" id="historyPanel">
+        <div class="admin-panel-body">
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Стіл</th>
+                    <th>Користувач</th>
+                    <th>Статус</th>
+                    <th>Оплата</th>
+                    <th>Сума</th>
+                    <th>Дата</th>
+                    <th>Деталі</th>
+                </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                <tr th:each="order : ${ordersPage.content}">
+                    <td class="order-id-cell" th:text="|#${order.id}|">#0</td>
+                    <td th:text="${order.tableNumber != null} ? |&#x2116;${order.tableNumber}| : '—'">—</td>
+                    <td th:text="${order.userId != null and #strings.length(order.userId) > 8}
+ ? |${#strings.substring(order.userId, 0, 8)}…| : ${order.userId}">—</td>
+                    <td>
+                        <span class="status-badge" th:classappend="|status-${order.status}|"
+                              th:text="${order.status == T(com.example.CourseWork.addition.OrderStatus).NEW} ? 'Нове'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).PREPARING} ? 'Готується'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).READY} ? 'Готове'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).COMPLETED} ? 'Завершене'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).CANCELLED} ? 'Скасоване'
+                                : ${order.status}))))">—</span>
+                    </td>
+                    <td>
+                        <span class="status-badge" th:classappend="|payment-${order.paymentStatus}|"
+                              th:text="${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).PENDING} ? 'Очікує'
+                                : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).SUCCESS} ? 'Оплачено'
+                                : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).FAILED} ? 'Помилка'
+                                : ${order.paymentStatus}))">—</span>
+                    </td>
+                    <td class="order-price-cell"
+                        th:text="|${#numbers.formatDecimal(order.totalPrice, 1, 2)} &#x20B4;|">0</td>
+                    <td th:text="${order.createdAt != null} ? ${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')} : '—'">—</td>
+                    <td>
+                        <button type="button" class="btn btn-secondary btn-sm"
+                                th:attr="hx-get=@{/htmx/admin/orders/{id}/detail(id=${order.id})}"
+                                hx-target="#orderDetailBody"
+                                hx-swap="innerHTML"
+                                aria-label="Переглянути деталі замовлення">&#x1F441; Деталі</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <div class="d-flex justify-between align-center mt-1 flex-wrap gap-1" th:if="${ordersPage.totalPages > 1}">
+                <span class="text-muted text-sm"
+                      th:text="|Сторінка ${ordersPage.number + 1} з ${ordersPage.totalPages} (${ordersPage.totalElements} усього)|">—</span>
+                <div class="d-flex gap-1">
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            th:if="${ordersPage.hasPrevious()}"
+                            th:attr="hx-get=|/htmx/admin/orders/table?page=${ordersPage.number - 1}&size=${ordersPage.size}${filterQuery}|"
+                            hx-target="#adminOrdersHistoryRoot"
+                            hx-swap="innerHTML">Назад</button>
+                    <button type="button" class="btn btn-secondary btn-sm"
+                            th:if="${ordersPage.hasNext()}"
+                            th:attr="hx-get=|/htmx/admin/orders/table?page=${ordersPage.number + 1}&size=${ordersPage.size}${filterQuery}|"
+                            hx-target="#adminOrdersHistoryRoot"
+                            hx-swap="innerHTML">Далі</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal body only (+ OOB title update) -->
+<div th:fragment="orderDetailBody">
+    <th:block th:if="${order != null}">
+        <h3 id="orderDetailTitle" class="modal-title" hx-swap-oob="true"
+            th:text="|Замовлення #${order.id}|">Замовлення</h3>
+        <div class="mb-1" th:if="${order.tableNumber != null}">
+            <strong>Стіл:</strong> <span th:text="|&#x2116;${order.tableNumber}|">—</span>
+        </div>
+        <div class="mb-2 d-flex flex-wrap gap-1 align-center">
+            <strong>Статус:</strong>
+            <span class="status-badge" th:classappend="|status-${order.status}|"
+                  th:text="${order.status == T(com.example.CourseWork.addition.OrderStatus).NEW} ? 'Нове'
+                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).PREPARING} ? 'Готується'
+                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).READY} ? 'Готове'
+                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).COMPLETED} ? 'Завершене'
+                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).CANCELLED} ? 'Скасоване'
+                    : ${order.status}))))">—</span>
+            <strong>Оплата:</strong>
+            <span class="status-badge" th:classappend="|payment-${order.paymentStatus}|"
+                  th:text="${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).PENDING} ? 'Очікує'
+                    : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).SUCCESS} ? 'Оплачено'
+                    : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).FAILED} ? 'Помилка'
+                    : ${order.paymentStatus}))">—</span>
+        </div>
+        <div class="mb-2">
+            <strong>Сума:</strong>
+            <span class="order-price-cell" th:text="|${#numbers.formatDecimal(order.totalPrice, 1, 2)} &#x20B4;|">0</span>
+        </div>
+        <div class="mb-1"><strong>Страви:</strong></div>
+        <div class="order-detail-items-list" th:if="${order.items != null and !order.items.isEmpty()}">
+            <div class="order-detail-item" th:each="item : ${order.items}">
+                <div>
+                    <span th:text="|${item.dishName} × ${item.quantity}|">—</span>
+                    <div class="text-muted text-xs" th:if="${item.specialRequest != null and !item.specialRequest.isBlank()}"
+                         th:text="${item.specialRequest}"></div>
+                </div>
+                <div th:if="${item.rating != null}" th:text="|Оцінка: ${item.rating}/5|"></div>
+            </div>
+        </div>
+        <p class="text-muted text-sm" th:if="${order.items == null or order.items.isEmpty()}">Немає позицій</p>
+        <div class="order-review-block mt-2" th:if="${order.serviceRating != null or (order.serviceComment != null and !order.serviceComment.isBlank())}">
+            <div class="order-review-header">
+                <span>&#x1F4AC; Відгук клієнта</span>
+                <span th:if="${order.serviceRating != null}" th:text="| ${order.serviceRating}/5|"></span>
+            </div>
+            <div class="text-muted text-sm order-review-comment" th:if="${order.serviceComment != null and !order.serviceComment.isBlank()}"
+                 th:text="${order.serviceComment}"></div>
+        </div>
+    </th:block>
+</div>
+</body>
+</html>

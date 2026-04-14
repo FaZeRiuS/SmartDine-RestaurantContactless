@@ -10,42 +10,45 @@
 
 <main class="container page-content">
     <div class="section-header fade-in-up">
-        <h1 class="section-title">🥡 Мої замовлення</h1>
+        <h1 class="section-title"> Мої замовлення</h1>
         <p class="section-subtitle">Переглядайте статус активних та історію ваших минулих замовлень</p>
     </div>
 
-    <!-- Tabs -->
     <div class="menu-tabs fade-in-up">
-        <button class="menu-tab active" data-tab="active">Активні</button>
-        <button class="menu-tab" data-tab="past">Минулі</button>
+        <button type="button" class="menu-tab customer-order-tab active"
+                th:attr="hx-get=@{/htmx/customer/orders(tab=active)}"
+                hx-target="#customerOrdersRoot"
+                hx-swap="innerHTML"
+                data-tab="active">Активні</button>
+        <button type="button" class="menu-tab customer-order-tab"
+                th:attr="hx-get=@{/htmx/customer/orders(tab=past)}"
+                hx-target="#customerOrdersRoot"
+                hx-swap="innerHTML"
+                data-tab="past">Минулі</button>
     </div>
 
-    <!-- Content Area -->
-    <div id="historyLoading" class="loading-overlay">
+    <div id="historyLoading" class="loading-overlay" style="display:none;">
         <div class="loading-spinner"></div>
         <span>Завантаження вашої історії...</span>
     </div>
 
-    <div id="ordersContainer" class="fade-in-up">
-        <!-- Orders will be rendered here by history.js -->
-    </div>
-
-    <div id="historyEmpty" class="empty-state hidden">
-        <div class="empty-state-icon">📦</div>
-        <h3>У вас поки немає замовлень у цій категорії</h3>
-        <p>Оберіть щось смачненьке в нашому меню!</p>
-        <a th:href="@{/menu}" class="btn btn-primary mt-2">Переглянути меню</a>
+    <div id="customerOrdersRoot" class="fade-in-up"
+         th:attr="hx-get=@{/htmx/customer/orders(tab=active)}"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <span>Завантаження вашої історії...</span>
+        </div>
     </div>
 </main>
 
 <div th:replace="~{fragments/layout :: mobile-nav}"></div>
 <div th:replace="~{fragments/layout :: footer}"></div>
 
-<!-- Toast Container -->
 <div id="toastContainer" class="toast-container"></div>
 
-    <!-- Scripts: identity + SSE notifications (sse.js) -->
-    <div th:replace="~{fragments/layout :: scripts}"></div>
-    <script th:src="@{/js/history.js}"></script>
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script th:src="@{/js/history.js}"></script>
 </body>
 </html>

@@ -6,6 +6,8 @@ import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import com.microsoft.playwright.assertions.LocatorAssertions;
+
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -56,8 +58,12 @@ class StaffJourneyE2ETest extends BaseE2ETest {
         confirmBtn.click();
 
         // 3. Confirm order is now in "NEW" status
+        guestPage.waitForLoadState(LoadState.LOAD);
         Locator statusBadge = guestPage.locator("#activeOrderStatus");
         assertThat(statusBadge).containsText("Нове");
+
+        // confirmOrder uses HX-Refresh: SSE must reconnect before staff triggers order-update
+        waitForSseConnection(guestPage);
 
         // Extract Order ID for Staff to find it easily
         String orderIdText = guestPage.locator("#activeOrderId").textContent();
@@ -90,17 +96,19 @@ class StaffJourneyE2ETest extends BaseE2ETest {
 
         // Verify staff sees success
         Locator toast = staffPage.locator("#toastContainer");
-        assertThat(toast).containsText("Готується");
+        assertThat(toast).containsText("Готується",
+                new LocatorAssertions.ContainsTextOptions().setTimeout(10000));
 
         // --- REAL-TIME VERIFICATION (Back to Guest Context) ---
 
         // 4. Guest page should update AUTOMATICALLY via SSE
         // We wait for the specific toast notification first
         assertThat(guestPage.locator("#toastContainer")).containsText("почали готувати",
-                new com.microsoft.playwright.assertions.LocatorAssertions.ContainsTextOptions().setTimeout(10000));
+                new LocatorAssertions.ContainsTextOptions().setTimeout(15000));
 
-        // Then verify the badge update
-        assertThat(statusBadge).containsText("Готується");
+        // Then verify the badge update (HTMX refresh follows toast; allow extra time under full-suite load)
+        assertThat(statusBadge).containsText("Готується",
+                new LocatorAssertions.ContainsTextOptions().setTimeout(15000));
 
         // Cleanup is handled automatically by BaseE2ETest.cleanupContexts()
     }

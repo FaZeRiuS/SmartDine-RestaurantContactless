@@ -303,6 +303,10 @@ h3+p {
     align-items: center;
 }
 
+.align-start {
+    align-items: flex-start;
+}
+
 .justify-between {
     justify-content: space-between;
 }
@@ -332,6 +336,14 @@ h3+p {
 
 .text-sm {
     font-size: 0.9rem;
+}
+
+.text-lg {
+    font-size: 1.1rem;
+}
+
+.fw-800 {
+    font-weight: 800;
 }
 
 .text-xs {

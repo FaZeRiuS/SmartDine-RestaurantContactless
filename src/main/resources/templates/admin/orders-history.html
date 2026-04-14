@@ -23,17 +23,23 @@
     <div class="container">
         <div class="section-header">
             <div>
-                <h1 class="section-title"><span class="title-accent">📊</span> Історія замовлень</h1>
+                <h1 class="section-title"><span class="title-accent">��</span> Історія замовлень</h1>
                 <p class="section-subtitle">Повний перелік усіх замовлень</p>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="loadAllOrders()" aria-label="Оновити список замовлень">🔄 Оновити</button>
+            <button type="submit" form="adminOrdersFilterForm" class="btn btn-secondary btn-sm" aria-label="Оновити список замовлень">��� Оновити</button>
         </div>
 
-        <!-- Filters -->
-        <div class="filters-bar">
+        <form id="adminOrdersFilterForm" class="filters-bar"
+              th:attr="hx-get=@{/htmx/admin/orders/table}"
+              hx-target="#adminOrdersHistoryRoot"
+              hx-trigger="change from:select, submit"
+              hx-swap="innerHTML">
+            <input type="hidden" name="page" value="0" id="adminOrdersPageField">
             <div>
                 <label class="form-label" for="filterStatus">Статус замовлення:</label>
-                <select class="form-select" id="filterStatus" onchange="applyFilters()" aria-label="Фільтрувати за статусом замовлення">
+                <select class="form-select" name="status" id="filterStatus"
+                        onchange="document.getElementById('adminOrdersPageField').value='0';"
+                        aria-label="Фільтрувати за статусом замовлення">
                     <option value="">Усі</option>
                     <option value="NEW">Нові</option>
                     <option value="PREPARING">Готуються</option>
@@ -44,46 +50,25 @@
             </div>
             <div>
                 <label class="form-label" for="filterPayment">Статус оплати:</label>
-                <select class="form-select" id="filterPayment" onchange="applyFilters()" aria-label="Фільтрувати за статусом оплати">
+                <select class="form-select" name="paymentStatus" id="filterPayment"
+                        onchange="document.getElementById('adminOrdersPageField').value='0';"
+                        aria-label="Фільтрувати за статусом оплати">
                     <option value="">Усі</option>
                     <option value="PENDING">Очікує</option>
                     <option value="SUCCESS">Оплачено</option>
                     <option value="FAILED">Помилка</option>
                 </select>
             </div>
-        </div>
+        </form>
 
-        <!-- Loading -->
-        <div class="loading-overlay" id="historyLoading">
-            <div class="loading-spinner"></div>
-            <span>Завантаження замовлень...</span>
-        </div>
-
-        <!-- Orders table -->
-        <div class="admin-panel" id="historyPanel" style="display:none;">
-            <div class="admin-panel-body">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Стіл</th>
-                            <th>Користувач</th>
-                            <th>Статус</th>
-                            <th>Оплата</th>
-                            <th>Сума</th>
-                            <th>Дата</th>
-                            <th>Деталі</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyTableBody"></tbody>
-                </table>
+        <div id="adminOrdersHistoryRoot"
+             th:attr="hx-get=@{/htmx/admin/orders/table}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="loading-overlay" id="historyLoading">
+                <div class="loading-spinner"></div>
+                <span>Завантаження замовлень...</span>
             </div>
-        </div>
-
-        <div class="empty-state hidden" id="historyEmpty">
-            <div class="empty-state-icon">📊</div>
-            <h3>Немає замовлень</h3>
-            <p class="text-muted">Замовлення ще не було створено</p>
         </div>
     </div>
 </section>
@@ -93,7 +78,7 @@
     <div class="modal">
         <div class="modal-header">
             <h3 class="modal-title" id="orderDetailTitle">Замовлення</h3>
-            <button class="modal-close" onclick="closeModal('orderDetailModal')">✕</button>
+            <button class="modal-close" onclick="closeModal('orderDetailModal')">��</button>
         </div>
         <div class="modal-body" id="orderDetailBody"></div>
     </div>

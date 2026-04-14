@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="ordersList">
+    <div th:if="${ordersPage == null or ordersPage.isEmpty()}" class="empty-state" id="historyEmpty">
+        <div class="empty-state-icon">&#x1F4E6;</div>
+        <h3>У вас поки немає замовлень у цій категорії</h3>
+        <p>Оберіть щось смачненьке в нашому меню!</p>
+        <a th:href="@{/menu}" class="btn btn-primary mt-2">Переглянути меню</a>
+    </div>
+    <th:block th:unless="${ordersPage == null or ordersPage.isEmpty()}">
+        <div id="historyEmpty" class="hidden"></div>
+        <div class="orders-cards-wrap">
+            <div class="active-order-card history-card fade-in-up" th:each="order : ${ordersPage.content}">
+                <div class="active-order-header">
+                    <h3 th:text="|Замовлення #${order.id}|">#0</h3>
+                    <div class="status-badges-group">
+                        <span class="order-status-badge"
+                              th:classappend="|status-${#strings.toLowerCase(order.status.name())}|"
+                              th:text="${order.status == T(com.example.CourseWork.addition.OrderStatus).NEW} ? 'Нове'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).PREPARING} ? 'Готується'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).READY} ? 'Готове'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).COMPLETED} ? 'Завершене'
+                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).CANCELLED} ? 'Скасоване'
+                                : ${order.status}))))">—</span>
+                        <span class="order-status-badge"
+                              th:classappend="|payment-${#strings.toLowerCase(order.paymentStatus.name())}|"
+                              th:text="${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).PENDING} ? 'Очікує'
+                                : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).SUCCESS} ? 'Оплачено'
+                                : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).FAILED} ? 'Помилка'
+                                : ${order.paymentStatus}))">—</span>
+                    </div>
+                </div>
+                <div class="history-card-date"
+                     th:text="${order.createdAt != null} ? ${#temporals.format(order.createdAt, 'dd.MM.yyyy, HH:mm')} : ''">—</div>
+                <div class="active-order-minimal-info mt-1" th:if="${order.items != null}">
+                    <div class="cart-item" th:each="item : ${order.items}">
+                        <div class="cart-item-info">
+                            <div class="cart-item-name" th:text="${item.dishName}">—</div>
+                        </div>
+                        <div class="cart-item-qty" th:text="|× ${item.quantity}|">×0</div>
+                        <div class="cart-item-price"
+                             th:text="|${#numbers.formatDecimal(item.price.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)} &#x20B4;|">0</div>
+                    </div>
+                </div>
+                <div class="active-order-footer">
+                    <div class="cart-total flex-column gap-1">
+                        <div class="d-flex justify-between gap-2">
+                            <span>Загальна сума:</span>
+                            <span class="text-gold" th:text="|${#numbers.formatDecimal(order.totalPrice, 1, 2)} &#x20B4;|">0</span>
+                        </div>
+                        <th:block th:if="${order.loyaltyDiscount != null and order.loyaltyDiscount.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                            <div class="d-flex justify-between gap-2">
+                                <span class="text-muted">Знижка балами:</span>
+                                <span class="text-muted"
+                                      th:text="|- ${#numbers.formatDecimal(order.loyaltyDiscount, 1, 2)} &#x20B4;|">0</span>
+                            </div>
+                            <div class="d-flex justify-between gap-2">
+                                <span>До сплати:</span>
+                                <span class="text-gold"
+                                      th:text="|${#numbers.formatDecimal(order.amountToPay != null ? order.amountToPay : order.totalPrice, 1, 2)} &#x20B4;|">0</span>
+                            </div>
+                        </th:block>
+                    </div>
+                    <a th:if="${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).PENDING and tab == 'active'}"
+                       th:href="@{/}"
+                       class="btn btn-primary btn-sm w-full mt-1">&#x1F4B3; Перейти до оплати</a>
+
+                    <th:block th:if="${order.serviceRating != null}">
+                        <div class="order-review-block mt-1">
+                            <div class="order-review-header">
+                                <span>&#x1F31F; Мій відгук</span>
+                                <span style="color: var(--accent-gold);" th:text="| ${order.serviceRating}/5|"></span>
+                            </div>
+                            <div class="order-review-comment text-muted text-sm"
+                                 th:if="${order.serviceComment != null and !order.serviceComment.isBlank()}"
+                                 th:text="${order.serviceComment}"></div>
+                        </div>
+                        <div class="text-muted mt-1" th:if="${order.items != null}">
+                            <div class="mb-1">Оцінки страв:</div>
+                            <div class="d-flex justify-between align-center gap-2 mt-0" th:each="item : ${order.items}">
+                                <div class="text-sm" th:text="${item.dishName}">—</div>
+                                <div th:if="${item.rating != null}" style="color: var(--accent-gold);"
+                                     th:text="|${item.rating}/5|">—</div>
+                                <span class="text-muted" th:if="${item.rating == null}">—</span>
+                            </div>
+                        </div>
+                    </th:block>
+
+                    <th:block
+ th:if="${order.serviceRating == null and order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).SUCCESS and (order.status == T(com.example.CourseWork.addition.OrderStatus).READY or order.status == T(com.example.CourseWork.addition.OrderStatus).COMPLETED)}">
+                        <div class="cart-summary mt-1 p-1">
+                            <div class="order-review-header mb-1">Залишити відгук</div>
+                            <div class="d-flex justify-between align-center gap-2">
+                                <div class="text-muted">Сервіс:</div>
+                                <div class="star-picker" th:attr="data-order-id=${order.id},data-type='service'"></div>
+                            </div>
+                            <div class="mt-1">
+                                <div class="text-muted text-xs mb-1">Побажання (опціонально):</div>
+                                <textarea class="form-input w-full" th:id="|reviewComment-${order.id}|" rows="2"
+                                          placeholder="Наприклад: було б добре додати серветки..."></textarea>
+                            </div>
+                            <div class="mt-1">
+                                <div class="text-muted text-xs mb-1">Страви:</div>
+                                <div class="d-flex justify-between align-center gap-2 mt-0" th:each="item : ${order.items}">
+                                    <div class="text-sm" th:text="${item.dishName}">—</div>
+                                    <div class="star-picker"
+                                         th:attr="data-order-id=${order.id},data-dish-id=${item.dishId},data-type='dish'"></div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm w-full mt-1"
+                                    th:attr="onclick=|submitOrderReview(${order.id})|">&#x2705; Надіслати відгук</button>
+                            <div class="text-muted text-xs mt-1" th:id="|reviewHint-${order.id}|"></div>
+                        </div>
+                    </th:block>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-between align-center mt-1 flex-wrap gap-1" th:if="${ordersPage.totalPages > 1}">
+            <span class="text-muted text-sm"
+ th:text="|Сторінка ${ordersPage.number + 1} з ${ordersPage.totalPages}|">—</span>
+            <div class="d-flex gap-1">
+                <button type="button" class="btn btn-secondary btn-sm"
+                        th:if="${ordersPage.hasPrevious()}"
+                        th:attr="hx-get=|/htmx/customer/orders?page=${ordersPage.number - 1}&size=${ordersPage.size}&tab=${tab}|"
+                        hx-target="#customerOrdersRoot"
+                        hx-swap="innerHTML">Назад</button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        th:if="${ordersPage.hasNext()}"
+                        th:attr="hx-get=|/htmx/customer/orders?page=${ordersPage.number + 1}&size=${ordersPage.size}&tab=${tab}|"
+                        hx-target="#customerOrdersRoot"
+                        hx-swap="innerHTML">Далі</button>
+            </div>
+        </div>
+    </th:block>
+</div>
+</body>
+</html>

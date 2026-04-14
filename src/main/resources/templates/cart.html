@@ -33,137 +33,14 @@
             </div>
         </div>
 
-        <!-- Loading state -->
-        <div class="loading-overlay" id="cartLoading">
-            <div class="loading-spinner"></div>
-            <span>Завантаження кошика...</span>
-        </div>
+        <div id="activeOrderContainer"
+             class="hidden mb-3"
+             hx-get="/htmx/orders/active-panel"
+             hx-trigger="load"
+             hx-swap="innerHTML"></div>
 
-        <!-- Active Order Status -->
-        <div id="activeOrderContainer" class="hidden">
-            <div class="active-order-card">
-                <div class="active-order-header">
-                    <h3><span class="title-accent">🔔</span> Ваш статус замовлення #<span id="activeOrderId">0</span></h3>
-                    <div class="status-badges-group">
-                        <div class="status-badge-wrapper" id="orderStatusWrapper">
-                            <span class="order-status-badge" id="activeOrderStatus"></span>
-                        </div>
-                        <div class="status-badge-separator"></div>
-                        <div class="status-badge-wrapper" id="paymentStatusWrapper">
-                            <span class="order-status-badge" id="activePaymentStatus"></span>
-                        </div>
-                    </div>
-                </div>
-                <div id="activeOrderItems"></div>
-                <div class="active-order-footer">
-                    <div class="cart-total">
-                        <span>До сплати:</span>
-                        <span id="activeOrderTotalPrice">0.00 ₴</span>
-                    </div>
-                    <details id="loyaltyAccordion" class="accordion">
-                        <summary class="accordion-summary">Бали лояльності</summary>
-                        <div id="loyaltySection" class="cart-summary mt-1 p-1">
-                            <div class="d-flex flex-column gap-1">
-                                <div>
-                                    <div class="text-muted text-sm">
-                                        Доступно: <span id="loyaltyBalance">—</span> ₴ • макс. 50%
-                                    </div>
-                                    <div class="text-muted text-xs">
-                                        Застосовано: <span id="loyaltyApplied">0.00</span> ₴
-                                    </div>
-                                </div>
-                                
-                                <input id="loyaltyAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
-                                       placeholder="Сума ₴"/>
-                                
-                                <div class="d-flex gap-1">
-                                    <button class="btn btn-primary btn-sm flex-1" type="button" 
-                                            onclick="applyLoyaltyToOrder()">Застосувати</button>
-                                            
-                                    <button class="btn btn-secondary btn-sm flex-1" type="button" 
-                                            onclick="clearLoyaltyOnOrder()">Скасувати</button>
-                                </div>
-
-                                <div id="loyaltyHint" class="text-muted text-xs"></div>
-                            </div>
-                        </div>
-                    </details>
-
-                    <details id="tipsAccordion" class="accordion">
-                        <summary class="accordion-summary">Чайові</summary>
-                        <div id="tipsSection" class="cart-summary mt-1 p-1">
-                            <div class="d-flex flex-column gap-1">
-                                <div class="text-muted text-sm">
-                                    Оберіть варіант чайових або введіть суму:
-                                </div>
-                                <div class="d-flex gap-sm flex-wrap align-center">
-                                    <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(10)">+10 ₴</button>
-                                    <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(20)">+20 ₴</button>
-                                    <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(50)">+50 ₴</button>
-                                    <button class="btn btn-secondary btn-sm tip-preset-btn" type="button" onclick="setTipPreset(0)">0 ₴</button>
-                                </div>
-                                
-                                <input id="tipAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
-                                       placeholder="Сума ₴"/>
-                                
-                                <button class="btn btn-primary btn-sm" type="button" 
-                                        onclick="applyTipToOrder()">Застосувати чайові</button>
-
-                                <div class="text-muted text-xs">
-                                    Застосовано: <span id="tipApplied">0.00</span> ₴
-                                </div>
-                                <div id="tipHint" class="text-muted text-xs"></div>
-                            </div>
-                        </div>
-                    </details>
-
-                    <div class="d-flex gap-1 mt-1">
-                        <div id="paymentActions" class="hidden flex-1">
-                            <button class="btn btn-primary w-full btn-lg" id="payBtn" onclick="payOrder()" aria-label="Оплатити замовлення через LiqPay">
-                                💳 Оплатити замовлення
-                            </button>
-                        </div>
-                        <button class="btn btn-secondary flex-1" id="addMoreBtn" onclick="window.location.href='/menu'" aria-label="Повернутися до меню та додати більше страв">
-                            ➕ Додати ще страв
-                        </button>
-                    </div>
-                    <p class="text-success mt-1 hidden" id="paidMessage">
-                        ✅ Замовлення оплачено. Очікуйте на приготування!
-                    </p>
-                    <div id="orderReviewSection"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cart content (filled by JS) -->
-        <div id="cartContent" class="hidden">
-            <!-- Cart items -->
-            <div id="cartItems" class="mb-3"></div>
-
-            <!-- Cart summary -->
-            <div class="cart-summary mb-4" id="cartSummary" style="display:none;">
-                <div class="cart-total">
-                    <span>Загальна сума:</span>
-                    <span class="cart-total-price" id="cartTotalPrice">0.00 ₴</span>
-                </div>
-                <div class="cart-actions">
-                    <button class="btn btn-secondary" id="addMoreBtn" onclick="window.location.href='/menu'" aria-label="Повернутися до меню та додати більше страв">
-                        ➕ Додати ще страв
-                    </button>
-                    <button class="btn btn-primary" id="confirmOrderBtn" onclick="confirmOrder()" aria-label="Оформити та підтвердити замовлення">
-                        ✅ Оформити замовлення
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Empty cart -->
-        <div class="cart-empty hidden" id="cartEmpty">
-            <div class="cart-empty-icon">🛒</div>
-            <h2>Кошик порожній</h2>
-            <p>Додайте страви з меню, щоб зробити замовлення</p>
-            <a th:href="@{/menu}" class="btn btn-primary">📋 Перейти до меню</a>
-        </div>
+        <!-- Cart content (Server-Driven UI via Thymeleaf fragments + HTMX) -->
+        <div th:replace="~{fragments/cart :: content}"></div>
     </div>
 </main>
 

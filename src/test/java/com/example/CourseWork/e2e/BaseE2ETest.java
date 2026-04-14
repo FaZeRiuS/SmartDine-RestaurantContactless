@@ -1,6 +1,7 @@
 package com.example.CourseWork.e2e;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.ServiceWorkerPolicy;
 import org.junit.jupiter.api.*;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
@@ -64,10 +65,22 @@ public abstract class BaseE2ETest {
         contexts.clear();
     }
 
-    protected BrowserContext createTrackedContext() {
-        BrowserContext context = browser.newContext();
+    /**
+     * @param blockServiceWorkers {@code true} for order/cart E2E — avoids SW from another test’s origin/port
+     *         intercepting HTMX (flaky 403 / swapError in full Maven runs). PWA tests should pass {@code false}.
+     */
+    protected BrowserContext createTrackedContext(boolean blockServiceWorkers) {
+        Browser.NewContextOptions opts = new Browser.NewContextOptions();
+        if (blockServiceWorkers) {
+            opts.setServiceWorkers(ServiceWorkerPolicy.BLOCK);
+        }
+        BrowserContext context = browser.newContext(opts);
         contexts.add(context);
         return context;
+    }
+
+    protected BrowserContext createTrackedContext() {
+        return createTrackedContext(true);
     }
 
     protected String getBaseUrl() {

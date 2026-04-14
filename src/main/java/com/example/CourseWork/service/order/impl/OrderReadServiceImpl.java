@@ -1,6 +1,7 @@
 package com.example.CourseWork.service.order.impl;
 
 import com.example.CourseWork.addition.OrderStatus;
+import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.OrderResponseDto;
 import com.example.CourseWork.exception.ForbiddenException;
 import com.example.CourseWork.exception.ErrorMessages;
@@ -18,7 +19,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,13 +57,41 @@ public class OrderReadServiceImpl implements OrderReadService {
         this.currentUserIdentity = currentUserIdentity;
     }
 
-    @Transactional
+       @Transactional
     @Override
     public Page<OrderResponseDto> getAllOrders(Pageable pageable) {
         Page<OrderResponseDto> page = orderRepository.findAllByOrderByCreatedAtDesc(pageable)
                 .map(orderMapper::toResponseDto);
         enrichOrdersWithReviews(page.getContent());
         return page;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderResponseDto> getAllOrdersFiltered(
+            Pageable pageable, OrderStatus status, PaymentStatus paymentStatus) {
+        Page<Order> raw;
+        if (status != null && paymentStatus != null) {
+            raw = orderRepository.findByStatusAndPaymentStatusOrderByCreatedAtDesc(
+                    status, paymentStatus, pageable);
+        } else if (status != null) {
+            raw = orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
+        } else if (paymentStatus != null) {
+            raw = orderRepository.findByPaymentStatusOrderByCreatedAtDesc(paymentStatus, pageable);
+        } else {
+            raw = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
+        }
+        Page<OrderResponseDto> page = raw.map(orderMapper::toResponseDto);
+        enrichOrdersWithReviews(page.getContent());
+        return page;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public OrderResponseDto getOrderDetailForAdmin(Integer id) {
+        OrderResponseDto dto = getOrderById(id);
+        enrichOrdersWithReviews(List.of(dto));
+        return dto;
     }
 
     @Transactional
@@ -117,6 +149,17 @@ public class OrderReadServiceImpl implements OrderReadService {
         return page;
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public Page<OrderResponseDto> getOrderHistoryForStatuses(
+            String userId, Collection<OrderStatus> statuses, Pageable pageable) {
+        Page<OrderResponseDto> page = orderRepository
+                .findAllByUserIdAndStatusInOrderByCreatedAtDesc(userId, statuses, pageable)
+                .map(orderMapper::toResponseDto);
+        enrichOrdersWithReviews(page.getContent());
+        return page;
+    }
+
     @Transactional
     @Override
     public OrderResponseDto updateOrderStatus(Integer orderId, OrderStatus newStatus) {
@@ -137,7 +180,19 @@ public class OrderReadServiceImpl implements OrderReadService {
 
         Order updatedOrder = orderRepository.save(order);
         OrderResponseDto response = orderMapper.toResponseDto(updatedOrder);
-        orderNotifier.notifyStatusChange(order.getUserId(), response, newStatus);
+        final String notifyUserId = order.getUserId();
+        final OrderResponseDto notifyPayload = response;
+        final OrderStatus notifyRequestedStatus = newStatus;
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    orderNotifier.notifyStatusChange(notifyUserId, notifyPayload, notifyRequestedStatus);
+                }
+            });
+        } else {
+            orderNotifier.notifyStatusChange(notifyUserId, notifyPayload, notifyRequestedStatus);
+        }
 
         return response;
     }

@@ -11,8 +11,45 @@ let csrfState = {
   inFlight: null
 };
 
+function dispatchCsrfInitialized() {
+  try {
+    document.dispatchEvent(new CustomEvent('csrf:initialized', { detail: { ...csrfState } }));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Blocks the main thread briefly until a token exists or timeout.
+ * HTMX configRequest handlers are synchronous; async ensure() alone can race the first request.
+ */
+function waitForTokenSync(maxMs) {
+  const deadline = Date.now() + (maxMs || 400);
+  if (csrfState.token) {
+    return csrfState.token;
+  }
+  if (!csrfState.inFlight) {
+    ensureCsrf();
+  }
+  while (Date.now() < deadline) {
+    if (csrfState.token) {
+      return csrfState.token;
+    }
+    if (!csrfState.inFlight && !csrfState.token) {
+      break;
+    }
+    const spin = Date.now();
+    while (Date.now() - spin < 2) {
+      /* cooperative busy-wait slice */
+    }
+  }
+  return csrfState.token || null;
+}
+
 async function ensureCsrf() {
-  if (csrfState.token) return csrfState;
+  if (csrfState.token) {
+    return csrfState;
+  }
   if (csrfState.inFlight) return csrfState.inFlight;
 
   csrfState.inFlight = fetch('/api/csrf', { credentials: 'same-origin' })
@@ -22,11 +59,12 @@ async function ensureCsrf() {
       csrfState.headerName = data.headerName || csrfState.headerName;
       csrfState.parameterName = data.parameterName || csrfState.parameterName;
       csrfState.inFlight = null;
+      dispatchCsrfInitialized();
       return csrfState;
     })
-    .catch(err => {
+    .catch(() => {
       csrfState.inFlight = null;
-      // Keep going without CSRF token; requests will likely 403, but UI will show real error.
+      dispatchCsrfInitialized();
       return csrfState;
     });
 
@@ -67,6 +105,7 @@ function isUnsafeMethod(method) {
 window.__csrf = {
   ensure: ensureCsrf,
   token: () => csrfState.token,
+  waitForTokenSync,
   async addHiddenInput(form) {
     if (!form) return;
     const { token, parameterName } = await ensureCsrf();
