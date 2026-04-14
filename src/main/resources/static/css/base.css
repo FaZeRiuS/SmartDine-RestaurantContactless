@@ -35,9 +35,9 @@
     --shadow-gold: 0 4px 24px rgba(201, 169, 110, 0.15);
 
     --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --font-body: 'Inter', sans-serif;
-    --font-heading: 'Montserrat', sans-serif;
-    --font-price: 'Oswald', sans-serif;
+    --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
+    --font-heading: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
+    --font-price: 'Oswald', system-ui, -apple-system, 'Segoe UI', Roboto, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
 
     --gap-xs: 8px;
     --gap-sm: 12px;

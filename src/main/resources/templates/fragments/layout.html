@@ -172,6 +172,9 @@
     <!-- HTMX & Extensions -->
     <script src="https://unpkg.com/htmx.org@1.9.11" defer></script>
     <script src="https://unpkg.com/htmx.org@1.9.11/dist/ext/sse.js" defer></script>
+
+    <!-- Premium emoji rendering (SVG, consistent across platforms) -->
+    <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" defer></script>
     
     <script th:src="@{/js/csrf.js}" defer></script>
     <script th:src="@{/js/ui.js}" defer></script>
@@ -181,6 +184,13 @@
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', function() {
+            function parseEmojis(root) {
+                try {
+                    if (!window.twemoji || typeof window.twemoji.parse !== 'function') return;
+                    window.twemoji.parse(root || document.body, { folder: 'svg', ext: '.svg' });
+                } catch (e) { /* ignore */ }
+            }
+
             // 1. Warm up CSRF (same as csrf.js ensure — sets token before first HTMX load trigger)
             if (window.__csrf && typeof window.__csrf.ensure === 'function') {
                 window.__csrf.ensure().catch(function () { /* ignore */ });
@@ -210,17 +220,25 @@
                     if (typeof initSharedUI === 'function') initSharedUI();
                     if (typeof initSse === 'function') initSse(data.id);
                     if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
+                    parseEmojis(document.body);
                     
                 } catch (err) {
                     console.warn('>>> BOOTSTRAP: Reduced functionality mode:', err.message);
                     if (typeof initSharedUI === 'function') initSharedUI();
                     if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
+                    parseEmojis(document.body);
                 } finally {
                     console.timeEnd('>>> BOOTSTRAP: Total Time');
                 }
             }
 
             bootstrapApp();
+
+            // Re-parse emojis after HTMX swaps (new fragments injected)
+            document.body?.addEventListener('htmx:afterSwap', function (evt) {
+                const t = evt && evt.detail ? evt.detail.target : null;
+                parseEmojis(t || document.body);
+            });
         });
     </script>
 </div>

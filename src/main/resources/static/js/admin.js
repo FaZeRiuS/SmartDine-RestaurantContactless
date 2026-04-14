@@ -58,6 +58,14 @@ async function openDishModalById(id) {
     try {
         const res = await fetch('/api/dishes/' + id, { credentials: 'same-origin' });
         if (!res.ok) throw new Error('Помилка ' + res.status);
+        const ct = (res.headers.get('content-type') || '').toLowerCase();
+        if (!ct.includes('application/json')) {
+            const body = await res.text().catch(() => '');
+            const hint = body && body.trim().length > 0
+                ? ' (сервер повернув не-JSON; можливо редірект/помилка авторизації)'
+                : '';
+            throw new Error('Некоректна відповідь сервера' + hint);
+        }
         const dish = await res.json();
         openDishModalWithData(dish);
     } catch (err) {
@@ -82,28 +90,64 @@ function openDishModal() {
 }
 
 function openDishModalWithData(dish) {
-    document.getElementById('dishEditId').value = dish.id;
-    document.getElementById('dishName').value = dish.name || '';
-    document.getElementById('dishDescription').value = dish.description || '';
-    document.getElementById('dishPrice').value = dish.price || '';
-    document.getElementById('dishTags').value = (dish.tags || []).join(', ');
-    document.getElementById('dishMenuIds').value = (dish.menuIds || []).join(', ');
-    document.getElementById('dishAvailable').checked = dish.isAvailable !== false;
+    try {
+        const toStringList = (value) => {
+            if (value == null) return [];
+            if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
+            if (typeof value === 'string') {
+                return value.split(',').map(s => s.trim()).filter(Boolean);
+            }
+            return [String(value).trim()].filter(Boolean);
+        };
 
-    const imageUrl = dish.imageUrl || '';
-    document.getElementById('dishImageUrl').value = imageUrl;
-    document.getElementById('dishImageFile').value = '';
-    const preview = document.getElementById('dishImagePreview');
-    if (imageUrl) {
-        preview.querySelector('img').src = imageUrl;
-        preview.style.display = 'block';
-    } else {
-        preview.style.display = 'none';
+        const toIntListString = (value) => {
+            const parts = toStringList(value);
+            const nums = parts
+                .map(p => parseInt(p, 10))
+                .filter(n => Number.isFinite(n) && !Number.isNaN(n));
+            return nums.join(', ');
+        };
+
+        const id = dish && dish.id != null ? dish.id : '';
+        document.getElementById('dishEditId').value = id;
+        document.getElementById('dishName').value = (dish && dish.name) ? dish.name : '';
+        document.getElementById('dishDescription').value = (dish && dish.description) ? dish.description : '';
+
+        const priceVal = dish && dish.price != null ? dish.price : '';
+        document.getElementById('dishPrice').value = priceVal === 0 ? '0' : (priceVal || '');
+
+        const tagsVal = dish ? (dish.tags ?? dish.tagList ?? dish.tagNames) : null;
+        document.getElementById('dishTags').value = toStringList(tagsVal).join(', ');
+
+        const menuIdsVal = dish ? (dish.menuIds ?? dish.menuIdList ?? dish.menus) : null;
+        // Support menuIds=[1,2] or menus=[{id:1},{id:2}]
+        let menuIdsNormalized = menuIdsVal;
+        if (Array.isArray(menuIdsVal) && menuIdsVal.length > 0 && typeof menuIdsVal[0] === 'object') {
+            menuIdsNormalized = menuIdsVal.map(m => m && (m.id ?? m.menuId)).filter(v => v != null);
+        }
+        document.getElementById('dishMenuIds').value = toIntListString(menuIdsNormalized);
+
+        const available = dish ? (dish.isAvailable ?? dish.available) : null;
+        document.getElementById('dishAvailable').checked = available !== false;
+
+        const imageUrl = dish && dish.imageUrl ? dish.imageUrl : '';
+        document.getElementById('dishImageUrl').value = imageUrl;
+        document.getElementById('dishImageFile').value = '';
+        const preview = document.getElementById('dishImagePreview');
+        const img = preview ? preview.querySelector('img') : null;
+        if (preview && img && imageUrl) {
+            img.src = imageUrl;
+            preview.style.display = 'block';
+        } else if (preview) {
+            preview.style.display = 'none';
+        }
+
+        document.getElementById('dishModalTitle').textContent = id ? 'Редагувати страву' : 'Нова страва';
+        configureDishSaveForm();
+        openModal('dishModal');
+    } catch (e) {
+        showToast('Не вдалося відкрити форму редагування: ' + e.message, 'error');
     }
-
-    document.getElementById('dishModalTitle').textContent = 'Редагувати страву';
-    configureDishSaveForm();
-    openModal('dishModal');
 }
 
 /**

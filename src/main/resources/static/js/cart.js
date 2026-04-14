@@ -264,10 +264,18 @@ async function repeatLastOrder() {
 async function payOrder() {
     const btn = document.getElementById('payBtn');
     const container = document.getElementById('activeOrderContainer');
-    const orderIdRaw = container?.dataset?.orderId;
-    const orderId = orderIdRaw && String(orderIdRaw).trim() !== '' ? orderIdRaw : null;
+    let orderIdRaw = container?.dataset?.orderId;
+    if (orderIdRaw == null || String(orderIdRaw).trim() === '') {
+        // Fallback: active order fragment renders the id inside #activeOrderId
+        const idEl = container ? container.querySelector('#activeOrderId') : document.getElementById('activeOrderId');
+        orderIdRaw = idEl ? idEl.textContent : null;
+    }
+    const orderId = orderIdRaw && String(orderIdRaw).trim() !== '' ? String(orderIdRaw).trim() : null;
 
-    if (!orderId || !btn) return;
+    if (!orderId || !btn) {
+        showToast('❌ Не знайдено ID замовлення для оплати. Оновіть сторінку.', 'error');
+        return;
+    }
 
     btn.disabled = true;
     btn.innerHTML = '<div class="loading-spinner"></div> Обробка платежу...';

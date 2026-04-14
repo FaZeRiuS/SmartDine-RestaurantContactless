@@ -474,6 +474,37 @@
     transform: translateY(-1px);
 }
 
+.toast-body-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Rich toasts (server-rendered) can contain extra blocks under message */
+.toast.toast-rich {
+    flex-wrap: wrap;
+    align-items: stretch;
+}
+
+.toast.toast-rich .toast-body-main {
+    flex: 1 1 100%;
+}
+
+.toast-combo-offer {
+    flex: 1 1 100%;
+}
+
+.toast-combo-offer .toast-action {
+    margin-left: 0;
+}
+
+/* Twemoji images should behave like text glyphs */
+img.twemoji {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.15em;
+}
+
 
 /* ── Quantity Controls ────────────────────────────────── */
 .qty-control {
