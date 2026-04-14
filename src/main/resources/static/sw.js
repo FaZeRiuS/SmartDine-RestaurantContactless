@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smartdine-v7';
+const CACHE_NAME = 'smartdine-v8';
 const ASSETS_TO_CACHE = [
   '/css/base.css',
   '/css/layout.css',
@@ -74,6 +74,21 @@ self.addEventListener('fetch', event => {
 
   // Strategy for Static Assets
   // Logic: Cache-First with Network Update (Stale-while-revalidate)
+  // For CSS/JS: Network-first to avoid stale UI (admin toasts, styles, etc.)
+  if (url.origin === self.location.origin && (url.pathname.startsWith('/css/') || url.pathname.startsWith('/js/'))) {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.ok) {
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, networkResponse.clone()));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   if (ASSETS_TO_CACHE.includes(url.pathname) || url.origin !== self.location.origin) {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {

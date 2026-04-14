@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.time.LocalTime;
 import java.util.Optional;
@@ -40,7 +41,8 @@ public class HtmxAdminMenusController {
             @RequestParam String name,
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime,
-            Model model) {
+            Model model,
+            HttpServletResponse response) {
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Введіть назву меню");
         }
@@ -55,6 +57,7 @@ public class HtmxAdminMenusController {
             menuService.createMenu(dto);
         }
         model.addAttribute("menus", menuService.getAllMenusWithDishes());
+        response.setHeader("HX-Trigger", "admin:closeMenuModal");
         return "fragments/admin-menus-table :: menusTable";
     }
 

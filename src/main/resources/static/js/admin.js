@@ -12,7 +12,9 @@ function refreshMenusTable() {
 document.body?.addEventListener('htmx:afterRequest', (evt) => {
     try {
         const elt = evt?.detail?.elt;
-        const successful = evt?.detail?.successful === true;
+        const xhr = evt?.detail?.xhr;
+        const status = xhr ? xhr.status : 0;
+        const successful = status >= 200 && status < 300;
         if (!elt || !successful) return;
         const form = elt.closest ? elt.closest('form') : null;
         const formId = (form && form.id) ? form.id : elt.id;
@@ -25,6 +27,19 @@ document.body?.addEventListener('htmx:afterRequest', (evt) => {
     } catch (e) {
         // ignore
     }
+});
+
+// HTMX-triggered modal close events (server sends HX-Trigger)
+document.body?.addEventListener('admin:closeMenuModal', () => {
+    try {
+        if (typeof closeModal === 'function') closeModal('menuModal');
+    } catch (e) { /* ignore */ }
+});
+
+document.body?.addEventListener('admin:closeDishModal', () => {
+    try {
+        if (typeof closeModal === 'function') closeModal('dishModal');
+    } catch (e) { /* ignore */ }
 });
 
 function configureMenuSaveForm() {

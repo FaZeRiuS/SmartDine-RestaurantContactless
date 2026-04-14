@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -47,7 +48,8 @@ public class HtmxAdminDishesController {
             @RequestParam(required = false) String tags,
             @RequestParam(required = false) Boolean isAvailable,
             @RequestParam(required = false) String imageUrl,
-            Model model) {
+            Model model,
+            HttpServletResponse response) {
         DishDto dto = buildDishDto(name, description, price, menuIds, tags, Boolean.TRUE.equals(isAvailable), imageUrl);
         Integer parsedId = parseOptionalInt(id).orElse(null);
         if (parsedId != null) {
@@ -56,6 +58,7 @@ public class HtmxAdminDishesController {
             dishService.createDish(dto);
         }
         model.addAttribute("dishes", dishService.getAllDishes());
+        response.setHeader("HX-Trigger", "admin:closeDishModal");
         return "fragments/admin-dishes-table :: dishesTable";
     }
 
