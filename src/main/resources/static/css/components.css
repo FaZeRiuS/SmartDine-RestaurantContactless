@@ -434,17 +434,17 @@
     position: fixed;
     bottom: 32px;
     right: 32px;
-    z-index: 10000;
+    z-index: 20000 !important;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    pointer-events: none; /* Allow clicks through empty space */
+    pointer-events: none !important; /* Allow clicks through empty space */
 }
 
 .toast {
-    pointer-events: all; /* Catch clicks on the toast itself */
+    pointer-events: all !important; /* Catch clicks on the toast itself */
     cursor: default;
-    z-index: 10001;
+    z-index: 20001 !important;
     padding: 14px 24px;
     border-radius: var(--radius-lg);
     font-size: 0.95rem;
@@ -465,37 +465,41 @@
 }
 
 .toast-success {
-    background: rgba(22, 101, 52, 0.25);
-    border-color: rgba(74, 222, 128, 0.3);
-    box-shadow: 0 10px 30px rgba(74, 222, 128, 0.1);
+    background: rgba(22, 101, 52, 0.3) !important;
+    border-color: rgba(74, 222, 128, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(74, 222, 128, 0.2);
 }
 
 .toast-error {
-    background: rgba(153, 27, 27, 0.25);
-    border-color: rgba(248, 113, 113, 0.3);
-    box-shadow: 0 10px 30px rgba(248, 113, 113, 0.1);
+    background: rgba(153, 27, 27, 0.3) !important;
+    border-color: rgba(248, 113, 113, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(248, 113, 113, 0.2);
 }
 
 .toast-info {
-    background: rgba(30, 64, 175, 0.25);
-    border-color: rgba(96, 165, 250, 0.3);
-    box-shadow: 0 10px 30px rgba(96, 165, 250, 0.1);
+    background: rgba(30, 64, 175, 0.3) !important;
+    border-color: rgba(96, 165, 250, 0.4) !important;
+    box-shadow: 0 10px 30px rgba(96, 165, 250, 0.2);
 }
 
 .toast-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: linear-gradient(135deg, var(--gold), var(--gold-dark));
-    color: var(--bg-primary);
+    color: var(--bg-primary) !important;
     border: none;
-    padding: 6px 16px;
+    padding: 8px 18px;
     border-radius: var(--radius-sm);
     font-size: 0.85rem;
-    font-weight: 800;
+    font-weight: 700;
     cursor: pointer;
     margin-left: auto;
     transition: all var(--transition);
     white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+    line-height: 1;
+    text-decoration: none !important;
 }
 
 .toast-action:hover {

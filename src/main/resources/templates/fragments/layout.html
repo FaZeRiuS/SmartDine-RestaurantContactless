@@ -27,13 +27,13 @@
     <link rel="manifest" th:href="@{/manifest.json(v=1.3)}">
     
     <!-- Loaded CSS -->
-    <link rel="stylesheet" th:href="@{/css/base.css}">
-    <link rel="stylesheet" th:href="@{/css/layout.css}">
-    <link rel="stylesheet" th:href="@{/css/components.css}">
-    <link rel="stylesheet" th:href="@{/css/pages.css}">
-    <link rel="stylesheet" th:href="@{/css/responsive.css}">
-    <link rel="stylesheet" th:href="@{/css/admin.css}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
-    <link rel="stylesheet" th:href="@{/css/dashboard.css}" sec:authorize="hasRole('ADMINISTRATOR')">
+    <link rel="stylesheet" th:href="@{/css/base.css(v=1.4)}">
+    <link rel="stylesheet" th:href="@{/css/layout.css(v=1.4)}">
+    <link rel="stylesheet" th:href="@{/css/components.css(v=1.4)}">
+    <link rel="stylesheet" th:href="@{/css/pages.css(v=1.4)}">
+    <link rel="stylesheet" th:href="@{/css/responsive.css(v=1.4)}">
+    <link rel="stylesheet" th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+    <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
 </head>
 <body>
 
