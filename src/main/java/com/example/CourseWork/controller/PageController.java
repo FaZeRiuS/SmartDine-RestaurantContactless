@@ -100,6 +100,7 @@ public class PageController {
 
         model.addAttribute("personalizedRecommendations", personalized);
         model.addAttribute("popularDishes", popularDishes);
+        model.addAttribute("menuView", "index");
 
         return "index";
     }
@@ -131,6 +132,7 @@ public class PageController {
             menusForBody = displayMenus;
         }
         model.addAttribute("menusForBody", menusForBody);
+        model.addAttribute("menuView", "menu");
 
         return "menu";
     }

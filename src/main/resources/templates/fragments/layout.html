@@ -120,8 +120,8 @@
             </div>
         </div>
     </div>
-    <!-- Global Toast Container -->
-    <div id="toastContainer" class="toast-container"></div>
+        </div>
+    </div>
 </nav>
 
 <!-- ═══ MOBILE NAVIGATION FRAGMENT ═══ -->
@@ -160,7 +160,10 @@
 
 <!-- ═══ SCRIPTS FRAGMENT ═══ -->
 <div th:fragment="scripts">
-    <!-- Order/staff notifications: js/sse.js (initSse → EventSource /api/sse/subscribe/...) -->
+    <!-- Toast Notifications (OOB & JS) -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Order/staff notifications -->
     
     <!-- Scripts -->
     <script th:inline="javascript">

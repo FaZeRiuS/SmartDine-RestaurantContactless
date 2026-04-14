@@ -52,7 +52,7 @@
         </div>
 
         <div id="menuCategoriesRoot" hx-swap="innerHTML">
-            <th:block th:with="menus=${menusForBody}, menuView='menu'" th:replace="~{fragments/public-menu-categories :: categoryBodies}"/>
+            <th:block th:with="menus=${menusForBody}" th:replace="~{fragments/public-menu-categories :: categoryBodies}"/>
         </div>
 
         <div class="empty-state" th:if="${menus == null || menus.isEmpty()}">

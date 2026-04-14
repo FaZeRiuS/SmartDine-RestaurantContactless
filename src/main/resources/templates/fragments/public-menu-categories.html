@@ -7,6 +7,7 @@
              th:data-menu-id="${menu.id}"
              th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
 
+            <!-- Title: H3 for index/overview, H2 for main menu page -->
             <h3 class="menu-category-title" th:if="${menuView == 'index'}">
                 <span th:text="${menu.name}">Category</span>
                 <span class="menu-category-time"
@@ -14,7 +15,7 @@
                       th:text="${#temporals.format(menu.startTime, 'HH:mm')} + ' — ' + ${#temporals.format(menu.endTime, 'HH:mm')}">
                 </span>
             </h3>
-            <h2 class="menu-category-title" th:if="${menuView == 'menu'}">
+            <h2 class="menu-category-title" th:if="${menuView != 'index'}">
                 <span th:text="${menu.name}">Category</span>
                 <span class="menu-category-time"
                       th:if="${menu.startTime != null && menu.endTime != null}"

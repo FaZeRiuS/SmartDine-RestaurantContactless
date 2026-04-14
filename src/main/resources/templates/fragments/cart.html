@@ -50,7 +50,7 @@
                                 th:disabled="${item.quantity == null || item.quantity <= 1}">
                             −
                         </button>
-                        <span th:text="${item.quantity}">1</span>
+                        <div class="qty-value" th:text="${item.quantity}">1</div>
                         <button class="qty-btn"
                                 type="button"
                                 th:attr="hx-put=@{'/htmx/cart/items/' + ${item.id} + '/quantity'(quantity=${item.quantity + 1})}"
@@ -109,22 +109,22 @@
 <div th:fragment="toast">
     <div hx-swap-oob="beforeend:#toastContainer"
          class="toast"
-         th:classappend="${(toastType != null ? ' ' + toastType : ' toast-success') + (recommendDish != null ? ' toast-rich' : '')}">
+         th:classappend="${(toastType != null ? toastType : 'toast-success') + (recommendDish != null ? ' toast-rich' : '')}">
+        
         <div class="toast-body-main">
-            <span th:text="${message != null ? message : ''}">OK</span>
+            <span th:text="${message != null ? message : 'Дію виконано'}">OK</span>
+            <button type="button"
+                    class="toast-action"
+                    th:if="${recommendDish == null && (toastType == null || #strings.contains(toastType, 'success'))}"
+                    onclick="window.location.href='/cart'">
+                Кошик
+            </button>
         </div>
-        <button type="button"
-                class="toast-action"
-                th:if="${recommendDish == null && (toastType == null || #strings.contains(toastType, 'success'))}"
-                onclick="window.location.href='/cart'">
-            До кошика
-        </button>
-        <div th:if="${recommendDish != null}"
-             class="toast-combo-offer mt-2 pt-2"
-             style="border-top: 1px solid rgba(255,255,255,0.12);">
-            <div class="text-sm text-muted mb-1">Разом смакує краще</div>
-            <div class="d-flex align-center justify-between gap-2 flex-wrap">
-                <strong th:text="${recommendDish.name}">Страва</strong>
+
+        <div th:if="${recommendDish != null}" class="toast-combo-offer">
+            <div class="text-xs text-muted mb-2">Разом смакує краще:</div>
+            <div class="d-flex align-center justify-between gap-3">
+                <strong class="text-sm" th:text="${recommendDish.name}">Страва</strong>
                 <form hx-post="/htmx/cart/items" hx-swap="none" class="m-0">
                     <input type="hidden" name="dishId" th:value="${recommendDish.id}">
                     <input type="hidden" name="quantity" value="1">
