@@ -94,7 +94,10 @@
                         id="confirmOrderBtn"
                         type="button"
                         hx-post="/htmx/orders/confirm"
-                        hx-swap="none">
+                        hx-swap="none"
+                        data-toast-pending="Оформлюємо замовлення..."
+                        data-toast-success="Замовлення створено"
+                        data-toast-success-type="success">
                     ✅ Оформити замовлення
                 </button>
             </div>

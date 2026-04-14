@@ -113,11 +113,13 @@
         const size = Number(document.getElementById('qrSize').value);
 
         if (!Number.isFinite(table) || table < 1 || table > 500) {
-            alert('Невірний номер столу (1..500).');
+            if (typeof showToast === 'function') showToast('Невірний номер столу (1..500).', 'error');
+            else alert('Невірний номер столу (1..500).');
             return;
         }
         if (!Number.isFinite(size) || size < 120 || size > 1024) {
-            alert('Невірний розмір (120..1024).');
+            if (typeof showToast === 'function') showToast('Невірний розмір (120..1024).', 'error');
+            else alert('Невірний розмір (120..1024).');
             return;
         }
 
@@ -128,6 +130,7 @@
         img.width = size;
         img.height = size;
         img.src = qrSrc;
+        if (typeof showToast === 'function') showToast('QR-код згенеровано', 'success');
 
         const downloadBtn = document.getElementById('downloadBtn');
         downloadBtn.href = qrSrc;
@@ -145,11 +148,13 @@
         if (!val) return;
         try {
             await navigator.clipboard.writeText(val);
+            if (typeof showToast === 'function') showToast('Посилання скопійовано', 'success');
         } catch (e) {
             const input = document.getElementById('targetUrl');
             input.focus();
             input.select();
             document.execCommand('copy');
+            if (typeof showToast === 'function') showToast('Посилання скопійовано', 'success');
         }
     };
 

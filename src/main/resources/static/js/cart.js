@@ -32,6 +32,7 @@ async function injectReviewModalFromServer(orderId) {
     modal.querySelector('#reviewModalSubmitBtn')?.addEventListener('click', async () => {
         const hint = modal.querySelector('#reviewModalHint');
         try {
+            showToast('Надсилаємо відгук...', 'info');
             const servicePicker = modal.querySelector('.star-picker[data-type="service"]');
             const serviceRating = servicePicker ? parseInt(servicePicker.dataset.value || '0', 10) : 0;
             if (serviceRating < 1 || serviceRating > 5) {
@@ -281,6 +282,7 @@ async function payOrder() {
 
     btn.disabled = true;
     btn.innerHTML = '<div class="loading-spinner"></div> Обробка платежу...';
+    showToast('Обробляємо оплату. Зараз відкриється сторінка LiqPay...', 'info');
 
     try {
         // LiqPay Checkout flow must be initiated by a browser navigation (not fetch),
