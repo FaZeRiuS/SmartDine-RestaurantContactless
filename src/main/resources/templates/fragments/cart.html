@@ -106,19 +106,22 @@
 </div>
 
 <!-- Toast notification (OOB append). Expects: message, toastType; optional recommendDish (Smart Combo) -->
-<!-- Toast notification (OOB). Expects: message, toastType; optional recommendDish (Smart Combo) -->
-<div th:fragment="toast" 
-     hx-swap-oob="beforeend:#toastContainer"
-     class="toast"
-     th:classappend="${
-        (
-          toastType != null
-            ? (' ' + (#strings.startsWith(toastType, 'toast-') ? toastType : 'toast-' + toastType))
-            : ' toast-success'
-        )
-        + (recommendDish != null ? ' toast-rich' : '')
-     }">
-    
+<!--
+  HTMX OOB + beforeend: the library moves *child nodes* of the OOB element into #toastContainer,
+  not the OOB root — so a single root with class="toast" would lose that wrapper. Outer shell is
+  OOB-only; inner div keeps .toast / .toast-success for CSS.
+-->
+<div th:fragment="toast" hx-swap-oob="beforeend:#toastContainer">
+    <div class="toast"
+         th:classappend="${
+            (
+              toastType != null
+                ? (' ' + (#strings.startsWith(toastType, 'toast-') ? toastType : 'toast-' + toastType))
+                : ' toast-success'
+            )
+            + (recommendDish != null ? ' toast-rich' : '')
+         }">
+
     <div class="toast-body-main">
         <div class="d-flex align-center gap-3">
             <span th:text="${message != null ? message : 'Страву додано!'}">OK</span>
@@ -144,6 +147,7 @@
         <div class="mt-2 text-right">
             <a th:href="@{/cart}" class="text-xs text-white underline opacity-70 hover-opacity-100">Перейти до кошика</a>
         </div>
+    </div>
     </div>
 </div>
 
