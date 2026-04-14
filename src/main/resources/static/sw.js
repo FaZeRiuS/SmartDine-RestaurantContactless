@@ -1,4 +1,5 @@
-const CACHE_NAME = 'smartdine-v10';
+// Bump this to force clients to pick up fresh CSS/JS after UI changes.
+const CACHE_NAME = 'smartdine-v11';
 const ASSETS_TO_CACHE = [
   '/css/base.css',
   '/css/layout.css',
