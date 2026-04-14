@@ -17,11 +17,9 @@ document.body?.addEventListener('htmx:afterRequest', (evt) => {
         const form = elt.closest ? elt.closest('form') : null;
         const formId = (form && form.id) ? form.id : elt.id;
         if (formId === 'menuSaveForm') {
-            refreshMenusTable();
             if (typeof closeModal === 'function') closeModal('menuModal');
         }
         if (formId === 'dishSaveForm') {
-            refreshDishesTable();
             if (typeof closeModal === 'function') closeModal('dishModal');
         }
     } catch (e) {
