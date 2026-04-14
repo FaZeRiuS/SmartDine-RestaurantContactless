@@ -126,11 +126,10 @@
         <div class="d-flex align-center gap-3">
             <span th:text="${message != null ? message : 'Страву додано!'}">OK</span>
         </div>
-        <a th:href="@{/cart}"
-           class="toast-action"
-           th:if="${recommendDish == null}">
-            Кошик
-        </a>
+        <a class="toast-action"
+           th:if="${recommendDish == null}"
+           th:href="${toastPrimaryHref} ?: @{/cart}"
+           th:text="${toastPrimaryLabel} ?: 'Кошик'">Кошик</a>
     </div>
 
     <div th:if="${recommendDish != null}" class="toast-combo-offer">
@@ -145,7 +144,9 @@
             </form>
         </div>
         <div class="mt-2 text-right">
-            <a th:href="@{/cart}" class="text-xs text-white underline opacity-70 hover-opacity-100">Перейти до кошика</a>
+            <a class="text-xs text-white underline opacity-70 hover-opacity-100"
+               th:href="${toastPrimaryHref} ?: @{/cart}"
+               th:text="${toastSecondaryLabel} ?: 'Перейти до кошика'">Перейти до кошика</a>
         </div>
     </div>
     </div>

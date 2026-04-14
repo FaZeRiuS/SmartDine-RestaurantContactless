@@ -19,6 +19,8 @@ import java.time.LocalTime;
 
 import com.example.CourseWork.service.RecommendationService;
 import com.example.CourseWork.service.DishRatingService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -34,6 +36,7 @@ public class MenuServiceImpl implements MenuService {
 
     @Transactional
     @Override
+    @Cacheable(cacheNames = "menusWithDishes", key = "@publicPageCacheKey.menusWithDishesKey()")
     public List<MenuWithDishesDto> getAllMenusWithDishes() {
         List<Menu> menus = menuRepository.findAll();
         if (menus.isEmpty()) {
@@ -95,6 +98,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {"menusWithDishes", "availableDishes"}, allEntries = true)
     public MenuResponseDto createMenu(MenuDto dto) {
         Menu menu = new Menu();
         menu.setName(dto.getName());
@@ -104,6 +108,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @CacheEvict(cacheNames = {"menusWithDishes", "availableDishes"}, allEntries = true)
     public MenuResponseDto updateMenu(Integer id, MenuDto dto) {
         @SuppressWarnings("null")
         Menu menu = menuRepository.findById(id)
@@ -117,6 +122,7 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     @SuppressWarnings("null")
+    @CacheEvict(cacheNames = {"menusWithDishes", "availableDishes"}, allEntries = true)
     public void deleteMenu(Integer id) {
         @SuppressWarnings("null")
         boolean exists = menuRepository.existsById(id);

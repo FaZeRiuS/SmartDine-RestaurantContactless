@@ -136,6 +136,14 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
 
 		<!-- Web Push Notifications -->
 		<dependency>
@@ -208,6 +216,32 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>bundle-public-css</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<mkdir dir="${project.build.outputDirectory}/static/css"/>
+								<concat destfile="${project.build.outputDirectory}/static/css/public-bundle.css" encoding="UTF-8" append="false">
+									<fileset file="${project.basedir}/src/main/resources/static/css/base.css"/>
+									<fileset file="${project.basedir}/src/main/resources/static/css/layout.css"/>
+									<fileset file="${project.basedir}/src/main/resources/static/css/components.css"/>
+									<fileset file="${project.basedir}/src/main/resources/static/css/pages.css"/>
+									<fileset file="${project.basedir}/src/main/resources/static/css/responsive.css"/>
+								</concat>
+							</target>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>

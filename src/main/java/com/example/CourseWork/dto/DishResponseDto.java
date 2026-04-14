@@ -11,6 +11,9 @@ public class DishResponseDto {
     private String description;
     private BigDecimal price;
     private String imageUrl;
+    /** Responsive variants for {@code /uploads/*.jpg} (optional; set by mapper). */
+    private String imageUrlSmall;
+    private String imageUrlMedium;
     private Boolean isAvailable;
     private Double avgRating;
     private Long ratingsCount;

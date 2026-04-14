@@ -1,11 +1,7 @@
 // Bump this to force clients to pick up fresh CSS/JS after UI changes.
-const CACHE_NAME = 'smartdine-v11';
+const CACHE_NAME = 'smartdine-v14';
 const ASSETS_TO_CACHE = [
-  '/css/base.css',
-  '/css/layout.css',
-  '/css/components.css',
-  '/css/pages.css',
-  '/css/responsive.css',
+  '/css/public-bundle.css',
   '/css/admin.css',
   '/css/dashboard.css',
   '/js/ui.js',
@@ -13,8 +9,11 @@ const ASSETS_TO_CACHE = [
   '/js/csrf.js',
   '/js/sse.js',
   '/js/htmx-bridge.js',
+  '/js/vendor/alpine-3.14.9.min.js',
+  '/js/vendor/htmx-1.9.11.min.js',
+  '/js/vendor/htmx-sse-1.9.11.js',
+  '/js/vendor/twemoji-14.0.2.min.js',
   '/js/history.js',
-  '/js/menu-filter.js',
   '/js/admin.js',
   '/js/dashboard-charts.js',
   '/js/staff.js',
