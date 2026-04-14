@@ -112,6 +112,12 @@
         <div class="toast-body-main">
             <span th:text="${message != null ? message : ''}">OK</span>
         </div>
+        <button type="button"
+                class="toast-action"
+                th:if="${recommendDish == null && (toastType == null || #strings.contains(toastType, 'success'))}"
+                onclick="window.location.href='/cart'">
+            До кошика
+        </button>
         <div th:if="${recommendDish != null}"
              class="toast-combo-offer mt-2 pt-2"
              style="border-top: 1px solid rgba(255,255,255,0.12);">

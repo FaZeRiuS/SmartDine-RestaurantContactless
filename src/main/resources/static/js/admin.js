@@ -8,6 +8,25 @@ function refreshMenusTable() {
     htmx.ajax('GET', url, { target: '#adminMenusRoot', swap: 'innerHTML' });
 }
 
+// Ensure tables refresh after successful modal saves (works even if hx-on attribute is mis-typed).
+document.body?.addEventListener('htmx:afterRequest', (evt) => {
+    try {
+        const elt = evt?.detail?.elt;
+        const successful = evt?.detail?.successful === true;
+        if (!elt || !successful) return;
+        if (elt.id === 'menuSaveForm') {
+            refreshMenusTable();
+            if (typeof closeModal === 'function') closeModal('menuModal');
+        }
+        if (elt.id === 'dishSaveForm') {
+            refreshDishesTable();
+            if (typeof closeModal === 'function') closeModal('dishModal');
+        }
+    } catch (e) {
+        // ignore
+    }
+});
+
 function configureMenuSaveForm() {
     const form = document.getElementById('menuSaveForm');
     if (!form) return;

@@ -79,7 +79,8 @@
         <form id="menuSaveForm"
               hx-target="#adminMenusRoot"
               hx-swap="innerHTML"
-              hx-on::after-request="if (event.detail.successful) closeModal('menuModal')">
+              hx-on::afterRequest="if (event.detail.successful) closeModal('menuModal')"
+              hx-disabled-elt="#menuSaveSubmit">
             <input type="hidden" id="menuEditId">
             <div class="modal-body">
                 <div class="form-group">
@@ -97,7 +98,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('menuModal')">Скасувати</button>
-                <button type="submit" class="btn btn-primary">&#128190; Зберегти</button>
+                <button type="submit" class="btn btn-primary" id="menuSaveSubmit">&#128190; Зберегти</button>
             </div>
         </form>
     </div>
@@ -113,7 +114,8 @@
         <form id="dishSaveForm"
               hx-target="#adminDishesRoot"
               hx-swap="innerHTML"
-              hx-on::after-request="if (event.detail.successful) closeModal('dishModal')">
+              hx-on::afterRequest="if (event.detail.successful) closeModal('dishModal')"
+              hx-disabled-elt="#dishSaveSubmit">
             <input type="hidden" id="dishEditId">
             <div class="modal-body">
                 <div class="form-group">
@@ -151,6 +153,7 @@
                 </div>
                 <div class="form-group">
                     <div class="form-check">
+                        <input type="hidden" name="isAvailable" value="false">
                         <input type="checkbox" id="dishAvailable" name="isAvailable" value="true" checked>
                         <label class="form-label mb-0" for="dishAvailable">Доступна для замовлення</label>
                     </div>
@@ -158,7 +161,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal('dishModal')">Скасувати</button>
-                <button type="submit" class="btn btn-primary">&#128190; Зберегти</button>
+                <button type="submit" class="btn btn-primary" id="dishSaveSubmit">&#128190; Зберегти</button>
             </div>
         </form>
     </div>

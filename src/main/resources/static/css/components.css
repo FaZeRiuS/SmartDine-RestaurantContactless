@@ -498,11 +498,22 @@
     margin-left: 0;
 }
 
-/* Twemoji images should behave like text glyphs */
+/* Emoji images (Twemoji) should behave like text glyphs */
+img.emoji,
 img.twemoji {
     width: 1em;
     height: 1em;
     vertical-align: -0.15em;
+    display: inline-block;
+    flex: 0 0 1em;
+}
+
+/* Prevent button layout shift when emoji SVG loads */
+.btn img.emoji,
+.btn img.twemoji {
+    width: 1em;
+    height: 1em;
+    flex: 0 0 1em;
 }
 
 

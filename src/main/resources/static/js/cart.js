@@ -78,6 +78,7 @@ async function injectReviewModalFromServer(orderId) {
 
 function maybeAutoOpenReviewModal(order) {
     try {
+        if (window.isCustomer === false) return;
         if (!order || !order.id) return;
         const canReview = order.paymentStatus === 'SUCCESS' && (order.status === 'READY' || order.status === 'COMPLETED');
         if (!canReview) return;
@@ -143,6 +144,7 @@ function checkActiveOrder() {
 }
 
 function openActiveOrderReviewModal() {
+    if (window.isCustomer === false) return;
     const o = window.__lastActiveOrderForReview;
     if (!o || !o.id) return;
     injectReviewModalFromServer(o.id).then((overlay) => {

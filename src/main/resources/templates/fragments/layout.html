@@ -164,6 +164,7 @@
     <script th:inline="javascript">
         window.vapidPublicKey = /*[[${vapidPublicKey}]]*/ null;
         window.isAuthenticated = /*[[${#authentication.name != 'anonymousUser'}]]*/ false;
+        window.isCustomer = /*[[${#authorization.expression('hasRole(''CUSTOMER'')')}]]*/ false;
     </script>
     
     <!-- Alpine.js -->
@@ -187,7 +188,7 @@
             function parseEmojis(root) {
                 try {
                     if (!window.twemoji || typeof window.twemoji.parse !== 'function') return;
-                    window.twemoji.parse(root || document.body, { folder: 'svg', ext: '.svg' });
+                    window.twemoji.parse(root || document.body, { folder: 'svg', ext: '.svg', className: 'twemoji' });
                 } catch (e) { /* ignore */ }
             }
 
@@ -238,6 +239,11 @@
             document.body?.addEventListener('htmx:afterSwap', function (evt) {
                 const t = evt && evt.detail ? evt.detail.target : null;
                 parseEmojis(t || document.body);
+            });
+
+            // Ensure emojis are parsed even if CDN is slow.
+            window.addEventListener('load', function () {
+                parseEmojis(document.body);
             });
         });
     </script>
