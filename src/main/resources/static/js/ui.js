@@ -3,16 +3,39 @@
  */
 
 function initSharedUI() {
-    initMobileMenu();
     if (window.isAuthenticated) {
         loadLoyaltySummary();
     }
     initPushNotifications();
     checkUrlParams();
+
+    // 7. Auto-cleanup for toasts (including those from HTMX OOB)
+    const toastContainer = document.getElementById('toastContainer');
+    if (toastContainer) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1 && node.classList.contains('toast')) {
+                        // Auto-remove after 6 seconds if not already being handled
+                        setTimeout(() => {
+                            if (node.parentElement) {
+                                node.style.opacity = '0';
+                                node.style.transform = 'translateY(10px)';
+                                setTimeout(() => node.remove(), 400);
+                            }
+                        }, 6000);
+                    }
+                });
+            });
+        });
+        observer.observe(toastContainer, { childList: true });
+    }
 }
 
 // Exposed to central orchestration in layout.html
 window.initSharedUI = initSharedUI;
+window.renderStars = renderStars;
+window.initStarPickersIn = initStarPickersIn;
 
 /**
  * Sends a critical error log to the server for PWA/Lifecycle monitoring.
@@ -138,6 +161,10 @@ function showToast(message, type = 'info', action = null) {
     }
     
     container.appendChild(toast);
+
+    if (window.twemoji && typeof window.twemoji.parse === 'function') {
+        window.twemoji.parse(toast, { folder: 'svg', ext: '.svg', className: 'twemoji' });
+    }
     
     const duration = action ? 8000 : 4000;
     setTimeout(() => {
@@ -222,36 +249,7 @@ function formatPaymentStatus(status) {
     return map[status] || status;
 }
 
-// ── Responsive Burger Menu Handler (Sitewide) ──
-function initMobileMenu() {
-    const toggle = document.getElementById('menuToggle');
-    const nav = document.getElementById('burgerNav');
-    
-    if (toggle && nav) {
-        // Toggle on click
-        toggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            nav.classList.toggle('open');
-            toggle.innerHTML = nav.classList.contains('open') ? '✕' : '☰';
-        });
 
-        // Close on outside click
-        document.addEventListener('click', (e) => {
-            if (nav.classList.contains('open') && !nav.contains(e.target) && !toggle.contains(e.target)) {
-                nav.classList.remove('open');
-                toggle.innerHTML = '☰';
-            }
-        });
-
-        // Close on link click
-        nav.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                nav.classList.remove('open');
-                toggle.innerHTML = '☰';
-            });
-        });
-    }
-}
 // ── Push Notifications ──
 
 async function initPushNotifications() {
@@ -353,10 +351,13 @@ async function sendSubscriptionToServer(subscription) {
 }
 
 function getCsrfToken() {
+    if (window.__csrf && typeof window.__csrf.token === 'function') {
+        return window.__csrf.token() || '';
+    }
     const name = 'XSRF-TOKEN';
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
+    if (parts.length === 2) return parts.pop()?.split(';').shift() || '';
     return '';
 }
 

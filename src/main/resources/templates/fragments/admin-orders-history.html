@@ -30,20 +30,10 @@
                     <td th:text="${order.userId != null and #strings.length(order.userId) > 8}
  ? |${#strings.substring(order.userId, 0, 8)}…| : ${order.userId}">—</td>
                     <td>
-                        <span class="status-badge" th:classappend="|status-${order.status}|"
-                              th:text="${order.status == T(com.example.CourseWork.addition.OrderStatus).NEW} ? 'Нове'
-                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).PREPARING} ? 'Готується'
-                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).READY} ? 'Готове'
-                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).COMPLETED} ? 'Завершене'
-                                : (${order.status == T(com.example.CourseWork.addition.OrderStatus).CANCELLED} ? 'Скасоване'
-                                : ${order.status}))))">—</span>
+                        <th:block th:replace="~{fragments/status-badges :: order(status=${order.status})}"></th:block>
                     </td>
                     <td>
-                        <span class="status-badge" th:classappend="|payment-${order.paymentStatus}|"
-                              th:text="${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).PENDING} ? 'Очікує'
-                                : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).SUCCESS} ? 'Оплачено'
-                                : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).FAILED} ? 'Помилка'
-                                : ${order.paymentStatus}))">—</span>
+                        <th:block th:replace="~{fragments/status-badges :: payment(paymentStatus=${order.paymentStatus})}"></th:block>
                     </td>
                     <td class="order-price-cell"
                         th:text="|${#numbers.formatDecimal(order.totalPrice, 1, 2)} &#x20B4;|">0</td>
@@ -90,19 +80,9 @@
         </div>
         <div class="mb-2 d-flex flex-wrap gap-1 align-center">
             <strong>Статус:</strong>
-            <span class="status-badge" th:classappend="|status-${order.status}|"
-                  th:text="${order.status == T(com.example.CourseWork.addition.OrderStatus).NEW} ? 'Нове'
-                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).PREPARING} ? 'Готується'
-                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).READY} ? 'Готове'
-                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).COMPLETED} ? 'Завершене'
-                    : (${order.status == T(com.example.CourseWork.addition.OrderStatus).CANCELLED} ? 'Скасоване'
-                    : ${order.status}))))">—</span>
+            <th:block th:replace="~{fragments/status-badges :: order(status=${order.status})}"></th:block>
             <strong>Оплата:</strong>
-            <span class="status-badge" th:classappend="|payment-${order.paymentStatus}|"
-                  th:text="${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).PENDING} ? 'Очікує'
-                    : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).SUCCESS} ? 'Оплачено'
-                    : (${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).FAILED} ? 'Помилка'
-                    : ${order.paymentStatus}))">—</span>
+            <th:block th:replace="~{fragments/status-badges :: payment(paymentStatus=${order.paymentStatus})}"></th:block>
         </div>
         <div class="mb-2">
             <strong>Сума:</strong>

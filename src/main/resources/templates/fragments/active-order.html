@@ -15,29 +15,7 @@
                     <span class="title-accent" th:unless="${homeActiveOrderWidget}">&#128276;</span>
                     Ваш статус замовлення #<span id="activeOrderId" th:text="${activeOrder.id}">0</span>
                 </h3>
-                <div class="status-badges-group">
-                    <div class="status-badge-wrapper" id="orderStatusWrapper">
-                        <span id="activeOrderStatus"
-                              class="order-status-badge"
-                              th:classappend="' status-' + ${#strings.toLowerCase(activeOrder.status.name())}"
-                              th:text="${activeOrder.status.name() == 'NEW'} ? 'Нове' :
-                                      (${activeOrder.status.name() == 'PREPARING'} ? 'Готується' :
-                                      (${activeOrder.status.name() == 'READY'} ? 'Готове' :
-                                      (${activeOrder.status.name() == 'COMPLETED'} ? 'Виконано' :
-                                      (${activeOrder.status.name() == 'CANCELLED'} ? 'Скасоване' : ${activeOrder.status}))))">
-                        </span>
-                    </div>
-                    <div class="status-badge-separator"></div>
-                    <div class="status-badge-wrapper" id="paymentStatusWrapper">
-                        <span id="activePaymentStatus"
-                              class="order-status-badge"
-                              th:classappend="' payment-' + ${#strings.toLowerCase(activeOrder.paymentStatus.name())}"
-                              th:text="${activeOrder.paymentStatus.name() == 'PENDING'} ? 'Очікує оплати' :
-                                      (${activeOrder.paymentStatus.name() == 'SUCCESS'} ? 'Оплачено' :
-                                      (${activeOrder.paymentStatus.name() == 'FAILED'} ? 'Помилка оплати' : ${activeOrder.paymentStatus}))">
-                        </span>
-                    </div>
-                </div>
+                <div th:replace="~{fragments/status-badges :: render(status=${activeOrder.status}, paymentStatus=${activeOrder.paymentStatus})}"></div>
             </div>
 
             <div th:classappend="${homeActiveOrderWidget} ? ' active-order-minimal-info' : ''">

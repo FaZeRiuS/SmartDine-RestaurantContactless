@@ -2,7 +2,7 @@
   "name": "SmartDine — Безконтактне замовлення",
   "short_name": "SmartDine",
   "description": "Система безконтактного замовлення страв у ресторані через QR-код",
-  "start_url": "./",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",

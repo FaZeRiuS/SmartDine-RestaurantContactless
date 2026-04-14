@@ -18,16 +18,16 @@
             <td colspan="6" class="text-muted">Страв ще немає. Додайте першу через «Нова страва».</td>
         </tr>
         <tr th:each="dish : ${dishes}">
-            <td style="font-weight:700;color:var(--text-primary)" th:text="${dish.id}">0</td>
-            <td style="font-weight:600;color:var(--text-primary)" th:text="${dish.name}">—</td>
-            <td style="color:var(--gold);font-weight:600;white-space:nowrap"
+            <td class="data-table-id" th:text="${dish.id}">0</td>
+            <td class="fw-600 color-text-primary" th:text="${dish.name}">—</td>
+            <td class="data-table-price"
                 th:utext="${#numbers.formatDecimal(dish.price, 1, 2)} + ' &#x20B4;'">0.00</td>
             <td>
-                <span th:if="${dish.isAvailable != false}" style="color:var(--accent-green)" th:utext="'&#x2705;'">+</span>
-                <span th:if="${dish.isAvailable == false}" style="color:var(--accent-red)" th:utext="'&#x274C;'">-</span>
+                <span th:if="${dish.isAvailable != false}" class="data-table-available-yes">✅</span>
+                <span th:if="${dish.isAvailable == false}" class="data-table-available-no">❌</span>
             </td>
             <td>
-                <div class="dish-tags" style="margin:0" th:if="${dish.tags != null and !dish.tags.isEmpty()}">
+                <div class="dish-tags m-0" th:if="${dish.tags != null and !dish.tags.isEmpty()}">
                     <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
                 </div>
                 <span class="text-muted" th:if="${dish.tags == null or dish.tags.isEmpty()}">—</span>
@@ -36,13 +36,13 @@
                 <div class="d-flex gap-1">
                     <button type="button" class="btn btn-secondary btn-sm"
                             th:attr="onclick=|openDishModalById(${dish.id})|"
-                            aria-label="Редагувати страву" th:utext="'&#x270F;&#xFE0F;'">E</button>
+                            aria-label="Редагувати страву">✏️</button>
                     <button type="button" class="btn btn-danger btn-sm"
                             th:attr="hx-delete=|/htmx/admin/dishes/${dish.id}|,
                                      hx-target='#adminDishesRoot',
                                      hx-swap='innerHTML',
                                      hx-confirm='Видалити цю страву?'"
-                            aria-label="Видалити страву" th:utext="'&#x1F5D1;&#xFE0F;'">D</button>
+                            aria-label="Видалити страву">🗑️</button>
                 </div>
             </td>
         </tr>

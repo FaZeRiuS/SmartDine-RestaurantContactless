@@ -354,6 +354,26 @@
     flex-wrap: wrap;
 }
 
+/* Review-specific modal additions */
+.modal-review-id {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.review-modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.review-modal-row + .review-modal-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 
 /* ── Forms ────────────────────────────────────────────── */
 .form-group {

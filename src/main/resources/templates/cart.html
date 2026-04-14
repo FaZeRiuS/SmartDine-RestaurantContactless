@@ -39,6 +39,17 @@
              hx-trigger="load"
              hx-swap="innerHTML"></div>
 
+        <div id="cartSuppressedHint" class="cart-summary p-1 mb-2 hidden">
+            <div class="fw-800 mb-1">Активне замовлення</div>
+            <div class="text-muted text-sm">
+                У вас вже є активне замовлення. Додавання страв зараз відбувається прямо в нього,
+                тому кошик може виглядати порожнім.
+            </div>
+            <div class="text-muted text-xs mt-1">
+                Після завершення/оплати замовлення кошик знову буде доступний.
+            </div>
+        </div>
+
         <!-- Cart content (Server-Driven UI via Thymeleaf fragments + HTMX) -->
         <div th:replace="~{fragments/cart :: content}"></div>
     </div>
@@ -46,8 +57,6 @@
 
 <div th:replace="~{fragments/layout :: mobile-nav}"></div>
 <div th:replace="~{fragments/layout :: footer}"></div>
-<div class="toast-container" id="toastContainer"></div>
-
     <!-- Scripts: identity + SSE notifications (sse.js) -->
     <div th:replace="~{fragments/layout :: scripts}"></div>
 </body>

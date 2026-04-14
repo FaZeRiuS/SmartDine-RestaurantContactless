@@ -178,17 +178,17 @@
         font-size: 0.9rem;
     }
 
-    /* Buttons: larger for touch targets */
+    /* Buttons: larger for touch targets but balanced */
     .btn {
         padding: 12px 24px;
-        font-size: 1.2rem;
-        font-weight: 600;
+        font-size: 1.05rem;
+        font-weight: 700;
     }
-
+    
     .btn-sm {
-        padding: 10px 20px;
-        font-size: 1.1rem;
-        font-weight: 600;
+        padding: 8px 18px;
+        font-size: 0.95rem;
+        font-weight: 700;
     }
 
     /* Navbar */

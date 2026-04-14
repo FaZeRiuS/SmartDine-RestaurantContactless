@@ -1,15 +1,24 @@
-const CACHE_NAME = 'smartdine-v9';
+const CACHE_NAME = 'smartdine-v10';
 const ASSETS_TO_CACHE = [
   '/css/base.css',
   '/css/layout.css',
   '/css/components.css',
   '/css/pages.css',
   '/css/responsive.css',
+  '/css/admin.css',
   '/css/dashboard.css',
   '/js/ui.js',
   '/js/cart.js',
   '/js/csrf.js',
   '/js/sse.js',
+  '/js/htmx-bridge.js',
+  '/js/history.js',
+  '/js/menu-filter.js',
+  '/js/admin.js',
+  '/js/dashboard-charts.js',
+  '/js/staff.js',
+  '/js/orders-history-admin.js',
+
   '/icons/android-chrome-192x192.png',
   '/icons/android-chrome-512x512.png',
   '/icons/apple-touch-icon.png',

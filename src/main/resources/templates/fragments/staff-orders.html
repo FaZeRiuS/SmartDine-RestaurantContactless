@@ -68,19 +68,8 @@
     </div>
 </div>
 
-<!-- HTMX response after PUT status: board swap + optional toast (OOB) -->
-<th:block th:fragment="boardAfterStatusUpdate">
-    <div th:replace="~{fragments/staff-orders :: board}"></div>
-    <div th:if="${staffToastMessage != null}"
-         hx-swap-oob="beforeend:#toastContainer"
-         class="toast toast-success"
-         x-data="{}"
-         x-init="setTimeout(() => $el.remove(), 8000)">
-        <div class="toast-body-main">
-            <span th:text="${staffToastMessage}">OK</span>
-        </div>
-    </div>
-</th:block>
+<!-- HTMX response after status update uses board fragment only.
+     Toast UX is handled client-side via data-toast-* attributes (htmx-bridge.js). -->
 
 <th:block th:fragment="orderCard(order)">
     <div class="order-card fade-in-up"
@@ -93,13 +82,7 @@
                 </span>
                 <span class="waiter-called-badge" th:if="${order.needsWaiter}">Потрібен офіціант!</span>
             </div>
-            <span class="order-status-badge"
-                  th:classappend="' status-' + ${#strings.toLowerCase(order.status.name())}"
-                  th:text="${order.status.name() == 'NEW'} ? 'Нове' :
-                           (${order.status.name() == 'PREPARING'} ? 'Готується' :
-                           (${order.status.name() == 'READY'} ? 'Готове' :
-                           (${order.status.name() == 'COMPLETED'} ? 'Завершене' :
-                           (${order.status.name() == 'CANCELLED'} ? 'Скасоване' : ${order.status}))))">—</span>
+            <div th:replace="~{fragments/status-badges :: render(status=${order.status}, paymentStatus=null)}"></div>
         </div>
         <div class="order-card-body">
             <div class="order-item-row" th:each="item : ${order.items}">
@@ -130,7 +113,7 @@
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
                         data-toast-pending="Оновлюємо статус..."
-                        data-toast-success="Статус оновлено"
+                        th:attrappend="data-toast-success=|Замовлення #${order.id}: статус «Готується»|"
                         data-toast-success-type="success">&#128293; Готувати</button>
                 <button type="button" class="btn btn-success btn-sm"
                         th:if="${order.status.name() == 'PREPARING'}"
@@ -138,7 +121,7 @@
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
                         data-toast-pending="Оновлюємо статус..."
-                        data-toast-success="Статус оновлено"
+                        th:attrappend="data-toast-success=|Замовлення #${order.id}: статус «Готове»|"
                         data-toast-success-type="success">&#9989; Готове</button>
                 <button type="button" class="btn btn-secondary btn-sm"
                         th:if="${order.status.name() == 'READY'}"
@@ -146,7 +129,7 @@
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
                         data-toast-pending="Оновлюємо статус..."
-                        data-toast-success="Статус оновлено"
+                        th:attrappend="data-toast-success=|Замовлення #${order.id}: завершено|"
                         data-toast-success-type="success">&#127937; Завершити</button>
 
                 <button type="button" class="btn btn-danger btn-sm"
@@ -155,7 +138,7 @@
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
                         data-toast-pending="Скасовуємо замовлення..."
-                        data-toast-success="Замовлення скасовано"
+                        th:attrappend="data-toast-success=|Замовлення #${order.id}: скасовано|"
                         data-toast-success-type="success">&#10060; Скасувати</button>
             </div>
         </div>

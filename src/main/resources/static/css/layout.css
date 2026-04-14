@@ -138,10 +138,6 @@
     display: none !important;
 }
 
-.navbar-nav.open .nav-burger-only {
-    display: flex !important;
-}
-
 .burger-menu-container {
     position: relative;
     display: flex;

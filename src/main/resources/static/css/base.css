@@ -73,6 +73,13 @@ body {
     text-rendering: optimizeSpeed;
 }
 
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+
 /* Toast fallback styles (in case components.css is stale/not applied) */
 .toast-container {
     position: fixed;

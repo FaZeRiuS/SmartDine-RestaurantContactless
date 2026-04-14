@@ -109,9 +109,7 @@
 <div th:fragment="toast">
     <div hx-swap-oob="beforeend:#toastContainer"
          class="toast"
-         th:classappend="${(toastType != null ? ' ' + toastType : ' toast-success') + (recommendDish != null ? ' toast-rich' : '')}"
-         x-data="{}"
-         x-init="setTimeout(() => $el.remove(), 8000)">
+         th:classappend="${(toastType != null ? ' ' + toastType : ' toast-success') + (recommendDish != null ? ' toast-rich' : '')}">
         <div class="toast-body-main">
             <span th:text="${message != null ? message : ''}">OK</span>
         </div>

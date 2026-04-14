@@ -149,6 +149,25 @@
     color: var(--text-secondary);
 }
 
+.data-table-id {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.data-table-price {
+    font-weight: 600;
+    color: var(--gold);
+    white-space: nowrap;
+}
+
+.data-table-available-yes {
+    color: var(--accent-green) !important;
+}
+
+.data-table-available-no {
+    color: var(--accent-red) !important;
+}
+
 .data-table tr:hover td {
     background: var(--bg-card);
 }

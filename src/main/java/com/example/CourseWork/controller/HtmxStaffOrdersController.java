@@ -38,8 +38,7 @@ public class HtmxStaffOrdersController {
             Model model) {
         orderService.updateOrderStatus(id, newStatus);
         populateBoardModel(filter, model);
-        model.addAttribute("staffToastMessage", staffStatusToastMessage(newStatus, id));
-        return "fragments/staff-orders :: boardAfterStatusUpdate";
+        return "fragments/staff-orders :: board";
     }
 
     @DeleteMapping("/{id}/call-waiter")
@@ -67,17 +66,6 @@ public class HtmxStaffOrdersController {
         model.addAttribute("ordersReady", ready);
         model.addAttribute("boardEmpty", inProgress.isEmpty() && ready.isEmpty());
         model.addAttribute("boardRenderedAt", RENDERED_AT.format(LocalTime.now()));
-    }
-
-    private static String staffStatusToastMessage(OrderStatus newStatus, Integer orderId) {
-        String prefix = orderId != null ? "Замовлення #" + orderId + ": " : "";
-        return switch (newStatus) {
-            case PREPARING -> prefix + "статус «Готується»";
-            case READY -> prefix + "статус «Готове»";
-            case COMPLETED -> prefix + "завершено";
-            case CANCELLED -> prefix + "скасовано";
-            default -> prefix + "оновлено";
-        };
     }
 
     private static List<OrderResponseDto> applyFilter(List<OrderResponseDto> all, String filter) {

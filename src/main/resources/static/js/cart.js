@@ -48,8 +48,9 @@ async function injectReviewModalFromServer(orderId) {
             const comment = modal.querySelector('#reviewModalComment')?.value ?? null;
 
             const headers = { 'Content-Type': 'application/json' };
-            if (typeof getCsrfToken === 'function') {
-                headers['X-XSRF-TOKEN'] = getCsrfToken();
+            const token = typeof getCsrfToken === 'function' ? getCsrfToken() : null;
+            if (token) {
+                headers['X-XSRF-TOKEN'] = token;
             }
 
             const postRes = await fetch(`/api/orders/${orderId}/reviews`, {
@@ -138,6 +139,21 @@ document.body?.addEventListener('htmx:afterSwap', (evt) => {
         t.classList.add('hidden');
     }
     syncHomeLayoutAfterActiveOrderSwap();
+
+    // Cart page UX: if there is an active (unpaid) order, hide cart content block to avoid
+    // showing an empty cart alongside the active order card (items are added to order directly).
+    const cartContent = document.getElementById('cartContent');
+    const suppressedHint = document.getElementById('cartSuppressedHint');
+    if (cartContent) {
+        const hasActive = t.querySelector('.active-order-card') != null;
+        if (hasActive) {
+            cartContent.classList.add('hidden');
+            if (suppressedHint) suppressedHint.classList.remove('hidden');
+        } else {
+            cartContent.classList.remove('hidden');
+            if (suppressedHint) suppressedHint.classList.add('hidden');
+        }
+    }
 });
 
 function checkActiveOrder() {
@@ -326,6 +342,5 @@ window.refreshCartUI = function () {
 // ── Auto-load ──
 document.addEventListener('DOMContentLoaded', () => {
     // Initial load happens in layout.html after identity is fetched.
-    loadLoyaltySummary();
 });
 

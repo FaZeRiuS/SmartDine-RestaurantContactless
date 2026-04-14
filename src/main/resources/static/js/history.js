@@ -1,35 +1,7 @@
-/* Customer /orders page: HTMX loads fragments; star pickers + review submit stay in JS */
-
-function renderStars(value) {
-    const v = parseInt(value || 0, 10);
-    let out = '';
-    for (let i = 1; i <= 5; i++) {
-        out += i <= v ? '\u2605' : '\u2606';
-    }
-    return `<span style="color: var(--accent-gold); letter-spacing: 1px;">${out}</span>`;
-}
-
-function initStarPickers() {
-    document.querySelectorAll('.star-picker').forEach(el => {
-        if (el.dataset.initialized) return;
-        el.dataset.initialized = '1';
-        el.dataset.value = el.dataset.value || '0';
-        el.style.cursor = 'pointer';
-        el.style.userSelect = 'none';
-        el.style.color = 'var(--accent-gold)';
-        el.style.letterSpacing = '1px';
-        el.innerHTML = renderStars(0);
-
-        el.addEventListener('click', (e) => {
-            const rect = el.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const percent = x / rect.width;
-            const rating = Math.min(5, Math.max(1, Math.ceil(percent * 5)));
-            el.dataset.value = String(rating);
-            el.innerHTML = renderStars(rating);
-        });
-    });
-}
+/* 
+ * Customer /orders page: HTMX loads fragments; 
+ * Star pickers + review submit now use unified globals from ui.js
+ */
 
 function refreshCustomerOrdersList() {
     if (typeof htmx === 'undefined') return;
@@ -74,11 +46,11 @@ async function submitOrderReview(orderId) {
             throw new Error(msg || 'Помилка надсилання відгуку');
         }
 
-        showToast('\u2705 \u0414\u044f\u043a\u0443\u0454\u043c\u043e \u0437\u0430 \u0432\u0456\u0434\u0433\u0443\u043a!', 'success');
+        showToast('✅ Дякуємо за відгук!', 'success');
         refreshCustomerOrdersList();
     } catch (e) {
         if (hint) hint.textContent = e.message;
-        showToast('\u274c ' + e.message, 'error');
+        showToast('❌ ' + e.message, 'error');
     }
 }
 
@@ -92,7 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.body.addEventListener('htmx:afterSwap', (evt) => {
         if (evt.detail.target && evt.detail.target.id === 'customerOrdersRoot') {
-            initStarPickers();
+            if (typeof window.initStarPickersIn === 'function') {
+                window.initStarPickersIn(evt.detail.target);
+            }
         }
     });
 });

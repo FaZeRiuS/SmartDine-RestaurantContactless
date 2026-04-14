@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- 
+   Fragment for Status Badges
+   Expects: 
+     - status: OrderStatus enum or string
+     - paymentStatus: PaymentStatus enum or string (optional)
+     - showPayment: boolean (default true if paymentStatus provided)
+-->
+<!-- Combined fragment for cards -->
+<div th:fragment="render(status, paymentStatus)" class="status-badges-group">
+    <th:block th:replace="~{fragments/status-badges :: order(status=${status})}"></th:block>
+    <th:block th:if="${paymentStatus != null}">
+        <div class="status-badge-separator" th:if="${status != null}"></div>
+        <th:block th:replace="~{fragments/status-badges :: payment(paymentStatus=${paymentStatus})}"></th:block>
+    </th:block>
+</div>
+
+<!-- Order Status Only -->
+<th:block th:fragment="order(status)">
+    <span class="order-status-badge"
+          th:with="sName=${status != null ? (status instanceof T(java.lang.Enum) ? status.name() : status) : ''}"
+          th:classappend="|status-${#strings.toLowerCase(sName)}|"
+          th:text="${sName == 'NEW' ? 'Нове' :
+                  (sName == 'PREPARING' ? 'Готується' :
+                  (sName == 'READY' ? 'Готове' :
+                  (sName == 'COMPLETED' ? 'Завершене' :
+                  (sName == 'CANCELLED' ? 'Скасоване' : sName))))}">—</span>
+</th:block>
+
+<!-- Payment Status Only -->
+<th:block th:fragment="payment(paymentStatus)">
+    <span class="order-status-badge"
+          th:with="pName=${paymentStatus != null ? (paymentStatus instanceof T(java.lang.Enum) ? paymentStatus.name() : paymentStatus) : ''}"
+          th:classappend="|payment-${#strings.toLowerCase(pName)}|"
+          th:text="${pName == 'PENDING' ? 'Очікує' :
+                  (pName == 'SUCCESS' ? 'Оплачено' :
+                  (pName == 'FAILED' ? 'Помилка' : pName))}">—</span>
+</th:block>
+
+</body>
+</html>

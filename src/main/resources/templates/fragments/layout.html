@@ -192,11 +192,9 @@
                 } catch (e) { /* ignore */ }
             }
 
-            // 1. Warm up CSRF (same as csrf.js ensure — sets token before first HTMX load trigger)
+            // 1. Warm up CSRF
             if (window.__csrf && typeof window.__csrf.ensure === 'function') {
                 window.__csrf.ensure().catch(function () { /* ignore */ });
-            } else {
-                fetch('/api/csrf', { credentials: 'same-origin' }).catch(function () { /* ignore */ });
             }
 
             // 2. Service Worker Registration (Fire and forget, runs in background)
@@ -237,6 +235,12 @@
 
             // Re-parse emojis after HTMX swaps (new fragments injected)
             document.body?.addEventListener('htmx:afterSwap', function (evt) {
+                const t = evt && evt.detail ? evt.detail.target : null;
+                parseEmojis(t || document.body);
+            });
+
+            // Ensure OOB-swapped fragments (like toasts) also get parsed.
+            document.body?.addEventListener('htmx:oobAfterSwap', function (evt) {
                 const t = evt && evt.detail ? evt.detail.target : null;
                 parseEmojis(t || document.body);
             });
