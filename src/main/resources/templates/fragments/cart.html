@@ -110,7 +110,14 @@
 <div th:fragment="toast" 
      hx-swap-oob="beforeend:#toastContainer"
      class="toast"
-     th:classappend="${(toastType != null ? ' ' + toastType : ' toast-success') + (recommendDish != null ? ' toast-rich' : '')}">
+     th:classappend="${
+        (
+          toastType != null
+            ? (' ' + (#strings.startsWith(toastType, 'toast-') ? toastType : 'toast-' + toastType))
+            : ' toast-success'
+        )
+        + (recommendDish != null ? ' toast-rich' : '')
+     }">
     
     <div class="toast-body-main">
         <div class="d-flex align-center gap-3">

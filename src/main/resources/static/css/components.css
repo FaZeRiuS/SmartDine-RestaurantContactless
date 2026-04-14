@@ -438,7 +438,10 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    pointer-events: none !important; /* Allow clicks through empty space */
+    /* NOTE: Do not disable pointer events on the container.
+       In HTML, `pointer-events: none` prevents clicks on all descendants too,
+       which breaks toast action buttons. */
+    pointer-events: auto;
 }
 
 .toast {
