@@ -30,16 +30,7 @@ document.body?.addEventListener('htmx:afterRequest', (evt) => {
 });
 
 function configureMenuSaveForm() {
-    const form = document.getElementById('menuSaveForm');
-    if (!form) return;
-    form.removeAttribute('hx-post');
-    form.removeAttribute('hx-put');
-    const id = document.getElementById('menuEditId').value;
-    if (id) {
-        form.setAttribute('hx-put', '/htmx/admin/menus/' + id);
-    } else {
-        form.setAttribute('hx-post', '/htmx/admin/menus');
-    }
+    // No-op: forms always POST; backend upserts by id.
 }
 
 function openMenuModal(data = null) {
@@ -50,7 +41,6 @@ function openMenuModal(data = null) {
     document.getElementById('menuEndTime').value =
         data && data.end && data.end !== 'null' ? data.end : '';
     document.getElementById('menuModalTitle').textContent = data && data.id ? 'Редагувати меню' : 'Нове меню';
-    configureMenuSaveForm();
     openModal('menuModal');
 }
 
@@ -63,16 +53,7 @@ function refreshDishesTable() {
 }
 
 function configureDishSaveForm() {
-    const form = document.getElementById('dishSaveForm');
-    if (!form) return;
-    form.removeAttribute('hx-post');
-    form.removeAttribute('hx-put');
-    const id = document.getElementById('dishEditId').value;
-    if (id) {
-        form.setAttribute('hx-put', '/htmx/admin/dishes/' + id);
-    } else {
-        form.setAttribute('hx-post', '/htmx/admin/dishes');
-    }
+    // No-op: forms always POST; backend upserts by id.
 }
 
 async function openDishModalById(id) {
@@ -106,7 +87,6 @@ function openDishModal() {
     document.getElementById('dishImageFile').value = '';
     document.getElementById('dishImagePreview').style.display = 'none';
     document.getElementById('dishModalTitle').textContent = 'Нова страва';
-    configureDishSaveForm();
     openModal('dishModal');
 }
 
@@ -164,7 +144,6 @@ function openDishModalWithData(dish) {
         }
 
         document.getElementById('dishModalTitle').textContent = id ? 'Редагувати страву' : 'Нова страва';
-        configureDishSaveForm();
         openModal('dishModal');
     } catch (e) {
         showToast('Не вдалося відкрити форму редагування: ' + e.message, 'error');

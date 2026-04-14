@@ -37,7 +37,8 @@ public class HtmxAdminDishesController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
-    public String createDish(
+    public String upsertDish(
+            @RequestParam(required = false) Integer id,
             @RequestParam String name,
             @RequestParam(required = false, defaultValue = "") String description,
             @RequestParam String price,
@@ -47,7 +48,11 @@ public class HtmxAdminDishesController {
             @RequestParam(required = false) String imageUrl,
             Model model) {
         DishDto dto = buildDishDto(name, description, price, menuIds, tags, Boolean.TRUE.equals(isAvailable), imageUrl);
-        dishService.createDish(dto);
+        if (id != null) {
+            dishService.updateDish(id, dto);
+        } else {
+            dishService.createDish(dto);
+        }
         model.addAttribute("dishes", dishService.getAllDishes());
         return "fragments/admin-dishes-table :: dishesTable";
     }

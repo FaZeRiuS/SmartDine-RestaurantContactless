@@ -34,7 +34,8 @@ public class HtmxAdminMenusController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
-    public String createMenu(
+    public String upsertMenu(
+            @RequestParam(required = false) Integer id,
             @RequestParam String name,
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime,
@@ -46,11 +47,16 @@ public class HtmxAdminMenusController {
         dto.setName(name.trim());
         dto.setStartTime(parseTime(startTime));
         dto.setEndTime(parseTime(endTime));
-        menuService.createMenu(dto);
+        if (id != null) {
+            menuService.updateMenu(id, dto);
+        } else {
+            menuService.createMenu(dto);
+        }
         model.addAttribute("menus", menuService.getAllMenusWithDishes());
         return "fragments/admin-menus-table :: menusTable";
     }
 
+    // PUT endpoint kept for backward compatibility with any older clients.
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     public String updateMenu(
