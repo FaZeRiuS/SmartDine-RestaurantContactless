@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smartdine-v6';
+const CACHE_NAME = 'smartdine-v7';
 const ASSETS_TO_CACHE = [
   '/css/base.css',
   '/css/layout.css',
@@ -60,9 +60,11 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Update cache for offline use
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          // Update cache for offline use (avoid caching admin pages or URLs with query params)
+          if (!url.pathname.startsWith('/admin') && !url.search) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
           return response;
         })
         .catch(() => caches.match(event.request))

@@ -77,6 +77,9 @@
             <button type="button" class="modal-close" onclick="closeModal('menuModal')">&#10005;</button>
         </div>
         <form id="menuSaveForm"
+              method="post"
+              action="/htmx/admin/menus"
+              hx-post="/htmx/admin/menus"
               hx-target="#adminMenusRoot"
               hx-swap="innerHTML"
               hx-on::afterRequest="if (event.detail.successful) closeModal('menuModal')"
@@ -112,6 +115,9 @@
             <button type="button" class="modal-close" onclick="closeModal('dishModal')">&#10005;</button>
         </div>
         <form id="dishSaveForm"
+              method="post"
+              action="/htmx/admin/dishes"
+              hx-post="/htmx/admin/dishes"
               hx-target="#adminDishesRoot"
               hx-swap="innerHTML"
               hx-on::afterRequest="if (event.detail.successful) closeModal('dishModal')"
