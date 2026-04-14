@@ -72,7 +72,8 @@ public class SecurityConfig {
                                 "/sw.js",
                                 "/api/test/auth/**",
                                 "/auth/**",
-                                "/icons/**")
+                                "/icons/**",
+                                "/uploads/**")
                         .permitAll()
                         // Swagger/OpenAPI endpoints: disabled in prod and blocked here as
                         // defense-in-depth

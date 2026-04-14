@@ -138,8 +138,13 @@ function escapeHtml(str) {
  * @param {object} action - {text: string, onClick: function}
  */
 function showToast(message, type = 'info', action = null) {
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
     
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;

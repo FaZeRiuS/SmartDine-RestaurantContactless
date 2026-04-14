@@ -38,7 +38,9 @@ public class HtmxStaffOrdersController {
             Model model) {
         orderService.updateOrderStatus(id, newStatus);
         populateBoardModel(filter, model);
-        return "fragments/staff-orders :: board";
+        model.addAttribute("message", "Замовлення #" + id + ": статус «" + getStatusDisplayName(newStatus) + "»");
+        model.addAttribute("type", "success");
+        return "fragments/staff-orders :: board_with_toast";
     }
 
     @DeleteMapping("/{id}/call-waiter")
@@ -49,7 +51,9 @@ public class HtmxStaffOrdersController {
             Model model) {
         orderService.dismissWaiterCall(id);
         populateBoardModel(filter, model);
-        return "fragments/staff-orders :: board";
+        model.addAttribute("message", "Виклик за замовленням #" + id + " опрацьовано");
+        model.addAttribute("type", "success");
+        return "fragments/staff-orders :: board_with_toast";
     }
 
     private void populateBoardModel(String filter, Model model) {
@@ -78,5 +82,15 @@ public class HtmxStaffOrdersController {
         } catch (IllegalArgumentException e) {
             return all;
         }
+    }
+
+    private String getStatusDisplayName(OrderStatus status) {
+        return switch (status) {
+            case NEW -> "Нове";
+            case PREPARING -> "Готується";
+            case READY -> "Готово";
+            case COMPLETED -> "Завершено";
+            case CANCELLED -> "Скасовано";
+        };
     }
 }

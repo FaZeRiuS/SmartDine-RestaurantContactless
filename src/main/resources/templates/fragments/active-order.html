@@ -15,7 +15,7 @@
                     <span class="title-accent" th:unless="${homeActiveOrderWidget}">&#128276;</span>
                     Ваш статус замовлення #<span id="activeOrderId" th:text="${activeOrder.id}">0</span>
                 </h3>
-                <div th:replace="~{fragments/status-badges :: render(status=${activeOrder.status}, paymentStatus=${activeOrder.paymentStatus})}"></div>
+                <div id="activeOrderStatus" th:insert="~{fragments/status-badges :: render(status=${activeOrder.status}, paymentStatus=${activeOrder.paymentStatus})}"></div>
             </div>
 
             <div th:classappend="${homeActiveOrderWidget} ? ' active-order-minimal-info' : ''">

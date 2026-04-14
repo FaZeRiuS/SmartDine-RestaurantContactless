@@ -49,7 +49,7 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
             JOIN dish_menus md ON d.id = md.dish_id
             JOIN menu m ON md.menu_id = m.id
             JOIN ScoredDishes sd ON d.id = sd.dish_id
-            WHERE m.id > 0 AND m.start_time IS NULL
+            WHERE m.id > 0
         ),
         FinalScored AS (
             SELECT d.*, rd.match_score,
@@ -58,7 +58,7 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
             JOIN RankedDishes rd ON d.id = rd.dish_id
             WHERE rd.rn <= 2
         )
-        SELECT fs.*
+        SELECT fs.id, fs.name, fs.description, fs.price, fs.image_url, fs.is_available
         FROM FinalScored fs
         WHERE fs.dish_rn = 1
         ORDER BY fs.match_score DESC

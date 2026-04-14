@@ -103,46 +103,48 @@
                         th:attr="hx-delete=@{/htmx/staff/orders/{id}/call-waiter(id=${order.id},filter=${staffFilter})},
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
-                        data-toast-pending="Позначаємо виклик офіціанта як виконаний..."
-                        data-toast-success="Виклик офіціанта закрито"
-                        data-toast-success-type="success">&#128104;&#8205;&#9794;&#65039; Підійти до столу</button>
+                        data-toast-pending="Позначаємо виклик офіціанта як виконаний...">&#128104;&#8205;&#9794;&#65039; Підійти до столу</button>
 
                 <button type="button" class="btn btn-warning btn-sm"
                         th:if="${order.status.name() == 'NEW'}"
                         th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=PREPARING,filter=${staffFilter})},
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
-                        data-toast-pending="Оновлюємо статус..."
-                        th:attrappend="data-toast-success=|Замовлення #${order.id}: статус «Готується»|"
-                        data-toast-success-type="success">&#128293; Готувати</button>
+                        data-toast-pending="Оновлюємо статус...">&#128293; Готувати</button>
                 <button type="button" class="btn btn-success btn-sm"
                         th:if="${order.status.name() == 'PREPARING'}"
                         th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=READY,filter=${staffFilter})},
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
-                        data-toast-pending="Оновлюємо статус..."
-                        th:attrappend="data-toast-success=|Замовлення #${order.id}: статус «Готове»|"
-                        data-toast-success-type="success">&#9989; Готове</button>
+                        data-toast-pending="Оновлюємо статус...">&#9989; Готове</button>
                 <button type="button" class="btn btn-secondary btn-sm"
                         th:if="${order.status.name() == 'READY'}"
                         th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=COMPLETED,filter=${staffFilter})},
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
-                        data-toast-pending="Оновлюємо статус..."
-                        th:attrappend="data-toast-success=|Замовлення #${order.id}: завершено|"
-                        data-toast-success-type="success">&#127937; Завершити</button>
+                        data-toast-pending="Оновлюємо статус...">&#127937; Завершити</button>
 
                 <button type="button" class="btn btn-danger btn-sm"
                         th:if="${order.status.name() == 'NEW' or order.status.name() == 'PREPARING'}"
                         th:attr="hx-put=@{/htmx/staff/orders/{id}/status(id=${order.id},newStatus=CANCELLED,filter=${staffFilter})},
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
-                        data-toast-pending="Скасовуємо замовлення..."
-                        th:attrappend="data-toast-success=|Замовлення #${order.id}: скасовано|"
-                        data-toast-success-type="success">&#10060; Скасувати</button>
+                        data-toast-pending="Скасовуємо замовлення...">&#10060; Скасувати</button>
             </div>
         </div>
     </div>
+</th:block>
+
+<!-- Helper fragment for OOB toasts from controller -->
+<div th:fragment="toast-oob(message, type)" id="toastContainer" hx-swap-oob="beforeend">
+    <div class="toast" th:classappend="'toast-' + ${type}">
+        <span th:text="${message}">Message</span>
+    </div>
+</div>
+
+<th:block th:fragment="board_with_toast(message, type)">
+    <th:block th:replace="~{fragments/staff-orders :: board}"></th:block>
+    <th:block th:replace="~{fragments/staff-orders :: toast-oob(message=${message}, type=${type})}"></th:block>
 </th:block>
 
 </body>

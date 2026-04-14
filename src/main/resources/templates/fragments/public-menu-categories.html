@@ -50,17 +50,15 @@
                             <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' &#8372;'">0 UAH</span>
                         </div>
 
-                        <th:block th:if="${menuView == 'menu'}">
-                            <div class="dish-rating text-muted"
-                                 th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
-                                &#9733; <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
-                                <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
-                            </div>
-                            <div class="dish-rating text-muted"
-                                 th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
-                                &#9733; Немає оцінок
-                            </div>
-                        </th:block>
+                        <div class="dish-rating text-muted text-sm mb-1"
+                             th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
+                            &#9733; <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
+                            <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
+                        </div>
+                        <div class="dish-rating text-muted text-sm mb-1"
+                             th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
+                            &#9733; Немає оцінок
+                        </div>
 
                         <p class="dish-description" th:text="${dish.description}">Description</p>
 
