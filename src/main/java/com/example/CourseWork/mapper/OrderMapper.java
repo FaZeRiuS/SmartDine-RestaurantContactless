@@ -2,6 +2,7 @@ package com.example.CourseWork.mapper;
 
 import com.example.CourseWork.dto.OrderItemResponseDto;
 import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.model.Order;
 import org.springframework.stereotype.Component;
 
@@ -39,10 +40,17 @@ public class OrderMapper {
         List<OrderItemResponseDto> items = order.getItems().stream().map(item -> {
             OrderItemResponseDto itemDto = new OrderItemResponseDto();
             itemDto.setId(item.getId());
-            itemDto.setDishId(item.getDish().getId());
-            itemDto.setDishName(item.getDish().getName());
+            Dish dish = item.getDish();
+            if (dish != null) {
+                itemDto.setDishId(dish.getId());
+                itemDto.setDishName(dish.getName());
+                itemDto.setPrice(dish.getPrice());
+            } else {
+                itemDto.setDishId(null);
+                itemDto.setDishName("(видалена страва)");
+                itemDto.setPrice(BigDecimal.ZERO);
+            }
             itemDto.setQuantity(item.getQuantity());
-            itemDto.setPrice(item.getDish().getPrice());
             itemDto.setSpecialRequest(item.getSpecialRequest());
             return itemDto;
         }).collect(Collectors.toList());

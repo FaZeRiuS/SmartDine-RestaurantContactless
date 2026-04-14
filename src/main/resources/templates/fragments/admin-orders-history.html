@@ -58,7 +58,7 @@
                 </tr>
                 </tbody>
             </table>
-            <div class="d-flex justify-between align-center mt-1 flex-wrap gap-1" th:if="${ordersPage.totalPages > 1}">
+            <div class="d-flex justify-between align-center mt-2 flex-wrap gap-1" th:if="${ordersPage.totalPages > 1}">
                 <span class="text-muted text-sm"
                       th:text="|Сторінка ${ordersPage.number + 1} з ${ordersPage.totalPages} (${ordersPage.totalElements} усього)|">—</span>
                 <div class="d-flex gap-1">

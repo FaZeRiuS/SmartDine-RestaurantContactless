@@ -3,6 +3,7 @@ package com.example.CourseWork.mapper;
 import com.example.CourseWork.dto.CartItemDetailDto;
 import com.example.CourseWork.dto.CartResponseDto;
 import com.example.CourseWork.model.Cart;
+import com.example.CourseWork.model.Dish;
 import org.springframework.stereotype.Component;
 
 import java.util.stream.Collectors;
@@ -18,9 +19,16 @@ public class CartMapper {
         var items = cart.getItems().stream().map(item -> {
             CartItemDetailDto detail = new CartItemDetailDto();
             detail.setId(item.getId());
-            detail.setDishId(item.getDish().getId());
-            detail.setDishName(item.getDish().getName());
-            detail.setPrice(item.getDish().getPrice());
+            Dish dish = item.getDish();
+            if (dish != null) {
+                detail.setDishId(dish.getId());
+                detail.setDishName(dish.getName());
+                detail.setPrice(dish.getPrice());
+            } else {
+                detail.setDishId(null);
+                detail.setDishName("(видалена страва)");
+                detail.setPrice(java.math.BigDecimal.ZERO);
+            }
             detail.setQuantity(item.getQuantity());
             detail.setSpecialRequest(item.getSpecialRequest());
             return detail;
