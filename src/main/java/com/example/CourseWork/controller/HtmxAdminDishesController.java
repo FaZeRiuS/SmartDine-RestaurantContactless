@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/htmx/admin/dishes")
@@ -38,7 +39,7 @@ public class HtmxAdminDishesController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     public String upsertDish(
-            @RequestParam(required = false) Integer id,
+            @RequestParam(required = false) String id,
             @RequestParam String name,
             @RequestParam(required = false, defaultValue = "") String description,
             @RequestParam String price,
@@ -48,8 +49,9 @@ public class HtmxAdminDishesController {
             @RequestParam(required = false) String imageUrl,
             Model model) {
         DishDto dto = buildDishDto(name, description, price, menuIds, tags, Boolean.TRUE.equals(isAvailable), imageUrl);
-        if (id != null) {
-            dishService.updateDish(id, dto);
+        Integer parsedId = parseOptionalInt(id).orElse(null);
+        if (parsedId != null) {
+            dishService.updateDish(parsedId, dto);
         } else {
             dishService.createDish(dto);
         }
@@ -143,5 +145,16 @@ public class HtmxAdminDishesController {
             }
         }
         return out;
+    }
+
+    private static Optional<Integer> parseOptionalInt(String raw) {
+        if (raw == null) return Optional.empty();
+        String s = raw.trim();
+        if (s.isEmpty()) return Optional.empty();
+        try {
+            return Optional.of(Integer.parseInt(s));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalTime;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/htmx/admin/menus")
@@ -35,7 +36,7 @@ public class HtmxAdminMenusController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     public String upsertMenu(
-            @RequestParam(required = false) Integer id,
+            @RequestParam(required = false) String id,
             @RequestParam String name,
             @RequestParam(required = false) String startTime,
             @RequestParam(required = false) String endTime,
@@ -43,12 +44,13 @@ public class HtmxAdminMenusController {
         if (name == null || name.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Введіть назву меню");
         }
+        Integer parsedId = parseOptionalInt(id).orElse(null);
         MenuDto dto = new MenuDto();
         dto.setName(name.trim());
         dto.setStartTime(parseTime(startTime));
         dto.setEndTime(parseTime(endTime));
-        if (id != null) {
-            menuService.updateMenu(id, dto);
+        if (parsedId != null) {
+            menuService.updateMenu(parsedId, dto);
         } else {
             menuService.createMenu(dto);
         }
@@ -90,5 +92,16 @@ public class HtmxAdminMenusController {
             return null;
         }
         return LocalTime.parse(s);
+    }
+
+    private static Optional<Integer> parseOptionalInt(String raw) {
+        if (raw == null) return Optional.empty();
+        String s = raw.trim();
+        if (s.isEmpty()) return Optional.empty();
+        try {
+            return Optional.of(Integer.parseInt(s));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 }
