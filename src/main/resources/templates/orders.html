@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="uk" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мої замовлення — SmartDine</title>
+    <meta name="description" content="Переглядайте статус активних та минулих замовлень у SmartDine">
+    <th:block th:replace="~{fragments/layout :: cssLinks}"></th:block>
 </head>
 <body>
 
