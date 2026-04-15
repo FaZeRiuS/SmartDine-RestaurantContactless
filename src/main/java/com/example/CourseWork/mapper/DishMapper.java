@@ -2,7 +2,6 @@ package com.example.CourseWork.mapper;
 
 import com.example.CourseWork.dto.DishResponseDto;
 import com.example.CourseWork.model.Dish;
-import com.example.CourseWork.util.DishImageVariants;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,7 +17,6 @@ public class DishMapper {
         dto.setImageUrl(dish.getImageUrl());
         dto.setMenuIds(dish.getMenus().stream().map(com.example.CourseWork.model.Menu::getId).collect(java.util.stream.Collectors.toList()));
         dto.setTags(dish.getTags());
-        DishImageVariants.apply(dto);
         return dto;
     }
 } 

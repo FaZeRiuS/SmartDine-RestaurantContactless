@@ -1,10 +1,7 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.MenuWithDishesDto;
 import com.example.CourseWork.service.MenuService;
-import com.example.CourseWork.service.OrderService;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -26,8 +23,6 @@ import java.util.stream.Collectors;
 public class HtmxMenuCategoriesController {
 
     private final MenuService menuService;
-    private final OrderService orderService;
-    private final CurrentUserIdentity currentUserIdentity;
 
     @GetMapping("/categories-body")
     public String categoriesBody(
@@ -54,14 +49,7 @@ public class HtmxMenuCategoriesController {
 
         model.addAttribute("menus", menus);
         model.addAttribute("menuView", view);
-        model.addAttribute("hasActiveUnpaidOrder", hasActiveUnpaidOrder());
         return "fragments/public-menu-categories :: categoryBodies";
-    }
-
-    private boolean hasActiveUnpaidOrder() {
-        return orderService.getMyActiveOrder(currentUserIdentity.currentUserId())
-                .filter(o -> o.getPaymentStatus() != PaymentStatus.SUCCESS)
-                .isPresent();
     }
 
     private boolean isMenuAvailableNow(MenuWithDishesDto menu, LocalTime now) {

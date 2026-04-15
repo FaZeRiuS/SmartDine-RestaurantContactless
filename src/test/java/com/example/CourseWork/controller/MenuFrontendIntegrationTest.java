@@ -5,7 +5,6 @@ import com.example.CourseWork.dto.MenuWithDishesDto;
 import com.example.CourseWork.service.CartService;
 import com.example.CourseWork.service.DishService;
 import com.example.CourseWork.service.MenuService;
-import com.example.CourseWork.service.OrderService;
 import com.example.CourseWork.service.RecommendationService;
 import org.htmlunit.WebClient;
 import org.htmlunit.html.HtmlPage;
@@ -40,9 +39,6 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
     @MockitoBean
     private CartService cartService;
 
-    @MockitoBean
-    private OrderService orderService;
-
     private WebClient webClient;
 
     @BeforeEach
@@ -53,8 +49,6 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
         CartResponseDto emptyCart = new CartResponseDto();
         emptyCart.setItems(List.of());
         when(cartService.getCartByUserId(any())).thenReturn(emptyCart);
-        when(currentUserIdentity.currentUserId()).thenReturn("test-user");
-        when(orderService.getMyActiveOrder(any())).thenReturn(java.util.Optional.empty());
     }
 
     @Test

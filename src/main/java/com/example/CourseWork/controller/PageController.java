@@ -4,16 +4,13 @@ import com.example.CourseWork.dto.DishResponseDto;
 import com.example.CourseWork.dto.MenuWithDishesDto;
 import com.example.CourseWork.dto.CartResponseDto;
 import com.example.CourseWork.dto.CartItemDetailDto;
-import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.service.CartService;
 import com.example.CourseWork.service.DishService;
 import com.example.CourseWork.service.MenuService;
-import com.example.CourseWork.service.OrderService;
 import com.example.CourseWork.service.RecommendationService;
 import com.example.CourseWork.service.security.CurrentUserIdentity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -35,7 +32,6 @@ public class PageController {
     private final DishService dishService;
     private final RecommendationService recommendationService;
     private final CartService cartService;
-    private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
     private final String keycloakPublicUrl;
 
@@ -44,7 +40,6 @@ public class PageController {
             DishService dishService,
             RecommendationService recommendationService,
             CartService cartService,
-            OrderService orderService,
             CurrentUserIdentity currentUserIdentity,
             @Value("${keycloak.public-url:http://localhost:8080}") String keycloakPublicUrl
     ) {
@@ -52,7 +47,6 @@ public class PageController {
         this.dishService = dishService;
         this.recommendationService = recommendationService;
         this.cartService = cartService;
-        this.orderService = orderService;
         this.currentUserIdentity = currentUserIdentity;
         this.keycloakPublicUrl = keycloakPublicUrl;
     }
@@ -106,9 +100,7 @@ public class PageController {
 
         model.addAttribute("personalizedRecommendations", personalized);
         model.addAttribute("popularDishes", popularDishes);
-        model.addAttribute("lcpPreloadImageUrl", resolveHomeLcpPreloadImageUrl(personalized, popularDishes, auth));
         model.addAttribute("menuView", "index");
-        model.addAttribute("hasActiveUnpaidOrder", hasActiveUnpaidOrder());
 
         return "index";
     }
@@ -141,78 +133,8 @@ public class PageController {
         }
         model.addAttribute("menusForBody", menusForBody);
         model.addAttribute("menuView", "menu");
-        model.addAttribute("hasActiveUnpaidOrder", hasActiveUnpaidOrder());
 
         return "menu";
-    }
-
-    /**
-     * First dish image shown above the fold on home: personalized block (if signed in), else popular
-     * (hidden for staff roles — must match index.html sec:authorize rules).
-     */
-    private static String resolveHomeLcpPreloadImageUrl(
-            List<DishResponseDto> personalized,
-            List<DishResponseDto> popularDishes,
-            Authentication auth) {
-        if (isSignedIn(auth)) {
-            String fromPersonalized = firstLcpPreloadUrl(personalized);
-            if (fromPersonalized != null) {
-                return fromPersonalized;
-            }
-        }
-        if (!isStaffRole(auth)) {
-            return firstLcpPreloadUrl(popularDishes);
-        }
-        return null;
-    }
-
-    private static boolean isSignedIn(Authentication auth) {
-        return auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName());
-    }
-
-    private static boolean isStaffRole(Authentication auth) {
-        if (auth == null) {
-            return false;
-        }
-        return auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(r -> "ROLE_WAITER".equals(r) || "ROLE_CHEF".equals(r) || "ROLE_ADMINISTRATOR".equals(r));
-    }
-
-    /** Prefer medium derivative for LCP byte savings; fall back to small then master. */
-    private static String firstLcpPreloadUrl(List<DishResponseDto> dishes) {
-        if (dishes == null || dishes.isEmpty()) {
-            return null;
-        }
-        for (DishResponseDto d : dishes) {
-            String u = preferredLcpUrlForDish(d);
-            if (u != null) {
-                return u;
-            }
-        }
-        return null;
-    }
-
-    private static String preferredLcpUrlForDish(DishResponseDto d) {
-        if (d == null) {
-            return null;
-        }
-        if (d.getImageUrlMedium() != null && !d.getImageUrlMedium().isBlank()) {
-            return d.getImageUrlMedium();
-        }
-        if (d.getImageUrlSmall() != null && !d.getImageUrlSmall().isBlank()) {
-            return d.getImageUrlSmall();
-        }
-        if (d.getImageUrl() != null && !d.getImageUrl().isBlank()) {
-            return d.getImageUrl();
-        }
-        return null;
-    }
-
-    private boolean hasActiveUnpaidOrder() {
-        return orderService.getMyActiveOrder(currentUserIdentity.currentUserId())
-                .filter(o -> o.getPaymentStatus() != PaymentStatus.SUCCESS)
-                .isPresent();
     }
 
     private boolean isMenuAvailableNow(MenuWithDishesDto menu, LocalTime now) {

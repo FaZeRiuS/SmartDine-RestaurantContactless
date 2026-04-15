@@ -24,7 +24,7 @@
             </h2>
 
             <div class="dishes-grid" th:if="${menu.dishes != null && !menu.dishes.isEmpty()}">
-                <div class="dish-card" th:each="dish, dishStat : ${menu.dishes}"
+                <div class="dish-card" th:each="dish : ${menu.dishes}"
                      th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
 
                     <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
@@ -33,10 +33,7 @@
                         <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
                              th:src="${dish.imageUrl}"
                              th:alt="${dish.name}"
-                             th:attr="srcset=${dish.imageUrlSmall != null ? (dish.imageUrlSmall + ' 640w, ' + dish.imageUrlMedium + ' 960w, ' + dish.imageUrl + ' 1024w') : null},fetchpriority=${stat.index == 0 && dishStat.index < 2 ? 'high' : 'auto'}"
-                             sizes="(max-width: 768px) 100vw, 420px"
-                             width="960" height="720"
-                             th:loading="${stat.index == 0 && dishStat.index < 2 ? 'eager' : 'lazy'}"
+                             loading="lazy"
                              decoding="async"
                              class="dish-image">
                         <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
@@ -77,9 +74,8 @@
                                 <input type="hidden" name="specialRequest" value="">
                                 <button class="btn btn-primary add-to-cart-btn"
                                         type="submit"
-                                        th:aria-label="${hasActiveUnpaidOrder} ? |Додати ${dish.name} до замовлення| : |Додати ${dish.name} у кошик|">
-                                    <th:block th:if="${hasActiveUnpaidOrder}">&#128722; додати до замовлення</th:block>
-                                    <th:block th:unless="${hasActiveUnpaidOrder}">&#128722; У кошик</th:block>
+                                        th:aria-label="|Додати ${dish.name} у кошик|">
+                                    &#128722; У кошик
                                 </button>
                             </form>
                         </div>

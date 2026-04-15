@@ -10,9 +10,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -40,8 +37,6 @@ public class HtmxCartController {
     public String addItemToCart(@RequestParam Integer dishId, 
                                 @RequestParam(defaultValue = "1") Integer quantity,
                                 @RequestParam(required = false, defaultValue = "") String specialRequest,
-                                HttpSession session,
-                                HttpServletRequest request,
                                 Model model) {
         
         String userId = currentUserIdentity.currentUserId();
@@ -94,26 +89,7 @@ public class HtmxCartController {
 
         model.addAttribute("message", addedToOrder ? "🛎️ Страву додано до активного замовлення!" : "🛒 Страву додано у кошик!");
         model.addAttribute("toastType", "toast-success");
-        if (addedToOrder) {
-            model.addAttribute("toastPrimaryHref", homeActiveOrderHref(session, request));
-            model.addAttribute("toastPrimaryLabel", "До замовлення");
-            model.addAttribute("toastSecondaryLabel", "Перейти до замовлення");
-        }
         return "fragments/cart :: toast";
-    }
-
-    private static String homeActiveOrderHref(HttpSession session, HttpServletRequest request) {
-        String ctx = request.getContextPath();
-        if (ctx == null) {
-            ctx = "";
-        }
-        StringBuilder sb = new StringBuilder(ctx).append("/");
-        Integer table = (Integer) session.getAttribute("tableNumber");
-        if (table != null) {
-            sb.append("?table=").append(table);
-        }
-        sb.append("#activeOrderContainer");
-        return sb.toString();
     }
 
     @DeleteMapping("/items/{itemId}")

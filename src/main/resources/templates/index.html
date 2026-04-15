@@ -6,14 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartDine — Безконтактне замовлення у ресторані</title>
     <meta name="description" content="SmartDine — зручне безконтактне замовлення страв через QR-код. Переглядайте меню, обирайте страви та замовляйте прямо з телефону.">
-    <th:block th:replace="~{fragments/critical-css :: criticalHeader}"></th:block>
-    <th:block th:replace="~{fragments/critical-css :: criticalHero}"></th:block>
-    <th:block th:replace="~{fragments/critical-css :: criticalHomeDishSections}"></th:block>
-    <th:block th:replace="~{fragments/head-fonts :: webFonts}"></th:block>
-    <link rel="preload" as="image" fetchpriority="high"
-          th:if="${lcpPreloadImageUrl != null}"
-          th:href="${lcpPreloadImageUrl}">
-    <th:block th:replace="~{fragments/public-bundle-styles :: publicBundleLinks}"></th:block>
+        <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/layout.css}">
+    <link rel="stylesheet" th:href="@{/css/components.css}">
+    <link rel="stylesheet" th:href="@{/css/pages.css}">
+    <link rel="stylesheet" th:href="@{/css/responsive.css}">
     <link rel="stylesheet" th:href="@{/css/admin.css}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
 </head>
 <body>
@@ -92,10 +89,6 @@
                     <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" 
                          th:src="${dish.imageUrl}" 
                          th:alt="${dish.name}" 
-                         th:attr="srcset=${dish.imageUrlSmall != null ? (dish.imageUrlSmall + ' 640w, ' + dish.imageUrlMedium + ' 960w, ' + dish.imageUrl + ' 1024w') : null},fetchpriority=${stat.index < 2 ? 'high' : 'auto'}"
-                         sizes="(max-width: 768px) 100vw, 420px"
-                         width="960" height="720"
-                         th:loading="${stat.index < 2 ? 'eager' : 'lazy'}"
                          decoding="async"
                          class="dish-image">
                     <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
@@ -127,8 +120,7 @@
                             <input type="hidden" name="quantity" value="1">
                             <input type="hidden" name="specialRequest" value="">
                             <button class="btn btn-primary add-to-cart-btn" type="submit">
-                                <span th:if="${hasActiveUnpaidOrder}">🛒 додати до замовлення</span>
-                                <span th:unless="${hasActiveUnpaidOrder}">🛒 У кошик</span>
+                                🛒 У кошик
                             </button>
                         </form>
                     </div>
@@ -161,10 +153,8 @@
                     <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" 
                          th:src="${dish.imageUrl}" 
                          th:alt="${dish.name}" 
-                         th:attr="srcset=${dish.imageUrlSmall != null ? (dish.imageUrlSmall + ' 640w, ' + dish.imageUrlMedium + ' 960w, ' + dish.imageUrl + ' 1024w') : null},fetchpriority=${stat.index < 2 ? 'high' : 'auto'}"
-                         sizes="(max-width: 768px) 100vw, 420px"
-                         width="960" height="720"
                          th:loading="${stat.index < 2 ? 'eager' : 'lazy'}"
+                         th:attr="fetchpriority=${stat.index < 2 ? 'high' : 'auto'}"
                          decoding="async"
                          class="dish-image">
                     <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
@@ -196,8 +186,7 @@
                             <input type="hidden" name="quantity" value="1">
                             <input type="hidden" name="specialRequest" value="">
                             <button class="btn btn-primary add-to-cart-btn" type="submit">
-                                <span th:if="${hasActiveUnpaidOrder}">🛒 Додати до замовлення</span>
-                                <span th:unless="${hasActiveUnpaidOrder}">🛒 У кошик</span>
+                                🛒 У кошик
                             </button>
                         </form>
                     </div>

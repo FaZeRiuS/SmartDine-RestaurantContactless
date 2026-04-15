@@ -12,8 +12,6 @@ import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.DishRatingService;
 import com.example.CourseWork.service.DishService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -32,7 +30,6 @@ public class DishServiceImpl implements DishService {
     private final DishRatingService dishRatingService;
 
     @Override
-    @CacheEvict(cacheNames = {"menusWithDishes", "availableDishes"}, allEntries = true)
     public DishResponseDto createDish(DishDto dto) {
         List<Integer> menuIds = dto.getMenuIds() == null ? Collections.emptyList() : dto.getMenuIds();
         List<Menu> menus = menuIds.isEmpty() ? Collections.emptyList() : menuRepository.findAllById(menuIds);
@@ -53,7 +50,6 @@ public class DishServiceImpl implements DishService {
     }
 
     @Override
-    @CacheEvict(cacheNames = {"menusWithDishes", "availableDishes"}, allEntries = true)
     public DishResponseDto updateDish(Integer id, DishDto dto) {
         @SuppressWarnings("null")
         Dish dish = dishRepository.findById(id)
@@ -78,13 +74,11 @@ public class DishServiceImpl implements DishService {
 
     @Override
     @SuppressWarnings("null")
-    @CacheEvict(cacheNames = {"menusWithDishes", "availableDishes"}, allEntries = true)
     public void deleteDish(Integer id) {
         dishRepository.deleteById(id);
     }
 
     @Override
-    @Cacheable(cacheNames = "availableDishes", key = "'all'")
     public List<DishResponseDto> getAllAvailableDishes() {
         List<DishResponseDto> dishes = dishRepository.findByIsAvailableTrue()
                 .stream()
@@ -132,7 +126,6 @@ public class DishServiceImpl implements DishService {
         return Optional.of(dto);
     }
     @Override
-    @CacheEvict(cacheNames = {"menusWithDishes", "availableDishes"}, allEntries = true)
     public void updateDishImage(Integer id, String imageUrl) {
         @SuppressWarnings("null")
         Dish dish = dishRepository.findById(id)

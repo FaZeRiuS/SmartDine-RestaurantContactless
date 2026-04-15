@@ -1,8 +1,0 @@
-<th:block xmlns:th="http://www.thymeleaf.org" th:fragment="publicBundleLinks">
-    <!-- Non-render-blocking: discover early, apply after print pass (see PageSpeed render-blocking CSS). -->
-    <link rel="preload" th:href="@{/css/public-bundle.css(v=3)}" as="style">
-    <link rel="stylesheet" th:href="@{/css/public-bundle.css(v=3)}" media="print" onload="this.media='all'">
-    <noscript>
-        <link rel="stylesheet" th:href="@{/css/public-bundle.css(v=3)}">
-    </noscript>
-</th:block>
