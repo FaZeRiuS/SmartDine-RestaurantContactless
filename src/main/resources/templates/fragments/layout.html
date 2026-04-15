@@ -35,7 +35,8 @@
 <nav class="navbar" th:fragment="header">
     <div class="navbar-inner">
         <a class="navbar-brand" th:href="@{/}">
-            <img th:src="@{/images/logo.png}" alt="SmartDine" class="brand-logo" fetchpriority="high">
+            <!-- Intrinsic 600×159 → reserved box for CSS height:38px (~144×38) avoids logo CLS -->
+            <img th:src="@{/images/logo.png}" alt="SmartDine" class="brand-logo" fetchpriority="high" width="144" height="38" decoding="async">
         </a>
 
         <ul class="navbar-nav" id="mainNav">
