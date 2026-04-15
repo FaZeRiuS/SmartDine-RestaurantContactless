@@ -11,50 +11,46 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SmartDine">
     
-    <!-- ═══ CSS LINKS FRAGMENT (included by all pages) ═══ -->
-    <th:block th:fragment="cssLinks">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Preload Critical CSS -->
+    <link rel="preload" th:href="@{/images/logo.webp}" as="image" fetchpriority="high" type="image/webp">
+    <link rel="preload" th:href="@{/css/base.css}" as="style">
+    <link rel="preload" th:href="@{/css/layout.css}" as="style">
+    
+    <link rel="apple-touch-icon" th:href="@{/icons/apple-touch-icon.png}">
+    <link rel="icon" type="image/png" sizes="32x32" th:href="@{/icons/favicon-32x32.png}">
+    <link rel="icon" type="image/png" sizes="16x16" th:href="@{/icons/favicon-16x16.png}">
+    <link rel="shortcut icon" type="image/x-icon" th:href="@{/favicon.ico}">
+    <link rel="manifest" th:href="@{/manifest.json(v=1.3)}">
+    
+    <!-- Critical CSS (sync, already preloaded) -->
+    <link rel="stylesheet" th:href="@{/css/base.css(v=1.4)}">
+    <link rel="stylesheet" th:href="@{/css/layout.css(v=1.4)}">
 
-        <!-- Preload Critical Assets -->
-        <link rel="preload" th:href="@{/images/logo.webp}" as="image" fetchpriority="high" type="image/webp">
-        <link rel="preload" th:href="@{/css/base.css(v=1.4)}" as="style">
-        <link rel="preload" th:href="@{/css/layout.css(v=1.4)}" as="style">
+    <!-- Non-critical CSS (async, non-blocking) -->
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/components.css(v=1.4)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/components.css(v=1.4)}"></noscript>
 
-        <link rel="apple-touch-icon" th:href="@{/icons/apple-touch-icon.png}">
-        <link rel="icon" type="image/png" sizes="32x32" th:href="@{/icons/favicon-32x32.png}">
-        <link rel="icon" type="image/png" sizes="16x16" th:href="@{/icons/favicon-16x16.png}">
-        <link rel="shortcut icon" type="image/x-icon" th:href="@{/favicon.ico}">
-        <link rel="manifest" th:href="@{/manifest.json(v=1.3)}">
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/pages.css(v=1.4)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/pages.css(v=1.4)}"></noscript>
 
-        <!-- Critical CSS (sync, render-blocking is OK here) -->
-        <link rel="stylesheet" th:href="@{/css/base.css(v=1.4)}">
-        <link rel="stylesheet" th:href="@{/css/layout.css(v=1.4)}">
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/responsive.css(v=1.4)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/responsive.css(v=1.4)}"></noscript>
 
-        <!-- Non-critical CSS (async, non-blocking) -->
-        <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/components.css(v=1.4)}">
-        <noscript><link rel="stylesheet" th:href="@{/css/components.css(v=1.4)}"></noscript>
+    <link rel="stylesheet" media="print" onload="this.media='all'"
+          th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+    <noscript>
+        <link rel="stylesheet" th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+    </noscript>
 
-        <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/pages.css(v=1.4)}">
-        <noscript><link rel="stylesheet" th:href="@{/css/pages.css(v=1.4)}"></noscript>
-
-        <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/responsive.css(v=1.4)}">
-        <noscript><link rel="stylesheet" th:href="@{/css/responsive.css(v=1.4)}"></noscript>
-
-        <link rel="stylesheet" media="print" onload="this.media='all'"
-              th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
-        <noscript>
-            <link rel="stylesheet" th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
-        </noscript>
-
-        <link rel="stylesheet" media="print" onload="this.media='all'"
-              th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
-        <noscript>
-            <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
-        </noscript>
-    </th:block>
-
+    <link rel="stylesheet" media="print" onload="this.media='all'"
+          th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
+    <noscript>
+        <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
+    </noscript>
 </head>
 <body>
 
