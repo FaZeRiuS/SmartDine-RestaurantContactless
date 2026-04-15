@@ -86,15 +86,12 @@
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 
                 <div class="dish-image-container">
-                    <picture th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}">
-                        <source th:srcset="${dish.imageUrl}" type="image/webp"
-                                th:if="${dish.imageUrl.endsWith('.webp')}">
-                        <img th:src="${dish.imageUrl}"
-                             th:alt="${dish.name}"
-                             decoding="async"
-                             loading="lazy"
-                             class="dish-image">
-                    </picture>
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
+                         th:src="${dish.imageUrl}"
+                         th:alt="${dish.name}"
+                         decoding="async"
+                         loading="lazy"
+                         class="dish-image">
                     <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
                         <span>Dish</span>
                     </div>
@@ -154,16 +151,13 @@
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 
                 <div class="dish-image-container">
-                    <picture th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}">
-                        <source th:srcset="${dish.imageUrl}" type="image/webp"
-                                th:if="${dish.imageUrl.endsWith('.webp')}">
-                        <img th:src="${dish.imageUrl}"
-                             th:alt="${dish.name}"
-                             th:loading="${stat.index < 2 ? 'eager' : 'lazy'}"
-                             th:attr="fetchpriority=${stat.index < 2 ? 'high' : 'auto'}"
-                             decoding="async"
-                             class="dish-image">
-                    </picture>
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
+                         th:src="${dish.imageUrl}"
+                         th:alt="${dish.name}"
+                         th:loading="${stat.index < 2 ? 'eager' : 'lazy'}"
+                         th:attr="fetchpriority=${stat.index < 2 ? 'high' : 'auto'}"
+                         decoding="async"
+                         class="dish-image">
                     <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
                         <span>Dish</span>
                     </div>

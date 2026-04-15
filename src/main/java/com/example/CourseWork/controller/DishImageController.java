@@ -75,13 +75,13 @@ public class DishImageController {
             Files.createDirectories(uploadPath);
         }
 
-        String filename = UUID.randomUUID() + ".webp";
+        String filename = UUID.randomUUID() + ".jpg";
         Path filePath = uploadPath.resolve(filename);
 
         Thumbnails.of(file.getInputStream())
                 .size(800, 800)
                 .keepAspectRatio(true)
-                .outputFormat("webp")
+                .outputFormat("jpg")
                 .outputQuality(0.82)
                 .toFile(filePath.toFile());
 
