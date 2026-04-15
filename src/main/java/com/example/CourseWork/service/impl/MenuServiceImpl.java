@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalTime;
+import java.time.Clock;
+import java.time.temporal.ChronoUnit;
 
 import com.example.CourseWork.service.RecommendationService;
 import com.example.CourseWork.service.DishRatingService;
@@ -31,6 +33,7 @@ public class MenuServiceImpl implements MenuService {
     private final RecommendationService recommendationService;
     private final DishRatingService dishRatingService;
     private final CurrentUserIdentity currentUserIdentity;
+    private final Clock appClock;
 
     @Transactional
     @Override
@@ -40,7 +43,8 @@ public class MenuServiceImpl implements MenuService {
             return new ArrayList<>();
         }
         
-        LocalTime now = LocalTime.now();
+        // Compare menu time windows in configured app time zone; ignore seconds/nanos.
+        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
         
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         boolean isStaff = auth != null && auth.getAuthorities().stream()

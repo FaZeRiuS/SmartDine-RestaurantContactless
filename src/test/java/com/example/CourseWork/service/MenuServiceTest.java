@@ -12,6 +12,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,11 +40,20 @@ class MenuServiceTest {
     private CurrentUserIdentity currentUserIdentity;
 
     private MenuServiceImpl menuService;
+    private Clock testClock;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        menuService = new MenuServiceImpl(menuRepository, menuMapper, recommendationService, dishRatingService, currentUserIdentity);
+        testClock = Clock.fixed(Instant.parse("2026-04-15T10:00:00Z"), ZoneId.of("UTC"));
+        menuService = new MenuServiceImpl(
+                menuRepository,
+                menuMapper,
+                recommendationService,
+                dishRatingService,
+                currentUserIdentity,
+                testClock
+        );
     }
 
     @Test

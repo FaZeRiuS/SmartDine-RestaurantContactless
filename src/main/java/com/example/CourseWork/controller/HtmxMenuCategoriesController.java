@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.Clock;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class HtmxMenuCategoriesController {
 
     private final MenuService menuService;
+    private final Clock appClock;
 
     @GetMapping("/categories-body")
     public String categoriesBody(
@@ -33,7 +36,7 @@ public class HtmxMenuCategoriesController {
         Integer tableNumber = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", tableNumber);
 
-        LocalTime now = LocalTime.now();
+        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
         List<MenuWithDishesDto> allActive = menuService.getAllMenusWithDishes().stream()
                 .filter(m -> isMenuAvailableNow(m, now))
                 .collect(Collectors.toList());
@@ -56,6 +59,10 @@ public class HtmxMenuCategoriesController {
         if (menu.getStartTime() == null || menu.getEndTime() == null) {
             return true;
         }
-        return !now.isBefore(menu.getStartTime()) && !now.isAfter(menu.getEndTime());
+        // Support menus that cross midnight (e.g., 18:00 — 02:00)
+        if (menu.getStartTime().isBefore(menu.getEndTime())) {
+            return !now.isBefore(menu.getStartTime()) && !now.isAfter(menu.getEndTime());
+        }
+        return !now.isBefore(menu.getStartTime()) || !now.isAfter(menu.getEndTime());
     }
 }

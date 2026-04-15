@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.http.HttpSession;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +36,7 @@ public class PageController {
     private final CartService cartService;
     private final CurrentUserIdentity currentUserIdentity;
     private final String keycloakPublicUrl;
+    private final Clock appClock;
 
     public PageController(
             MenuService menuService,
@@ -41,6 +44,7 @@ public class PageController {
             RecommendationService recommendationService,
             CartService cartService,
             CurrentUserIdentity currentUserIdentity,
+            Clock appClock,
             @Value("${keycloak.public-url:http://localhost:8080}") String keycloakPublicUrl
     ) {
         this.menuService = menuService;
@@ -48,6 +52,7 @@ public class PageController {
         this.recommendationService = recommendationService;
         this.cartService = cartService;
         this.currentUserIdentity = currentUserIdentity;
+        this.appClock = appClock;
         this.keycloakPublicUrl = keycloakPublicUrl;
     }
 
@@ -61,7 +66,7 @@ public class PageController {
         Integer sessionTable = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", sessionTable);
 
-        LocalTime now = LocalTime.now();
+        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
         List<MenuWithDishesDto> allMenus = menuService.getAllMenusWithDishes();
 
         // Filter menus by time
@@ -112,7 +117,7 @@ public class PageController {
         Integer sessionTable = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", sessionTable);
 
-        LocalTime now = LocalTime.now();
+        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
         List<MenuWithDishesDto> allMenus = menuService.getAllMenusWithDishes();
 
         // Always show filtered menu on public page
@@ -141,7 +146,11 @@ public class PageController {
         if (menu.getStartTime() == null || menu.getEndTime() == null) {
             return true;
         }
-        return !now.isBefore(menu.getStartTime()) && !now.isAfter(menu.getEndTime());
+        // Support menus that cross midnight (e.g., 18:00 — 02:00)
+        if (menu.getStartTime().isBefore(menu.getEndTime())) {
+            return !now.isBefore(menu.getStartTime()) && !now.isAfter(menu.getEndTime());
+        }
+        return !now.isBefore(menu.getStartTime()) || !now.isAfter(menu.getEndTime());
     }
 
     @GetMapping("/cart")

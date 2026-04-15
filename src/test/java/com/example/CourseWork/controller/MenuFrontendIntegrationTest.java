@@ -15,6 +15,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.htmlunit.MockMvcWebClientBuilder;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,12 +42,19 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
     @MockitoBean
     private CartService cartService;
 
+    @MockitoBean
+    private Clock appClock;
+
     private WebClient webClient;
 
     @BeforeEach
     void setUp() {
         webClient = MockMvcWebClientBuilder.mockMvcSetup(mockMvc).build();
         webClient.getOptions().setJavaScriptEnabled(false);
+
+        // PageController uses LocalTime.now(appClock); a raw mock returns nulls -> NPE -> 500.
+        when(appClock.getZone()).thenReturn(ZoneId.of("UTC"));
+        when(appClock.instant()).thenReturn(Instant.parse("2026-04-15T10:00:00Z"));
 
         CartResponseDto emptyCart = new CartResponseDto();
         emptyCart.setItems(List.of());
