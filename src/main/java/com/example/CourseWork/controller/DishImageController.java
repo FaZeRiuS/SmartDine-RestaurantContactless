@@ -34,33 +34,9 @@ public class DishImageController {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Файл порожній"));
         }
-
         try {
-            // Ensure directory exists
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String filename = UUID.randomUUID().toString() + extension;
-            Path filePath = uploadPath.resolve(filename);
-
-            // Compress and Save file
-            Thumbnails.of(file.getInputStream())
-                    .size(1024, 1024)
-                    .outputFormat("jpg")
-                    .outputQuality(0.85)
-                    .toFile(filePath.toFile());
-
-            String fileUrl = "/uploads/" + filename;
-            log.info(">>> DISH IMAGE: Uploaded {} to {}", originalFilename, fileUrl);
-
+            String fileUrl = processAndSaveImage(file);
+            log.info(">>> DISH IMAGE: Uploaded {} -> {}", file.getOriginalFilename(), fileUrl);
             return ResponseEntity.ok(Map.of("imageUrl", fileUrl));
         } catch (IOException e) {
             log.error(">>> DISH IMAGE: Upload failed", e);
@@ -75,41 +51,40 @@ public class DishImageController {
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Файл порожній"));
         }
-
         try {
-            // Ensure directory exists
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String filename = UUID.randomUUID().toString() + extension;
-            Path filePath = uploadPath.resolve(filename);
-
-            // Compress and Save file
-            Thumbnails.of(file.getInputStream())
-                    .size(1024, 1024)
-                    .outputFormat("jpg")
-                    .outputQuality(0.85)
-                    .toFile(filePath.toFile());
-
-            String fileUrl = "/uploads/" + filename;
+            String fileUrl = processAndSaveImage(file);
             log.info(">>> DISH IMAGE: Associated {} with dish {}", fileUrl, id);
-
-            // Update dish entity
             dishService.updateDishImage(id, fileUrl);
-
             return ResponseEntity.ok(Map.of("imageUrl", fileUrl));
         } catch (Exception e) {
             log.error(">>> DISH IMAGE: Upload failed for dish {}", id, e);
             return ResponseEntity.internalServerError()
                     .body(Map.of("error", "Не вдалося зберегти файл: " + e.getMessage()));
         }
+    }
+
+    /**
+     * Compresses and saves an uploaded image as WebP (max 800×800px, quality 0.82).
+     * WebP saves ~50% vs. JPEG at equivalent visual quality.
+     *
+     * @return public URL of the saved image (e.g. "/uploads/uuid.webp")
+     */
+    private String processAndSaveImage(MultipartFile file) throws IOException {
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        String filename = UUID.randomUUID() + ".webp";
+        Path filePath = uploadPath.resolve(filename);
+
+        Thumbnails.of(file.getInputStream())
+                .size(800, 800)
+                .keepAspectRatio(true)
+                .outputFormat("webp")
+                .outputQuality(0.82)
+                .toFile(filePath.toFile());
+
+        return "/uploads/" + filename;
     }
 }

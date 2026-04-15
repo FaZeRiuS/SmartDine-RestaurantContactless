@@ -30,12 +30,15 @@
                     <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
 
                     <div class="dish-image-container">
-                        <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
-                             th:src="${dish.imageUrl}"
-                             th:alt="${dish.name}"
-                             loading="lazy"
-                             decoding="async"
-                             class="dish-image">
+                        <picture th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}">
+                            <source th:srcset="${dish.imageUrl}" type="image/webp"
+                                    th:if="${dish.imageUrl.endsWith('.webp')}">
+                            <img th:src="${dish.imageUrl}"
+                                 th:alt="${dish.name}"
+                                 loading="lazy"
+                                 decoding="async"
+                                 class="dish-image">
+                        </picture>
                         <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
                             <span th:if="${dish.tags != null && dish.tags.contains('meat')}">&#129385;</span>
                             <span th:if="${dish.tags != null && dish.tags.contains('seafood')}">&#128031;</span>
@@ -44,6 +47,7 @@
                             <span th:unless="${dish.tags != null && (dish.tags.contains('meat') || dish.tags.contains('seafood') || dish.tags.contains('sweet') || dish.tags.contains('drink'))}">&#127869;&#65039;</span>
                         </div>
                     </div>
+
 
                     <div class="dish-card-content">
                         <div class="dish-card-header">

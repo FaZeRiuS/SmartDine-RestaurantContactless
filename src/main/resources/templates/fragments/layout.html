@@ -16,7 +16,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
     
     <!-- Preload Critical CSS -->
-    <link rel="preload" th:href="@{/images/logo.png}" as="image" fetchpriority="high">
+    <link rel="preload" th:href="@{/images/logo.webp}" as="image" fetchpriority="high" type="image/webp">
     <link rel="preload" th:href="@{/css/base.css}" as="style">
     <link rel="preload" th:href="@{/css/layout.css}" as="style">
     
@@ -26,14 +26,31 @@
     <link rel="shortcut icon" type="image/x-icon" th:href="@{/favicon.ico}">
     <link rel="manifest" th:href="@{/manifest.json(v=1.3)}">
     
-    <!-- Loaded CSS -->
+    <!-- Critical CSS (sync, already preloaded) -->
     <link rel="stylesheet" th:href="@{/css/base.css(v=1.4)}">
     <link rel="stylesheet" th:href="@{/css/layout.css(v=1.4)}">
-    <link rel="stylesheet" th:href="@{/css/components.css(v=1.4)}">
-    <link rel="stylesheet" th:href="@{/css/pages.css(v=1.4)}">
-    <link rel="stylesheet" th:href="@{/css/responsive.css(v=1.4)}">
-    <link rel="stylesheet" th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
-    <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
+
+    <!-- Non-critical CSS (async, non-blocking) -->
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/components.css(v=1.4)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/components.css(v=1.4)}"></noscript>
+
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/pages.css(v=1.4)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/pages.css(v=1.4)}"></noscript>
+
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/responsive.css(v=1.4)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/responsive.css(v=1.4)}"></noscript>
+
+    <link rel="stylesheet" media="print" onload="this.media='all'"
+          th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+    <noscript>
+        <link rel="stylesheet" th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+    </noscript>
+
+    <link rel="stylesheet" media="print" onload="this.media='all'"
+          th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
+    <noscript>
+        <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
+    </noscript>
 </head>
 <body>
 
@@ -41,7 +58,10 @@
 <nav class="navbar" th:fragment="header">
     <div class="navbar-inner">
         <a class="navbar-brand" th:href="@{/}">
-            <img th:src="@{/images/logo.png}" alt="SmartDine" class="brand-logo" fetchpriority="high">
+            <picture>
+                <source th:srcset="@{/images/logo.webp}" type="image/webp">
+                <img th:src="@{/images/logo.png}" alt="SmartDine" class="brand-logo" fetchpriority="high">
+            </picture>
         </a>
 
         <ul class="navbar-nav" id="mainNav">
