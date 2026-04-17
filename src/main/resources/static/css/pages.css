@@ -183,6 +183,13 @@
     opacity: 1;
 }
 
+.dish-card:focus-visible,
+.dish-card:focus-within {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+    border-color: var(--gold);
+}
+
 .dish-card-content {
     display: flex;
     flex-direction: column;

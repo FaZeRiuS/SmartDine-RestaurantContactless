@@ -9,6 +9,8 @@ function initSharedUI() {
     initPushNotifications();
     checkUrlParams();
     initAccessibleTabsIn(document);
+    initKeyboardNavigationIn(document);
+    initMobileSiteTabSwipe();
 
     // Re-init after HTMX swaps (tabs/content can be injected)
     if (!document.documentElement.dataset.a11yTabsHtmxBound) {
@@ -16,10 +18,12 @@ function initSharedUI() {
         document.body?.addEventListener('htmx:afterSwap', function (evt) {
             const t = evt && evt.detail ? evt.detail.target : null;
             initAccessibleTabsIn(t || document);
+            initKeyboardNavigationIn(t || document);
         });
         document.body?.addEventListener('htmx:oobAfterSwap', function (evt) {
             const t = evt && evt.detail ? evt.detail.target : null;
             initAccessibleTabsIn(t || document);
+            initKeyboardNavigationIn(t || document);
         });
     }
 
@@ -51,6 +55,7 @@ window.initSharedUI = initSharedUI;
 window.renderStars = renderStars;
 window.initStarPickersIn = initStarPickersIn;
 window.initAccessibleTabsIn = initAccessibleTabsIn;
+window.initKeyboardNavigationIn = initKeyboardNavigationIn;
 
 /**
  * Sends a critical error log to the server for PWA/Lifecycle monitoring.
@@ -543,6 +548,199 @@ function bindSwipeToSwitchTabs(swipeArea, tablist) {
     }, { passive: true });
 
     swipeArea.addEventListener('touchend', (e) => {
+        const t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        onEnd(t.clientX, t.clientY);
+    }, { passive: true });
+}
+
+// ── General keyboard navigation (header nav, dish grids) ─────────────────────
+
+function initKeyboardNavigationIn(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    enhanceHeaderNavKeyboard(scope);
+    enhanceDishGridKeyboard(scope);
+}
+
+function enhanceHeaderNavKeyboard(scope) {
+    const mainNav = (scope.getElementById && scope.getElementById('mainNav')) || document.getElementById('mainNav');
+    if (!mainNav || mainNav.dataset.a11yNavInit === '1') return;
+    mainNav.dataset.a11yNavInit = '1';
+
+    mainNav.addEventListener('keydown', (e) => {
+        const key = e.key;
+        if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
+
+        const activeEl = document.activeElement;
+        if (!activeEl || activeEl.tagName !== 'A' || !mainNav.contains(activeEl)) return;
+
+        const links = Array.from(mainNav.querySelectorAll('a')).filter(a => !a.hasAttribute('disabled') && a.getAttribute('aria-disabled') !== 'true');
+        if (links.length === 0) return;
+
+        const idx = links.indexOf(activeEl);
+        if (idx < 0) return;
+
+        e.preventDefault();
+        let nextIdx = idx;
+        if (key === 'Home') nextIdx = 0;
+        else if (key === 'End') nextIdx = links.length - 1;
+        else if (key === 'ArrowRight') nextIdx = idx + 1;
+        else nextIdx = idx - 1;
+
+        const next = links[(nextIdx + links.length) % links.length];
+        next?.focus({ preventScroll: true });
+    });
+}
+
+function enhanceDishGridKeyboard(scope) {
+    scope.querySelectorAll('.dishes-grid').forEach(grid => {
+        if (grid.dataset.a11yGridInit === '1') return;
+        grid.dataset.a11yGridInit = '1';
+
+        // Make cards programmatically focusable for navigation (focus goes to the card container)
+        const cards = Array.from(grid.querySelectorAll('.dish-card'));
+        cards.forEach(card => {
+            if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+        });
+
+        // If user tabs into any element inside a card, keep a marker of "current" card
+        grid.addEventListener('focusin', (e) => {
+            const card = e.target && e.target.closest ? e.target.closest('.dish-card') : null;
+            if (!card || !grid.contains(card)) return;
+            cards.forEach(c => c.dataset.kbCurrent = c === card ? '1' : '');
+        });
+
+        grid.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter'].includes(key)) return;
+
+            const activeEl = document.activeElement;
+            const currentCard = activeEl && activeEl.closest ? activeEl.closest('.dish-card') : null;
+            if (!currentCard || !grid.contains(currentCard)) return;
+
+            const currentIdx = cards.indexOf(currentCard);
+            if (currentIdx < 0) return;
+
+            const moveTo = (idx) => {
+                const card = cards[Math.min(cards.length - 1, Math.max(0, idx))];
+                if (!card) return;
+                cards.forEach(c => c.dataset.kbCurrent = c === card ? '1' : '');
+                card.focus({ preventScroll: true });
+                try { card.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (err) { /* ignore */ }
+            };
+
+            // Calculate columns from first row geometry (best-effort, responsive-safe)
+            const getColumns = () => {
+                const tops = cards.map(c => Math.round(c.getBoundingClientRect().top));
+                const firstTop = tops[0];
+                if (!Number.isFinite(firstTop)) return 1;
+                let cols = 0;
+                for (let i = 0; i < tops.length; i++) {
+                    if (tops[i] !== firstTop) break;
+                    cols++;
+                }
+                return Math.max(1, cols || 1);
+            };
+
+            if (key === 'Enter') {
+                // Prefer focusing the primary action in the card (add-to-cart)
+                const btn = currentCard.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (btn && btn !== currentCard) {
+                    e.preventDefault();
+                    btn.focus({ preventScroll: true });
+                }
+                return;
+            }
+
+            e.preventDefault();
+            const cols = getColumns();
+            if (key === 'Home') moveTo(0);
+            else if (key === 'End') moveTo(cards.length - 1);
+            else if (key === 'ArrowRight') moveTo(currentIdx + 1);
+            else if (key === 'ArrowLeft') moveTo(currentIdx - 1);
+            else if (key === 'ArrowDown') moveTo(currentIdx + cols);
+            else if (key === 'ArrowUp') moveTo(currentIdx - cols);
+        });
+
+        // Ensure first card can be reached quickly when focusing grid (optional)
+        if (!grid.hasAttribute('tabindex')) grid.setAttribute('tabindex', '-1');
+    });
+}
+
+// ── Mobile swipe between site tabs (home/menu/cart) ─────────────────────────
+
+function initMobileSiteTabSwipe() {
+    if (document.documentElement.dataset.mobileSiteSwipeInit === '1') return;
+    document.documentElement.dataset.mobileSiteSwipeInit = '1';
+
+    const isTouchLike = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const isMobileWidth = () => window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    let startTime = 0;
+
+    const shouldIgnoreStart = (target) => {
+        if (!target) return false;
+        // Don't hijack swipes meant for horizontal scrollers or tablists
+        if (target.closest && target.closest('.menu-tabs')) return true;
+        if (target.closest && target.closest('.dishes-grid')) return false;
+        return false;
+    };
+
+    const onStart = (x, y, target) => {
+        if (!isTouchLike() || !isMobileWidth()) return;
+        if (shouldIgnoreStart(target)) return;
+        startX = x;
+        startY = y;
+        startTime = Date.now();
+        tracking = true;
+    };
+
+    const onEnd = (x, y) => {
+        if (!tracking) return;
+        tracking = false;
+
+        const dx = x - startX;
+        const dy = y - startY;
+        const dt = Date.now() - startTime;
+
+        if (Math.abs(dx) < 60) return;
+        if (Math.abs(dy) > Math.abs(dx) * 0.75) return;
+        if (dt > 900) return;
+
+        const nav = document.querySelector('.mobile-nav');
+        if (!nav) return;
+        const links = Array.from(nav.querySelectorAll('a.mobile-nav-item'))
+            .filter(a => a.href && a.offsetParent !== null);
+        if (links.length < 2) return;
+
+        const currentPath = window.location.pathname || '/';
+        const idx = links.findIndex(a => {
+            try {
+                return new URL(a.href).pathname === currentPath;
+            } catch (e) {
+                return false;
+            }
+        });
+        if (idx < 0) return;
+
+        const nextIdx = dx < 0 ? idx + 1 : idx - 1;
+        const next = links[(nextIdx + links.length) % links.length];
+        if (!next) return;
+        window.location.href = next.href;
+    };
+
+    // Bind to main if present (avoid swiping on the mobile nav itself)
+    const area = document.querySelector('main') || document.body;
+    area.addEventListener('touchstart', (e) => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        onStart(t.clientX, t.clientY, e.target);
+    }, { passive: true });
+
+    area.addEventListener('touchend', (e) => {
         const t = e.changedTouches && e.changedTouches[0];
         if (!t) return;
         onEnd(t.clientX, t.clientY);

@@ -301,6 +301,12 @@
     flex: 1;
 }
 
+.mobile-nav-item:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 4px;
+    border-radius: var(--radius-lg);
+}
+
 .mobile-nav-item.active {
     color: var(--gold);
     transform: translateY(-2px);
