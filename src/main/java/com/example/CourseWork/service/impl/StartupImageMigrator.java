@@ -69,10 +69,15 @@ public class StartupImageMigrator implements CommandLineRunner {
         int migratedCount = 0;
         for (Dish dish : dishes) {
             String imageUrl = dish.getImageUrl();
-            if (imageUrl != null && isLegacyFormat(imageUrl)) {
-                if (migrateDishImage(dish, uploadPath, backupPath)) {
-                    migratedCount++;
-                }
+            if (imageUrl == null || imageUrl.isBlank()) continue;
+            if (isLegacyFormat(imageUrl)) {
+                if (migrateDishImage(dish, uploadPath, backupPath)) migratedCount++;
+                continue;
+            }
+
+            // For existing WebP images (already optimized previously), ensure responsive variants exist.
+            if (isUploadWebpMain(imageUrl) && ensureResponsiveVariants(imageUrl, uploadPath)) {
+                migratedCount++;
             }
         }
         
@@ -86,6 +91,50 @@ public class StartupImageMigrator implements CommandLineRunner {
     private boolean isLegacyFormat(String imageUrl) {
         String lower = imageUrl.toLowerCase();
         return lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png");
+    }
+
+    private boolean isUploadWebpMain(String imageUrl) {
+        String lower = imageUrl.toLowerCase();
+        if (!lower.endsWith(".webp")) return false;
+        if (!lower.contains("/uploads/")) return false;
+        return !lower.endsWith("-thumb.webp") && !lower.matches(".*-w\\d+\\.webp$");
+    }
+
+    private boolean ensureResponsiveVariants(String imageUrl, Path uploadPath) {
+        String filename = imageUrl.substring(imageUrl.lastIndexOf("/") + 1);
+        String baseName = FilenameUtils.getBaseName(filename);
+        Path sourcePath = uploadPath.resolve(filename);
+        if (!Files.exists(sourcePath)) return false;
+
+        List<Integer> widths = List.of(320, 480, 640, 800);
+        boolean anyCreated = false;
+        try {
+            for (int w : widths) {
+                Path sized = uploadPath.resolve(baseName + "-w" + w + ".webp");
+                if (Files.exists(sized)) continue;
+                Thumbnails.of(sourcePath.toFile())
+                        .size(w, w)
+                        .keepAspectRatio(true)
+                        .outputFormat("webp")
+                        .outputQuality(w <= 480 ? 0.74 : 0.80)
+                        .toFile(sized.toFile());
+                anyCreated = true;
+            }
+
+            if (anyCreated) {
+                // Keep compatibility helpers in sync too.
+                Files.copy(uploadPath.resolve(baseName + "-w800.webp"),
+                        uploadPath.resolve(baseName + ".webp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(uploadPath.resolve(baseName + "-w320.webp"),
+                        uploadPath.resolve(baseName + "-thumb.webp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+            return anyCreated;
+        } catch (IOException e) {
+            log.error(">>> PERFORMANCE: Failed to generate responsive variants for {}", filename, e);
+            return false;
+        }
     }
 
     private boolean migrateDishImage(Dish dish, Path uploadPath, Path backupPath) {

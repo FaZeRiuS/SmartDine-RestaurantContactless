@@ -76,12 +76,10 @@
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 
                 <div class="dish-image-container">
-                    <picture th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
-                             th:with="base=${dish.imageUrl.endsWith('.webp') ? dish.imageUrl.substring(0, dish.imageUrl.length() - 5) : dish.imageUrl}">
-                        <source type="image/webp"
-                                th:srcset="${base + '-w320.webp 320w, ' + base + '-w480.webp 480w, ' + base + '-w640.webp 640w, ' + base + '-w800.webp 800w'}"
-                                sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px">
-                        <img th:src="${dish.imageUrl}"
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
+                             th:with="base=${dish.imageUrl.endsWith('.webp') ? dish.imageUrl.substring(0, dish.imageUrl.length() - 5) : dish.imageUrl}"
+                             th:src="${dish.imageUrl}"
+                             th:attr="srcset=${base + '-w320.webp 320w, ' + base + '-w480.webp 480w, ' + base + '-w640.webp 640w, ' + base + '-w800.webp 800w'}"
                              th:alt="${dish.name}"
                              width="800"
                              height="600"
@@ -90,7 +88,6 @@
                              decoding="async"
                              sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px"
                              class="dish-image">
-                    </picture>
                     <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
                         <span>Dish</span>
                     </div>
@@ -150,12 +147,10 @@
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 
                 <div class="dish-image-container">
-                    <picture th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
-                             th:with="base=${dish.imageUrl.endsWith('.webp') ? dish.imageUrl.substring(0, dish.imageUrl.length() - 5) : dish.imageUrl}">
-                        <source type="image/webp"
-                                th:srcset="${base + '-w320.webp 320w, ' + base + '-w480.webp 480w, ' + base + '-w640.webp 640w, ' + base + '-w800.webp 800w'}"
-                                sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px">
-                        <img th:src="${dish.imageUrl}"
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
+                             th:with="base=${dish.imageUrl.endsWith('.webp') ? dish.imageUrl.substring(0, dish.imageUrl.length() - 5) : dish.imageUrl}"
+                             th:src="${dish.imageUrl}"
+                             th:attr="srcset=${base + '-w320.webp 320w, ' + base + '-w480.webp 480w, ' + base + '-w640.webp 640w, ' + base + '-w800.webp 800w'}"
                              th:alt="${dish.name}"
                              width="800"
                              height="600"
@@ -164,7 +159,6 @@
                              decoding="async"
                              sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px"
                              class="dish-image">
-                    </picture>
                     <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
                         <span>Dish</span>
                     </div>
