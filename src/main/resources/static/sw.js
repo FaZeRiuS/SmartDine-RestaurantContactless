@@ -1,5 +1,18 @@
 // Bump this to force clients to pick up fresh CSS/JS after UI changes.
-const CACHE_NAME = 'smartdine-v12';
+const CACHE_NAME = 'smartdine-v13';
+
+function swDebugLogsEnabled() {
+  try {
+    return new URL(self.location.href).searchParams.get('debug') === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+function swLog() {
+  if (!swDebugLogsEnabled() || typeof console === 'undefined' || !console.log) return;
+  console.log.apply(console, arguments);
+}
 const ASSETS_TO_CACHE = [
   '/css/base.css',
   '/css/layout.css',
@@ -30,7 +43,7 @@ const ASSETS_TO_CACHE = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('[Service Worker] Caching app shell');
+      swLog('[Service Worker] Caching app shell');
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
@@ -153,7 +166,7 @@ self.addEventListener('push', event => {
 
       // 2. If user is active and looking at a relevant page, skip native push
       if (isUserActiveOnSite) {
-        console.log('[Service Worker] Suppression: User is focused on relevant page, skipping native notification');
+        swLog('[Service Worker] Suppression: User is focused on relevant page, skipping native notification');
         return;
       }
 

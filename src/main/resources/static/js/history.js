@@ -49,8 +49,13 @@ async function submitOrderReview(orderId) {
         showToast('✅ Дякуємо за відгук!', 'success');
         refreshCustomerOrdersList();
     } catch (e) {
-        if (hint) hint.textContent = e.message;
-        showToast('❌ ' + e.message, 'error');
+        const fb = 'Не вдалося надіслати відгук. Спробуйте ще раз.';
+        const display =
+            typeof userFacingErrorMessage === 'function'
+                ? userFacingErrorMessage(e, fb, (m) => m.includes('Оберіть оцінку'))
+                : fb;
+        if (hint) hint.textContent = display;
+        showToast('❌ ' + display, 'error');
     }
 }
 

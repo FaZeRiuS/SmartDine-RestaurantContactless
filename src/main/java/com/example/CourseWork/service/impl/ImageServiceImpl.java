@@ -47,7 +47,7 @@ public class ImageServiceImpl implements ImageService {
             } catch (Throwable t) {
                 // Catch Throwable to handle UnsatisfiedLinkError for WebP on some systems (like Mac aarch64)
                 log.error("Failed to process image as WebP for width {}. Error: {}", w, t.getMessage());
-                throw new IOException("Image processing failed: " + t.getMessage(), t);
+                throw new IOException("Image processing failed", t);
             }
         }
 

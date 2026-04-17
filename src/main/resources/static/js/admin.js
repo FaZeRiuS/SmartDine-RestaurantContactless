@@ -84,7 +84,10 @@ async function openDishModalById(id) {
         const dish = await res.json();
         openDishModalWithData(dish);
     } catch (err) {
-        showToast('Не вдалося завантажити страву: ' + err.message, 'error');
+        const fb = 'Не вдалося завантажити страву. Спробуйте ще раз.';
+        const display =
+            typeof userFacingErrorMessage === 'function' ? userFacingErrorMessage(err, fb) : fb;
+        showToast(display, 'error');
     }
 }
 
@@ -159,7 +162,10 @@ function openDishModalWithData(dish) {
         document.getElementById('dishModalTitle').textContent = id ? 'Редагувати страву' : 'Нова страва';
         openModal('dishModal');
     } catch (e) {
-        showToast('Не вдалося відкрити форму редагування: ' + e.message, 'error');
+        const fb = 'Не вдалося відкрити форму редагування. Спробуйте ще раз.';
+        const display =
+            typeof userFacingErrorMessage === 'function' ? userFacingErrorMessage(e, fb) : fb;
+        showToast(display, 'error');
     }
 }
 
@@ -181,7 +187,17 @@ async function uploadDishImage() {
             credentials: 'same-origin'
         });
 
-        if (!res.ok) throw new Error('Помилка завантаження ' + res.status);
+        if (!res.ok) {
+            let msg = 'Не вдалося завантажити фото.';
+            try {
+                const ct = (res.headers.get('content-type') || '').toLowerCase();
+                if (ct.includes('application/json')) {
+                    const j = await res.json();
+                    if (j && j.error) msg = String(j.error);
+                }
+            } catch (_) { /* keep default */ }
+            throw new Error(msg);
+        }
 
         const data = await res.json();
         document.getElementById('dishImageUrl').value = data.imageUrl;
@@ -192,7 +208,16 @@ async function uploadDishImage() {
 
         showToast('\u2705 \u0424\u043e\u0442\u043e \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e', 'success');
     } catch (err) {
-        showToast('\u274c ' + err.message, 'error');
+        const fb = 'Не вдалося завантажити фото. Спробуйте інше зображення.';
+        const display =
+            typeof userFacingErrorMessage === 'function'
+                ? userFacingErrorMessage(err, fb, (m) => {
+                      if (!m || m.length > 500) return false;
+                      if (/failed to fetch/i.test(m) || /networkerror/i.test(m)) return false;
+                      return true;
+                  })
+                : fb;
+        showToast('\u274c ' + display, 'error');
         fileInput.value = '';
     }
 }

@@ -70,8 +70,13 @@ async function injectReviewModalFromServer(orderId) {
             close();
             checkActiveOrder();
         } catch (e) {
-            if (hint) hint.textContent = e.message;
-            showToast('\u274c ' + e.message, 'error');
+            const fb = 'Не вдалося надіслати відгук. Спробуйте ще раз.';
+            const display =
+                typeof userFacingErrorMessage === 'function'
+                    ? userFacingErrorMessage(e, fb, (m) => m.includes('Оберіть оцінку'))
+                    : fb;
+            if (hint) hint.textContent = display;
+            showToast('\u274c ' + display, 'error');
         }
     });
 
@@ -334,7 +339,9 @@ async function checkLastOrder() {
             }
         }
     } catch (e) {
-        console.error('Error fetching last order:', e);
+        if (window.__CLIENT_DEBUG && typeof console.error === 'function') {
+            console.error('Error fetching last order:', e);
+        }
     }
 }
 
@@ -369,7 +376,12 @@ async function repeatLastOrder() {
         // Allow user to see the success message before redirecting
         setTimeout(() => window.location.href = '/cart', 1000);
     } catch (err) {
-        showToast('❌ Помилка: ' + err.message, 'error');
+        const fb = 'Не вдалося повторити замовлення. Спробуйте ще раз.';
+        const display =
+            typeof userFacingErrorMessage === 'function'
+                ? userFacingErrorMessage(err, fb, (m) => m.startsWith('Помилка при додаванні'))
+                : fb;
+        showToast('❌ ' + display, 'error');
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = '🛒 Додати в кошик';
@@ -418,7 +430,10 @@ async function payOrder() {
         document.body.appendChild(form);
         form.submit();
     } catch (err) {
-        showToast('❌ Помилка оплати: ' + err.message, 'error');
+        const fb = 'Не вдалося почати оплату. Спробуйте ще раз.';
+        const display =
+            typeof userFacingErrorMessage === 'function' ? userFacingErrorMessage(err, fb) : fb;
+        showToast('❌ ' + display, 'error');
         btn.disabled = false;
         btn.innerHTML = '💳 Оплатити замовлення (LiqPay)';
     }

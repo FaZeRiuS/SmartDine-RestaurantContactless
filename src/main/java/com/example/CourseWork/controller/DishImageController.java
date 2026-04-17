@@ -18,6 +18,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DishImageController {
 
+    /** Shown to clients; never append exception text (details stay in server logs only). */
+    private static final String IMAGE_SAVE_ERROR_CLIENT =
+            "Не вдалося обробити або зберегти файл. Спробуйте інше зображення або зверніться до адміністратора.";
+
     private final DishService dishService;
     private final ImageService imageService;
 
@@ -34,7 +38,7 @@ public class DishImageController {
         } catch (IOException e) {
             log.error(">>> DISH IMAGE: Upload failed", e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Не вдалося зберегти файл: " + e.getMessage()));
+                    .body(Map.of("error", IMAGE_SAVE_ERROR_CLIENT));
         }
     }
 
@@ -52,7 +56,7 @@ public class DishImageController {
         } catch (Exception e) {
             log.error(">>> DISH IMAGE: Upload failed for dish {}", id, e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Не вдалося зберегти файл: " + e.getMessage()));
+                    .body(Map.of("error", IMAGE_SAVE_ERROR_CLIENT));
         }
     }
 }

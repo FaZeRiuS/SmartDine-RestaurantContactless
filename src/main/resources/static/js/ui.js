@@ -83,6 +83,25 @@ async function logErrorToServer(message) {
 }
 
 /**
+ * Returns text safe to show in toasts. Logs full details to the server unless allowMessageIf(msg) is true.
+ * @param {Error|unknown} err
+ * @param {string} fallback user-facing Ukrainian message
+ * @param {(msg: string) => boolean} [allowMessageIf] if returns true, err.message is shown (local validation, etc.)
+ */
+function userFacingErrorMessage(err, fallback, allowMessageIf) {
+    const msg = err && err.message != null ? String(err.message) : '';
+    if (typeof allowMessageIf === 'function' && msg && allowMessageIf(msg)) {
+        return msg;
+    }
+    if (typeof logErrorToServer === 'function' && err) {
+        const detail = (typeof err.stack === 'string' && err.stack ? err.stack : msg || String(err)).slice(0, 4000);
+        void logErrorToServer('Client UI: ' + detail);
+    }
+    return fallback;
+}
+window.userFacingErrorMessage = userFacingErrorMessage;
+
+/**
  * Checks URL for specific parameters (like payment status)
  */
 function checkUrlParams() {

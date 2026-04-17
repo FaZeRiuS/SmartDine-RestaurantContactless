@@ -19,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import javax.imageio.ImageIO;
 
 @WebMvcTest(DishImageController.class)
@@ -55,6 +56,29 @@ class DishImageControllerTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.imageUrl").exists());
 
         verify(dishService).updateDishImage(eq(1), anyString());
+    }
+
+    private static final String EXPECTED_IMAGE_ERROR =
+            "Не вдалося обробити або зберегти файл. Спробуйте інше зображення або зверніться до адміністратора.";
+
+    @Test
+    void uploadDishImage_WhenProcessingFails_ShouldReturnGenericErrorWithoutExceptionText() throws Exception {
+        BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpg", baos);
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "test.jpg", "image/jpeg", baos.toByteArray());
+
+        when(imageService.processAndSaveImage(any()))
+                .thenThrow(new IOException("secret-internal-path"));
+
+        mockMvc.perform(multipart("/api/admin/dishes/1/image")
+                        .file(file)
+                        .with(withUser("admin-1", "ADMINISTRATOR"))
+                        .with(csrf()))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value(EXPECTED_IMAGE_ERROR))
+                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("secret-internal-path"))));
     }
 
     @Test

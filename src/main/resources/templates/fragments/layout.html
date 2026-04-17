@@ -204,6 +204,9 @@
         window.vapidPublicKey = /*[[${vapidPublicKey}]]*/ null;
         window.isAuthenticated = /*[[${#authentication.name != 'anonymousUser'}]]*/ false;
         window.isCustomer = /*[[${#authorization.expression('hasRole(''CUSTOMER'')')}]]*/ false;
+        window.__CLIENT_DEBUG = (function () {
+            try { return localStorage.getItem('debug') === '1'; } catch (e) { return false; }
+        })();
     </script>
     
     <!-- Alpine.js -->
@@ -248,24 +251,37 @@
             //    Otherwise push/bootstrap can run before the SW is active and caching is done.
             if ('serviceWorker' in navigator) {
                 try {
-                    const reg = await navigator.serviceWorker.register('/sw.js');
-                    await navigator.serviceWorker.ready;
-                    console.log('>>> PWA: Service Worker ready (precache + activate)', reg.scope);
+                    const swPath = window.__CLIENT_DEBUG ? '/sw.js?debug=1' : '/sw.js';
+                    const reg = await navigator.serviceWorker.register(swPath);
+                    // Playwright E2E uses serviceWorkers: "block" — register is stubbed and returns no registration;
+                    // navigator.serviceWorker.ready would never resolve, so bootstrap (SSE, etc.) must not wait on it.
+                    if (reg && typeof reg.scope === 'string') {
+                        await navigator.serviceWorker.ready;
+                        if (window.__CLIENT_DEBUG) {
+                            console.log('>>> PWA: Service Worker ready (precache + activate)', reg.scope);
+                        }
+                    }
                 } catch (err) {
-                    console.error('>>> PWA: SW failed:', err);
+                    if (window.__CLIENT_DEBUG) {
+                        console.error('>>> PWA: SW failed:', err);
+                    }
                 }
             }
 
             // 3. Centralized Identity & UI Boot
             async function bootstrapApp() {
-                console.time('>>> BOOTSTRAP: Total Time');
+                if (window.__CLIENT_DEBUG && typeof console.time === 'function') {
+                    console.time('>>> BOOTSTRAP: Total Time');
+                }
                 try {
                     const res = await fetch('/api/user/me');
                     if (!res.ok) throw new Error('Identity failed');
                     const data = await res.json();
                     
                     window.currentUserId = data.id;
-                    console.log('>>> BOOTSTRAP: Identity loaded: ' + data.id);
+                    if (window.__CLIENT_DEBUG) {
+                        console.log('>>> BOOTSTRAP: Identity loaded');
+                    }
                     
                     // Initialize components in sequence
                     if (typeof initSharedUI === 'function') initSharedUI();
@@ -277,7 +293,9 @@
                     scheduleEmojiParse(document.body);
                     
                 } catch (err) {
-                    console.warn('>>> BOOTSTRAP: Reduced functionality mode:', err.message);
+                    if (window.__CLIENT_DEBUG) {
+                        console.warn('>>> BOOTSTRAP: Reduced functionality mode:', err && err.message);
+                    }
                     if (typeof initSharedUI === 'function') initSharedUI();
                     if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
                     if (window.isCustomer && typeof window.updateAddToCartButtonLabels === 'function') {
@@ -285,7 +303,9 @@
                     }
                     scheduleEmojiParse(document.body);
                 } finally {
-                    console.timeEnd('>>> BOOTSTRAP: Total Time');
+                    if (window.__CLIENT_DEBUG && typeof console.timeEnd === 'function') {
+                        console.timeEnd('>>> BOOTSTRAP: Total Time');
+                    }
                 }
             }
 

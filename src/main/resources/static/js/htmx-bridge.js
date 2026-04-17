@@ -34,6 +34,8 @@
   function messageFromXhr(xhr) {
     if (!xhr) return statusMessage(0);
     const status = xhr.status || 0;
+    // Never surface JSON error bodies for server errors — they may contain internal details.
+    if (status >= 500) return statusMessage(status);
     const raw = xhr.responseText;
     if (raw && typeof raw === 'string') {
       const trimmed = raw.trim();
@@ -143,7 +145,9 @@
       const msg = elt.getAttribute?.('data-toast-pending');
       if (msg) showToast(msg, 'info');
     } catch (err) {
-      console.warn('HTMX Toast Bridge (Pending) Error:', err);
+      if (window.__CLIENT_DEBUG && typeof console.warn === 'function') {
+        console.warn('HTMX Toast Bridge (Pending) Error:', err);
+      }
     }
   }
 
@@ -173,7 +177,9 @@
       delete elt._htmxSuccessToast;
       delete elt._htmxSuccessToastType;
     } catch (err) {
-      console.warn('HTMX Toast Bridge (Success) Error:', err);
+      if (window.__CLIENT_DEBUG && typeof console.warn === 'function') {
+        console.warn('HTMX Toast Bridge (Success) Error:', err);
+      }
     }
   }
 
