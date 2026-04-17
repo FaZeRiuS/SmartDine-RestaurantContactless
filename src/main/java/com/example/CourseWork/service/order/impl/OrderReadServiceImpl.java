@@ -107,7 +107,9 @@ public class OrderReadServiceImpl implements OrderReadService {
             throw new ForbiddenException(ErrorMessages.ACCESS_DENIED);
         }
 
-        return orderMapper.toResponseDto(order);
+        OrderResponseDto dto = orderMapper.toResponseDto(order);
+        enrichOrdersWithReviews(List.of(dto));
+        return dto;
     }
 
     @Transactional

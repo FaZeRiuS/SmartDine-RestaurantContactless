@@ -47,15 +47,9 @@ async function injectReviewModalFromServer(orderId) {
 
             const comment = modal.querySelector('#reviewModalComment')?.value ?? null;
 
-            const headers = { 'Content-Type': 'application/json' };
-            const token = typeof getCsrfToken === 'function' ? getCsrfToken() : null;
-            if (token) {
-                headers['X-XSRF-TOKEN'] = token;
-            }
-
             const postRes = await fetch(`/api/orders/${orderId}/reviews`, {
                 method: 'POST',
-                headers,
+                headers: { 'Content-Type': 'application/json' },
                 credentials: 'same-origin',
                 body: JSON.stringify({ serviceRating, comment, dishRatings })
             });

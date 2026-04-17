@@ -15,9 +15,17 @@ import java.time.OffsetDateTime;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Integer> {
+    /**
+     * Loads order lines and dishes in one query (OSIV-safe). Avoids lazy-load failures when a dish row was removed
+     * but order lines still reference it.
+     */
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.id = :id")
+    Optional<Order> findByIdWithItemsAndDishes(@Param("id") Integer id);
+
     List<Order> findAllByOrderByCreatedAtDesc();
     List<Order> findAllByStatusOrderByCreatedAtDesc(OrderStatus status);
 

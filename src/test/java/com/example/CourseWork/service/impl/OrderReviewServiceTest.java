@@ -75,7 +75,7 @@ class OrderReviewServiceTest {
         item.setDish(dish);
         order.setItems(List.of(item));
 
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItemsAndDishes(orderId)).thenReturn(Optional.of(order));
         when(orderServiceReviewRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
         when(dishRepository.findById(10)).thenReturn(Optional.of(dish));
 
@@ -100,7 +100,7 @@ class OrderReviewServiceTest {
     void submitReview_ShouldThrowException_WhenOrderNotPaid() {
         // Arrange
         order.setPaymentStatus(PaymentStatus.PENDING);
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItemsAndDishes(orderId)).thenReturn(Optional.of(order));
         doThrow(new BadRequestException(ErrorMessages.ORDER_NOT_PAID))
                 .when(orderPaymentPolicy).assertReviewable(order);
         OrderReviewRequestDto dto = new OrderReviewRequestDto();
@@ -114,7 +114,7 @@ class OrderReviewServiceTest {
     void submitReview_ShouldThrowException_WhenOrderNotReadyOrCompleted() {
         // Arrange
         order.setStatus(OrderStatus.PREPARING);
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItemsAndDishes(orderId)).thenReturn(Optional.of(order));
         doThrow(new BadRequestException(ErrorMessages.ORDER_NOT_READY_FOR_REVIEW))
                 .when(orderPaymentPolicy).assertReviewable(order);
         OrderReviewRequestDto dto = new OrderReviewRequestDto();
@@ -128,7 +128,7 @@ class OrderReviewServiceTest {
     void submitReview_ShouldThrowException_WhenUserUnauthorized() {
         // Arrange
         order.setUserId(UUID.randomUUID().toString());
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItemsAndDishes(orderId)).thenReturn(Optional.of(order));
         doThrow(new ForbiddenException(ErrorMessages.ACCESS_DENIED))
                 .when(orderPaymentPolicy).assertOwner(order, userId.toString());
         OrderReviewRequestDto dto = new OrderReviewRequestDto();
@@ -142,7 +142,7 @@ class OrderReviewServiceTest {
     void submitReview_ShouldIgnoreInvalidDish_WhenDishNotInOrder() {
         // Arrange
         order.setItems(List.of()); // No items
-        when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItemsAndDishes(orderId)).thenReturn(Optional.of(order));
         when(orderServiceReviewRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
 
         OrderReviewRequestDto dto = new OrderReviewRequestDto();

@@ -39,7 +39,7 @@ public class OrderReviewServiceImpl implements OrderReviewService {
         if (userId == null) throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
         if (dto == null) throw new BadRequestException(ErrorMessages.REVIEW_BODY_REQUIRED);
 
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdWithItemsAndDishes(orderId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
         orderPaymentPolicy.assertOwner(order, userId.toString());
@@ -94,8 +94,10 @@ public class OrderReviewServiceImpl implements OrderReviewService {
                     continue;
                 }
 
-                Dish dish = dishRepository.findById(dishId)
-                        .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
+                Dish dish = dishRepository.findById(dishId).orElse(null);
+                if (dish == null) {
+                    continue;
+                }
 
                 OrderDishReview dishReview = new OrderDishReview();
                 dishReview.setOrder(order);
