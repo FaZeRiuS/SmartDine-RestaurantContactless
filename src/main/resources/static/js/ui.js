@@ -11,6 +11,7 @@ function initSharedUI() {
     initAccessibleTabsIn(document);
     initKeyboardNavigationIn(document);
     initMobileSiteTabSwipe();
+    initSequentialKeyboardTraversal();
 
     // Re-init after HTMX swaps (tabs/content can be injected)
     if (!document.documentElement.dataset.a11yTabsHtmxBound) {
@@ -419,7 +420,9 @@ function enhanceTablist(tablist) {
         if (!tab.id) tab.id = `tab-${Math.random().toString(36).slice(2)}-${i}`;
         tab.setAttribute('role', 'tab');
         tab.setAttribute('aria-selected', tab.classList.contains('active') ? 'true' : 'false');
-        tab.setAttribute('tabindex', tab.classList.contains('active') ? '0' : '-1');
+        // Keep all tabs reachable via Tab (sequential top-down navigation requirement).
+        // We still keep aria-selected in sync for screen readers.
+        if (!tab.hasAttribute('tabindex')) tab.setAttribute('tabindex', '0');
 
         tab.addEventListener('click', () => syncTabStateFromDom(tablist));
     });
@@ -431,25 +434,16 @@ function enhanceTablist(tablist) {
             : null;
         if (!current || current.parentElement !== tablist) return;
 
-        const enabledTabs = Array.from(tablist.querySelectorAll('.menu-tab'))
-            .filter(t => !t.disabled && t.getAttribute('aria-disabled') !== 'true');
-        const idx = enabledTabs.indexOf(current);
-        if (idx < 0) return;
-
-        const focusTabAt = (newIdx) => {
-            const t = enabledTabs[(newIdx + enabledTabs.length) % enabledTabs.length];
-            if (!t) return;
-            enabledTabs.forEach(x => x.setAttribute('tabindex', x === t ? '0' : '-1'));
-            t.focus({ preventScroll: true });
-            scrollTabIntoView(tablist, t);
-        };
-
         if (key === 'ArrowRight' || key === 'ArrowLeft' || key === 'Home' || key === 'End') {
+            // Horizontal arrow handling is overridden by global sequential traversal (see initSequentialKeyboardTraversal).
+            // Keep only Home/End as a convenience within the tablist.
+            const enabledTabs = Array.from(tablist.querySelectorAll('.menu-tab'))
+                .filter(t => !t.disabled && t.getAttribute('aria-disabled') !== 'true');
+            if (enabledTabs.length === 0) return;
             e.preventDefault();
-            if (key === 'Home') focusTabAt(0);
-            else if (key === 'End') focusTabAt(enabledTabs.length - 1);
-            else if (key === 'ArrowRight') focusTabAt(idx + 1);
-            else focusTabAt(idx - 1);
+            const t = key === 'Home' ? enabledTabs[0] : enabledTabs[enabledTabs.length - 1];
+            t?.focus({ preventScroll: true });
+            scrollTabIntoView(tablist, t);
             return;
         }
 
@@ -476,7 +470,8 @@ function syncTabStateFromDom(tablist) {
     const active = tabs.find(t => t.classList.contains('active')) || tabs[0];
     tabs.forEach(t => {
         t.setAttribute('aria-selected', t === active ? 'true' : 'false');
-        t.setAttribute('tabindex', t === active ? '0' : '-1');
+        // Do not rove tabindex; allow Tab to reach each tab button.
+        if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '0');
     });
 }
 
@@ -679,6 +674,7 @@ function initMobileSiteTabSwipe() {
     let startY = 0;
     let tracking = false;
     let startTime = 0;
+    let activePointerId = null;
 
     const normalizePath = (p) => {
         const s = String(p || '/');
@@ -712,18 +708,20 @@ function initMobileSiteTabSwipe() {
         return false;
     };
 
-    const onStart = (x, y, target) => {
+    const onStart = (x, y, target, pointerId = null) => {
         if (!isTouchLike() || !isMobileWidth()) return;
         if (shouldIgnoreStart(target)) return;
         startX = x;
         startY = y;
         startTime = Date.now();
         tracking = true;
+        activePointerId = pointerId;
     };
 
     const onEnd = (x, y) => {
         if (!tracking) return;
         tracking = false;
+        activePointerId = null;
 
         const dx = x - startX;
         const dy = y - startY;
@@ -755,11 +753,28 @@ function initMobileSiteTabSwipe() {
         window.location.href = next.href;
     };
 
-    // Bind at document level (capture) so it works reliably across pages
+    // Prefer Pointer Events for modern Chromium (GrapheneOS/Android), fallback to Touch Events.
+    document.addEventListener('pointerdown', (e) => {
+        if (!e || e.pointerType !== 'touch') return;
+        onStart(e.clientX, e.clientY, e.target, e.pointerId);
+    }, { passive: true, capture: true });
+
+    document.addEventListener('pointerup', (e) => {
+        if (!e || e.pointerType !== 'touch') return;
+        if (activePointerId != null && e.pointerId !== activePointerId) return;
+        onEnd(e.clientX, e.clientY);
+    }, { passive: true, capture: true });
+
+    document.addEventListener('pointercancel', (e) => {
+        if (!e || e.pointerType !== 'touch') return;
+        tracking = false;
+        activePointerId = null;
+    }, { passive: true, capture: true });
+
     document.addEventListener('touchstart', (e) => {
         const t = e.touches && e.touches[0];
         if (!t) return;
-        onStart(t.clientX, t.clientY, e.target);
+        onStart(t.clientX, t.clientY, e.target, null);
     }, { passive: true, capture: true });
 
     document.addEventListener('touchend', (e) => {
@@ -767,4 +782,85 @@ function initMobileSiteTabSwipe() {
         if (!t) return;
         onEnd(t.clientX, t.clientY);
     }, { passive: true, capture: true });
+}
+
+// ── Sequential traversal (top-down) with arrows ─────────────────────────────
+
+function initSequentialKeyboardTraversal() {
+    if (document.documentElement.dataset.seqKbInit === '1') return;
+    document.documentElement.dataset.seqKbInit = '1';
+
+    const isEditable = (el) => {
+        if (!el) return false;
+        const tag = el.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+        return !!el.isContentEditable;
+    };
+
+    const isVisible = (el) => {
+        try {
+            if (!el) return false;
+            if (el.disabled) return false;
+            if (el.getAttribute && el.getAttribute('aria-disabled') === 'true') return false;
+            // offsetParent is null for display:none (but also for position:fixed); check rect too
+            const rect = el.getBoundingClientRect();
+            if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+            const style = window.getComputedStyle(el);
+            if (style.visibility === 'hidden' || style.display === 'none') return false;
+            return true;
+        } catch (e) {
+            return false;
+        }
+    };
+
+    const focusablesInOrder = () => {
+        // We include the key UI regions requested by the user.
+        const selector = [
+            '#mainNav a',
+            '.menu-tabs .menu-tab',
+            '.dishes-grid .dish-card',
+            '.dishes-grid button, .dishes-grid a, .dishes-grid input, .dishes-grid select, .dishes-grid textarea',
+            '.mobile-nav a.mobile-nav-item'
+        ].join(',');
+
+        return Array.from(document.querySelectorAll(selector))
+            .filter(el => el && typeof el.focus === 'function' && isVisible(el));
+    };
+
+    const inManagedArea = (el) => {
+        if (!el || !el.closest) return false;
+        return !!el.closest('#mainNav, .menu-tabs, .dishes-grid, .mobile-nav');
+    };
+
+    const moveFocus = (dir) => {
+        const list = focusablesInOrder();
+        if (list.length === 0) return;
+        const active = document.activeElement;
+        let idx = list.indexOf(active);
+        if (idx < 0) {
+            // If focus is inside a dish-card (e.g. on button), start from that card
+            const card = active && active.closest ? active.closest('.dish-card') : null;
+            if (card) idx = list.indexOf(card);
+        }
+        const next = list[(idx + dir + list.length) % list.length] || list[0];
+        next.focus({ preventScroll: true });
+        try { next.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* ignore */ }
+    };
+
+    document.addEventListener('keydown', (e) => {
+        if (!e) return;
+        if (e.altKey || e.ctrlKey || e.metaKey) return;
+
+        const key = e.key;
+        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
+
+        const active = document.activeElement;
+        if (isEditable(active)) return;
+        if (!inManagedArea(active)) return;
+
+        e.preventDefault();
+        // Top-down sequential behavior: Up/Left => previous, Down/Right => next
+        if (key === 'ArrowUp' || key === 'ArrowLeft') moveFocus(-1);
+        else moveFocus(1);
+    }, { capture: true });
 }
