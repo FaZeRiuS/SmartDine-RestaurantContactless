@@ -505,15 +505,25 @@ function isDesktopSequentialArrowNav() {
     }
 }
 
-function sequentialFocusableIsVisible(el) {
+/** Focusable for page-order arrows: not hidden in DOM tree; no requirement to be in the viewport. */
+function sequentialFocusableOnPage(el) {
     try {
         if (!el) return false;
         if (el.disabled) return false;
         if (el.getAttribute && el.getAttribute('aria-disabled') === 'true') return false;
-        const rect = el.getBoundingClientRect();
-        if (!rect || rect.width <= 0 || rect.height <= 0) return false;
-        const style = window.getComputedStyle(el);
-        if (style.visibility === 'hidden' || style.display === 'none') return false;
+        if (el.hidden === true) return false;
+        let cur = el;
+        while (cur && cur.nodeType === 1) {
+            const s = window.getComputedStyle(cur);
+            if (s.display === 'none' || s.visibility === 'hidden') return false;
+            cur = cur.parentElement;
+        }
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        if (w <= 0 && h <= 0) {
+            const r = el.getBoundingClientRect();
+            if (!r || r.width <= 0 || r.height <= 0) return false;
+        }
         return true;
     } catch (e) {
         return false;
@@ -584,7 +594,7 @@ function bindSwipeToSwitchTabs(swipeArea, tablist) {
 // ── General keyboard navigation (header nav, dish grids) ─────────────────────
 
 function initKeyboardNavigationIn(root) {
-    // Arrow keys: document-level spatial navigation (initSpatialArrowNavigation).
+    // Arrow keys: document-order navigation (initSpatialArrowNavigation).
     // Tab order follows the DOM (no extra tabindex on dish cards).
     void root;
 }
@@ -715,7 +725,7 @@ function initMobileSiteTabSwipe() {
     }, { passive: true, capture: true });
 }
 
-// ── Spatial arrow navigation (desktop): nearest focusable in visual direction ─
+// ── Arrow navigation (desktop): next/prev focusable in document (page) order ─
 
 /* Use broad tags; filter disabled via property (covers fieldset[disabled] etc.) */
 const SPATIAL_FOCUS_SELECTOR = [
@@ -741,7 +751,7 @@ function isSpatialFocusableCandidate(el) {
     if (el.tagName === 'INPUT' && String(el.type || '').toLowerCase() === 'hidden') return false;
     const ti = el.getAttribute('tabindex');
     if (ti === '-1') return false;
-    return sequentialFocusableIsVisible(el);
+    return sequentialFocusableOnPage(el);
 }
 
 function getSpatialNavRoot(fromEl) {
@@ -767,115 +777,24 @@ function collectSpatialFocusables(root) {
     return out;
 }
 
-function spatialCenter(el) {
-    const r = el.getBoundingClientRect();
-    return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
-}
-
-/** Edge-aligned picks: prefer next row/column (clear header → dishes, tabs → grid). */
-const SPATIAL_LATERAL_WEIGHT = 3.4;
-
-function rectBox(el) {
-    const r = el.getBoundingClientRect();
-    return {
-        r,
-        cx: (r.left + r.right) / 2,
-        cy: (r.top + r.bottom) / 2
-    };
-}
-
-function pickBestAlongAxis(fromEl, pool, axis) {
-    const o = rectBox(fromEl);
-    let best = null;
-    let bestS = Infinity;
-    for (let i = 0; i < pool.length; i++) {
-        const el = pool[i];
-        if (!el || el === fromEl) continue;
-        if (fromEl.contains && fromEl.contains(el)) continue;
-        const p = rectBox(el);
-        let primary;
-        let lateral;
-        if (axis === 'down') {
-            if (p.r.top < o.r.bottom - 8) continue;
-            primary = Math.max(0, p.r.top - o.r.bottom);
-            lateral = Math.abs(p.cx - o.cx);
-        } else if (axis === 'up') {
-            if (p.r.bottom > o.r.top + 8) continue;
-            primary = Math.max(0, o.r.top - p.r.bottom);
-            lateral = Math.abs(p.cx - o.cx);
-        } else if (axis === 'right') {
-            if (p.r.left < o.r.right - 8) continue;
-            primary = Math.max(0, p.r.left - o.r.right);
-            lateral = Math.abs(p.cy - o.cy);
-        } else if (axis === 'left') {
-            if (p.r.right > o.r.left + 8) continue;
-            primary = Math.max(0, o.r.left - p.r.right);
-            lateral = Math.abs(p.cy - o.cy);
-        } else {
-            continue;
-        }
-        const score = primary + lateral * SPATIAL_LATERAL_WEIGHT;
-        if (score < bestS) {
-            bestS = score;
-            best = el;
-        }
-    }
-    return best;
-}
-
-function pickBestInHalfPlane(fromEl, pool, halfPlane) {
-    const o = spatialCenter(fromEl);
-    let best = null;
-    let bestD = Infinity;
-    for (let i = 0; i < pool.length; i++) {
-        const el = pool[i];
-        if (!el || el === fromEl) continue;
-        if (fromEl.contains && fromEl.contains(el)) continue;
-        const p = spatialCenter(el);
-        if (!halfPlane(p, o)) continue;
-        const dx = p.x - o.x;
-        const dy = p.y - o.y;
-        const d = dx * dx + dy * dy;
-        if (d < bestD) {
-            bestD = d;
-            best = el;
-        }
-    }
-    return best;
-}
-
+/**
+ * Next/previous focusable in tree order over the whole nav root (typically document.body).
+ * ArrowDown/ArrowRight → next; ArrowUp/ArrowLeft → previous (no wrap).
+ */
 function spatialNeighbor(fromEl, key) {
     const root = getSpatialNavRoot(fromEl);
-    const pool = collectSpatialFocusables(root);
-    const EPS = 6;
-
-    if (key === 'ArrowRight') {
-        let n = pickBestAlongAxis(fromEl, pool, 'right');
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
-        return n;
+    const list = collectSpatialFocusables(root);
+    let idx = list.indexOf(fromEl);
+    if (idx < 0 && fromEl && fromEl.closest) {
+        const host = fromEl.closest('button, a[href], input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]');
+        if (host) idx = list.indexOf(host);
     }
-    if (key === 'ArrowLeft') {
-        let n = pickBestAlongAxis(fromEl, pool, 'left');
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
-        return n;
+    if (idx < 0) return null;
+    if (key === 'ArrowDown' || key === 'ArrowRight') {
+        return list[idx + 1] ?? null;
     }
-    if (key === 'ArrowDown') {
-        let n = pickBestAlongAxis(fromEl, pool, 'down');
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
-        return n;
-    }
-    if (key === 'ArrowUp') {
-        let n = pickBestAlongAxis(fromEl, pool, 'up');
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
-        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
-        return n;
+    if (key === 'ArrowUp' || key === 'ArrowLeft') {
+        return list[idx - 1] ?? null;
     }
     return null;
 }
