@@ -294,6 +294,7 @@
 
             // Ensure emojis are parsed even if CDN is slow.
             window.addEventListener('load', function () {
+                document.documentElement.classList.add('ui-ready');
                 scheduleEmojiParse(document.body);
             });
         });

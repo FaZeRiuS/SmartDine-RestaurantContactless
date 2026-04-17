@@ -40,10 +40,13 @@
     top: 0;
     z-index: 1100;
     background: rgba(10, 10, 10, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
     padding: 0 1.25rem;
+}
+
+.ui-ready .navbar {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .navbar-inner {
@@ -273,7 +276,6 @@
     left: 0;
     right: 0;
     background: rgba(18, 18, 18, 0.95);
-    backdrop-filter: blur(20px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0.85rem 1.5rem 0.85rem 1rem;
     padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
@@ -281,6 +283,11 @@
     justify-content: space-around;
     align-items: center;
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.ui-ready .mobile-nav {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .mobile-nav-item {

@@ -21,8 +21,6 @@
         right: 0;
         width: 320px;
         background: rgba(12, 12, 12, 0.98);
-        backdrop-filter: blur(25px);
-        -webkit-backdrop-filter: blur(25px);
         border: 1px solid var(--border);
         border-radius: var(--radius-xl);
         padding: 1.5rem;
@@ -34,6 +32,11 @@
         transform: translateY(-10px);
         opacity: 0;
         visibility: hidden;
+    }
+
+    .ui-ready .navbar-burger {
+        backdrop-filter: blur(25px);
+        -webkit-backdrop-filter: blur(25px);
     }
 
     .navbar-burger.open {

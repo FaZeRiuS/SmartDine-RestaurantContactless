@@ -230,8 +230,7 @@ h3+p {
 }
 
 .fade-in-up {
-    animation: fadeInUp 0.4s ease-out both;
-    will-change: transform, opacity;
+    animation: fadeInUp 0.28s ease-out both;
 }
 
 .lcp-no-anim,
@@ -242,7 +241,16 @@ h3+p {
 }
 
 .fade-in {
-    animation: fadeIn 0.5s ease-out both;
+    animation: fadeIn 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 

@@ -43,14 +43,14 @@
 <!-- Hero Section -->
 <section id="heroSection" class="hero">
     <div class="hero-content">
-        <h1 style="animation-delay: 0s; animation-duration: 0.4s;">SmartDine</h1>
-        <p style="animation-delay: 0.1s; animation-duration: 0.4s;">
+        <h1>SmartDine</h1>
+        <p>
             Скануйте QR-код, обирайте улюблені страви та замовляйте — без очікування офіціанта
             <span th:if="${tableNumber != null}" class="table-badge">
                 • Стіл №[[${tableNumber}]]
             </span>
         </p>
-        <a th:href="@{/menu(table=${tableNumber})}" class="hero-cta" style="animation-delay: 0.2s; animation-duration: 0.4s;">
+        <a th:href="@{/menu(table=${tableNumber})}" class="hero-cta">
             Переглянути меню
         </a>
     </div>
