@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +47,7 @@ public class SseServiceImpl implements SseService {
                     .name(NotificationMessages.SSE_EVENT_CONNECTED)
                     .data(NotificationMessages.SSE_CONNECTED_MESSAGE)
                     .reconnectTime(10000)); // Hint browser to reconnect every 10s if connection lost
-        } catch (IOException ignored) {
+        } catch (Exception ignored) {
             // Client disconnected before first frame; emitter cleanup runs via callbacks
         }
 

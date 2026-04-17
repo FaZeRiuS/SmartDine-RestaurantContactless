@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -78,12 +79,15 @@ public class DishImageController {
         String filename = UUID.randomUUID() + ".jpg";
         Path filePath = uploadPath.resolve(filename);
 
-        Thumbnails.of(file.getInputStream())
-                .size(800, 800)
-                .keepAspectRatio(true)
-                .outputFormat("jpg")
-                .outputQuality(0.82)
-                .toFile(filePath.toFile());
+        // Ensure the uploaded stream is closed to avoid resource leaks in the container.
+        try (InputStream inputStream = file.getInputStream()) {
+            Thumbnails.of(inputStream)
+                    .size(800, 800)
+                    .keepAspectRatio(true)
+                    .outputFormat("jpg")
+                    .outputQuality(0.82)
+                    .toFile(filePath.toFile());
+        }
 
         return "/uploads/" + filename;
     }

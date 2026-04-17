@@ -1,17 +1,7 @@
 <!DOCTYPE html>
 <html lang="uk" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartDine — Безконтактне замовлення у ресторані</title>
-    <meta name="description" content="SmartDine — зручне безконтактне замовлення страв через QR-код. Переглядайте меню, обирайте страви та замовляйте прямо з телефону.">
-        <link rel="stylesheet" th:href="@{/css/base.css}">
-    <link rel="stylesheet" th:href="@{/css/layout.css}">
-    <link rel="stylesheet" th:href="@{/css/components.css}">
-    <link rel="stylesheet" th:href="@{/css/pages.css}">
-    <link rel="stylesheet" th:href="@{/css/responsive.css}">
-    <link rel="stylesheet" th:href="@{/css/admin.css}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+<head th:replace="~{fragments/layout :: head}">
 </head>
 <body>
 
