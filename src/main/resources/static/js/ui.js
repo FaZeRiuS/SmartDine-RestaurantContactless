@@ -428,9 +428,6 @@ function enhanceTablist(tablist) {
         if (!tab.id) tab.id = `tab-${Math.random().toString(36).slice(2)}-${i}`;
         tab.setAttribute('role', 'tab');
         tab.setAttribute('aria-selected', tab.classList.contains('active') ? 'true' : 'false');
-        // Keep all tabs reachable via Tab (sequential top-down navigation requirement).
-        // We still keep aria-selected in sync for screen readers.
-        if (!tab.hasAttribute('tabindex')) tab.setAttribute('tabindex', '0');
 
         tab.addEventListener('click', () => syncTabStateFromDom(tablist));
     });
@@ -449,7 +446,22 @@ function enhanceTablist(tablist) {
         if (key === 'Home' || key === 'End') {
             e.preventDefault();
             const t = key === 'Home' ? enabledTabs[0] : enabledTabs[enabledTabs.length - 1];
+            t?.click();
             t?.focus({ preventScroll: true });
+            scrollTabIntoView(tablist, t);
+            return;
+        }
+
+        if (key === 'ArrowRight' || key === 'ArrowLeft') {
+            e.preventDefault();
+            const idx = enabledTabs.indexOf(current);
+            if (idx < 0) return;
+            const delta = key === 'ArrowRight' ? 1 : -1;
+            const neighborIdx = idx + delta;
+            if (neighborIdx < 0 || neighborIdx >= enabledTabs.length) return;
+            const t = enabledTabs[neighborIdx];
+            t.click();
+            t.focus({ preventScroll: true });
             scrollTabIntoView(tablist, t);
             return;
         }
@@ -477,8 +489,8 @@ function syncTabStateFromDom(tablist) {
     const active = tabs.find(t => t.classList.contains('active')) || tabs[0];
     tabs.forEach(t => {
         t.setAttribute('aria-selected', t === active ? 'true' : 'false');
-        // Do not rove tabindex; allow Tab to reach each tab button.
-        if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '0');
+        // Roving tabindex: one tab stop for the list so Tab reaches dish buttons below.
+        t.setAttribute('tabindex', t === active ? '0' : '-1');
     });
 }
 
@@ -860,6 +872,10 @@ function initSpatialArrowNavigation() {
         const active = document.activeElement;
         if (!active || active === document.body) return;
         if (spatialArrowDeferToNative(active, key)) return;
+        // Let tablist own ←/→ between category tabs (roving tabindex; inactive tabs are not in DOM arrow list).
+        if (active.classList && active.classList.contains('menu-tab') && (key === 'ArrowLeft' || key === 'ArrowRight')) {
+            return;
+        }
 
         const next = spatialNeighbor(active, key);
         if (!next) return;
