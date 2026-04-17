@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,7 +64,8 @@ public class DishImageController {
     }
 
     /**
-     * Compresses and saves an uploaded image as WebP (max 800×800px) and generates a thumbnail (max 400×400px).
+     * Compresses and saves an uploaded image as WebP (max 800×800px) and generates
+     * a thumbnail (max 400×400px).
      * WebP saves ~50% vs. JPEG at equivalent visual quality.
      *
      * @return public URL of the saved original image (e.g. "/uploads/uuid.webp")
