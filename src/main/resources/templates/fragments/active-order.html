@@ -115,7 +115,7 @@
                                 <div class="d-flex gap-1">
                                     <button class="btn btn-primary btn-sm flex-1" type="submit"
                                             data-toast-pending="Застосовуємо бали лояльності..."
-                                            data-toast-success="Бали застосовано"
+                                            data-toast-success="Бали лояльності застосовано"
                                             data-toast-success-type="success">Застосувати</button>
                                 </div>
                             </form>
@@ -124,8 +124,8 @@
                                   hx-swap="innerHTML">
                                 <input type="hidden" name="amount" value="0"/>
                                 <button class="btn btn-secondary btn-sm w-full" type="submit"
-                                        data-toast-pending="Скасовуємо бали..."
-                                        data-toast-success="Бали скасовано"
+                                        data-toast-pending="Скасовуємо бали лояльності..."
+                                        data-toast-success="Бали лояльності скасовано"
                                         data-toast-success-type="success">Скасувати бали</button>
                             </form>
                             <div id="loyaltyHint" class="text-muted text-xs">
@@ -156,7 +156,7 @@
                                     <input type="hidden" name="amount" value="10"/>
                                     <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn"
                                             data-toast-pending="Застосовуємо чайові..."
-                                            data-toast-success="Чайові застосовано"
+                                            data-toast-success="Чайові застосовано (+10 грн)"
                                             data-toast-success-type="success">+10 грн</button>
                                 </form>
                                 <form th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
@@ -164,7 +164,7 @@
                                     <input type="hidden" name="amount" value="20"/>
                                     <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn"
                                             data-toast-pending="Застосовуємо чайові..."
-                                            data-toast-success="Чайові застосовано"
+                                            data-toast-success="Чайові застосовано (+20 грн)"
                                             data-toast-success-type="success">+20 грн</button>
                                 </form>
                                 <form th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
@@ -172,15 +172,15 @@
                                     <input type="hidden" name="amount" value="50"/>
                                     <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn"
                                             data-toast-pending="Застосовуємо чайові..."
-                                            data-toast-success="Чайові застосовано"
+                                            data-toast-success="Чайові застосовано (+50 грн)"
                                             data-toast-success-type="success">+50 грн</button>
                                 </form>
                                 <form th:attr="hx-post=@{/htmx/orders/{id}/tip(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
                                       hx-target="#activeOrderContainer" hx-swap="innerHTML">
                                     <input type="hidden" name="amount" value="0"/>
                                     <button type="submit" class="btn btn-secondary btn-sm tip-preset-btn"
-                                            data-toast-pending="Застосовуємо чайові..."
-                                            data-toast-success="Чайові оновлено"
+                                            data-toast-pending="Оновлюємо чайові..."
+                                            data-toast-success="Чайові скинуто (0 грн)"
                                             data-toast-success-type="success">0 грн</button>
                                 </form>
                             </div>
@@ -194,7 +194,7 @@
                                        th:value="${activeOrder.tipAmount != null && activeOrder.tipAmount > 0 ? #numbers.formatDecimal(activeOrder.tipAmount, 1, 2) : ''}"/>
                                 <button class="btn btn-primary btn-sm" type="submit"
                                         data-toast-pending="Застосовуємо чайові..."
-                                        data-toast-success="Чайові застосовано"
+                                        data-toast-success="Чайові збережено"
                                         data-toast-success-type="success">Застосувати чайові</button>
                             </form>
                             <div class="text-muted text-xs">
@@ -211,7 +211,6 @@
                     <div id="paymentActions" class="flex-1"
                          th:classappend="${activeOrder.paymentStatus.name() != 'SUCCESS'} ? '' : ' hidden'">
                         <button class="btn btn-primary w-full"
-                                th:classappend="${homeActiveOrderWidget} ? '' : ' btn-lg'"
                                 type="button"
                                 id="payBtn"
                                 onclick="payOrder()">

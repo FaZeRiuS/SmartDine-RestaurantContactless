@@ -568,6 +568,19 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
+    justify-content: stretch;
+}
+
+/* Same visual height for pay (primary) and "add dishes" (secondary), including <a> vs <button> */
+.active-order-pay-row > #paymentActions > .btn {
+    flex: 1;
+    min-height: 3rem;
+}
+
+.active-order-pay-row > a.btn.flex-1,
+.active-order-pay-row > button.btn.flex-1 {
+    min-height: 3rem;
+    justify-content: center;
 }
 
 .active-order-pay-row .btn {
@@ -576,6 +589,8 @@
     white-space: normal;
     text-align: center;
     justify-content: center;
+    align-items: center;
+    line-height: 1.25;
 }
 
 /* Cart page: limit items height */

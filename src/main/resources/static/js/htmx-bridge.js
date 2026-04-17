@@ -104,6 +104,18 @@
     } catch {
       // ignore
     }
+    try {
+      const xhr = evt?.detail?.xhr;
+      if (!xhr || xhr._htmxToastSuccess) return;
+      const elt = findToastSource(evt?.detail?.elt);
+      if (!elt) return;
+      const sm = elt.getAttribute?.('data-toast-success');
+      if (!sm) return;
+      xhr._htmxToastSuccess = sm;
+      xhr._htmxToastType = elt.getAttribute?.('data-toast-success-type') || 'success';
+    } catch {
+      // ignore
+    }
   });
 
   // Opt-in UX toasts for HTMX actions via data attributes:
@@ -116,17 +128,20 @@
       const elt = findToastSource(trigger);
       if (!elt || typeof showToast !== 'function') return;
 
-      // Robustness: Capture success message NOW while element is guaranteed to be in DOM.
-      // We store it on the SOURCE element found by findToastSource to be consistent.
       const successMsg = elt.getAttribute?.('data-toast-success');
+      const successType = elt.getAttribute?.('data-toast-success-type') || 'success';
       if (successMsg) {
         elt._htmxSuccessToast = successMsg;
-        elt._htmxSuccessToastType = elt.getAttribute?.('data-toast-success-type') || 'success';
+        elt._htmxSuccessToastType = successType;
+        const xhr = evt?.detail?.xhr;
+        if (xhr && typeof xhr === 'object') {
+          xhr._htmxToastSuccess = successMsg;
+          xhr._htmxToastType = successType;
+        }
       }
 
       const msg = elt.getAttribute?.('data-toast-pending');
-      if (!msg) return;
-      showToast(msg, 'info');
+      if (msg) showToast(msg, 'info');
     } catch (err) {
       console.warn('HTMX Toast Bridge (Pending) Error:', err);
     }
@@ -134,20 +149,27 @@
 
   function maybeShowSuccessToast(evt) {
     try {
-      const trigger = evt?.detail?.elt; 
-      const elt = findToastSource(trigger); // Re-find source to match attributes/properties
       const xhr = evt?.detail?.xhr;
-      if (!elt || !xhr || typeof showToast !== 'function') return;
+      if (!xhr || typeof showToast !== 'function') return;
       if (xhr.status < 200 || xhr.status >= 300) return;
 
-      // Try captured message from source first, then direct attribute fallback
+      if (xhr._htmxToastSuccess) {
+        showToast(xhr._htmxToastSuccess, xhr._htmxToastType || 'success');
+        delete xhr._htmxToastSuccess;
+        delete xhr._htmxToastType;
+        return;
+      }
+
+      const trigger = evt?.detail?.elt;
+      const elt = findToastSource(trigger);
+      if (!elt) return;
+
       const msg = elt._htmxSuccessToast || elt.getAttribute?.('data-toast-success');
       if (!msg) return;
 
       const t = elt._htmxSuccessToastType || elt.getAttribute?.('data-toast-success-type') || 'success';
       showToast(msg, t);
-      
-      // Cleanup
+
       delete elt._htmxSuccessToast;
       delete elt._htmxSuccessToastType;
     } catch (err) {
