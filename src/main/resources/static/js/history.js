@@ -41,9 +41,22 @@ async function submitOrderReview(orderId) {
         });
 
         if (!res.ok) {
-            let msg = await res.text();
-            try { msg = JSON.parse(msg).message || msg; } catch (e) { /* ignore */ }
-            throw new Error(msg || 'Помилка надсилання відгуку');
+            const body = await res.text();
+            let parsed = '';
+            try {
+                const j = JSON.parse(body);
+                const m = j.message ?? j.error ?? j.detail;
+                if (m != null && String(m).trim()) parsed = String(m).trim();
+            } catch (ignore) { /* not JSON */ }
+            let text = parsed;
+            if (!text && body && body.trim()) {
+                const t = body.trim();
+                if (t.length < 400 && !t.startsWith('<')) text = t;
+            }
+            if (!text) {
+                text = `Помилка відгуку (HTTP ${res.status})`;
+            }
+            throw new Error(text);
         }
 
         showToast('✅ Дякуємо за відгук!', 'success');

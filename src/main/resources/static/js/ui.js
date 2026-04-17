@@ -102,6 +102,16 @@ async function logErrorToServer(message) {
  * @param {string} fallback user-facing Ukrainian message
  * @param {(msg: string) => boolean} [allowMessageIf] if returns true, err.message is shown (local validation, etc.)
  */
+/**
+ * Some browsers expose only a stack frame (e.g. "@https://host/file.js:46:28") when Error.message is empty;
+ * that is not actionable server-side and spams logs.
+ */
+function isUninformativeClientUiStackOnly(detail) {
+    const d = String(detail).trim().split(/\r?\n/, 1)[0] || '';
+    return /^@?https?:\/\/\S+\.(js|mjs|html|jsx|tsx):\d+:\d+$/i.test(d)
+        || /^[\w$.]+@https?:\/\/\S+:\d+:\d+$/i.test(d);
+}
+
 function userFacingErrorMessage(err, fallback, allowMessageIf) {
     const msg = err && err.message != null ? String(err.message) : '';
     if (typeof allowMessageIf === 'function' && msg && allowMessageIf(msg)) {
@@ -109,6 +119,9 @@ function userFacingErrorMessage(err, fallback, allowMessageIf) {
     }
     if (typeof logErrorToServer === 'function' && err) {
         const detail = (typeof err.stack === 'string' && err.stack ? err.stack : msg || String(err)).slice(0, 4000);
+        if (!msg.trim() && isUninformativeClientUiStackOnly(detail)) {
+            return fallback;
+        }
         void logErrorToServer('Client UI: ' + detail);
     }
     return fallback;
