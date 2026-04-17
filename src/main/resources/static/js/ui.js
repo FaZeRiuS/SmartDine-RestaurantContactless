@@ -495,13 +495,11 @@ function scrollTabIntoView(tablist, tab) {
     }
 }
 
-/** PC keyboard arrow enhancement: wide viewport, primary pointer not coarse (touch). */
+/** Wide viewport: spatial arrows (keyboard / hybrid touch+keyboard laptops). */
 function isDesktopSequentialArrowNav() {
     try {
         if (!window.matchMedia) return true;
-        if (!window.matchMedia('(min-width: 769px)').matches) return false;
-        if (window.matchMedia('(pointer: coarse)').matches) return false;
-        return true;
+        return window.matchMedia('(min-width: 769px)').matches;
     } catch (e) {
         return true;
     }
@@ -719,15 +717,32 @@ function initMobileSiteTabSwipe() {
 
 // ── Spatial arrow navigation (desktop): nearest focusable in visual direction ─
 
+/* Use broad tags; filter disabled via property (covers fieldset[disabled] etc.) */
 const SPATIAL_FOCUS_SELECTOR = [
     'a[href]',
-    'button:not([disabled])',
-    'input:not([disabled]):not([type="hidden"])',
-    'textarea:not([disabled])',
-    'select:not([disabled])',
-    'details summary',
-    '[tabindex]:not([tabindex="-1"]):not([disabled])'
+    'area[href]',
+    'button',
+    'input:not([type="hidden"])',
+    'textarea',
+    'select',
+    'summary',
+    '[role="button"]',
+    '[role="tab"]',
+    '[role="menuitem"]',
+    '[tabindex]:not([tabindex="-1"])'
 ].join(',');
+
+function isSpatialFocusableCandidate(el) {
+    if (!el || el === document.body || el === document.documentElement) return false;
+    if (el.getAttribute('aria-hidden') === 'true') return false;
+    if (el.getAttribute('aria-disabled') === 'true') return false;
+    if (el.closest && typeof el.closest === 'function' && el.closest('[inert]')) return false;
+    if (el.disabled === true) return false;
+    if (el.tagName === 'INPUT' && String(el.type || '').toLowerCase() === 'hidden') return false;
+    const ti = el.getAttribute('tabindex');
+    if (ti === '-1') return false;
+    return sequentialFocusableIsVisible(el);
+}
 
 function getSpatialNavRoot(fromEl) {
     try {
@@ -741,12 +756,15 @@ function getSpatialNavRoot(fromEl) {
 
 function collectSpatialFocusables(root) {
     if (!root || !root.querySelectorAll) return [];
-    return Array.from(root.querySelectorAll(SPATIAL_FOCUS_SELECTOR)).filter((el) => {
-        if (!el || el === document.body || el === document.documentElement) return false;
-        if (el.getAttribute('aria-hidden') === 'true') return false;
-        if (el.getAttribute('aria-disabled') === 'true') return false;
-        return sequentialFocusableIsVisible(el);
+    const seen = new Set();
+    const out = [];
+    Array.from(root.querySelectorAll(SPATIAL_FOCUS_SELECTOR)).forEach((el) => {
+        if (!el || seen.has(el) || !isSpatialFocusableCandidate(el)) return;
+        if (typeof el.focus !== 'function') return;
+        seen.add(el);
+        out.push(el);
     });
+    return out;
 }
 
 function spatialCenter(el) {

@@ -192,11 +192,20 @@
 .dish-card:focus-within {
     outline: none;
     border-color: var(--border-gold);
-    /* Inset ring: avoids clipping from .dish-card overflow:hidden and .container overflow */
-    box-shadow:
-        inset 0 0 0 2px var(--gold),
-        0 0 0 1px rgba(201, 169, 110, 0.35);
+    box-shadow: 0 0 0 1px rgba(201, 169, 110, 0.35);
     z-index: 1;
+}
+
+/* Ring above the image: inset box-shadow sits under children and was invisible on the photo */
+.dish-card:focus-within::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 2px solid var(--gold);
+    pointer-events: none;
+    z-index: 5;
+    box-sizing: border-box;
 }
 
 .dish-card-content {
@@ -312,6 +321,7 @@
     overflow: hidden;
     background: var(--bg-secondary);
     position: relative;
+    z-index: 0;
 }
 
 .dish-image {

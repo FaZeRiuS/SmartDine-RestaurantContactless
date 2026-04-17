@@ -61,17 +61,11 @@ public class RecommendationServiceImpl implements RecommendationService {
             weighted.add(new long[]{id, cnt + 1L});
         }
 
-        Optional<Integer> chosenId = pickWeightedId(weighted);
-        if (chosenId.isEmpty()) {
-            return Optional.empty();
-        }
-
-        return dishRepository.findById(chosenId.get())
-                .map(dishMapper::toResponseDto)
-                .map(d -> {
-                    dishRatingService.enrichWithRatings(List.of(d));
-                    return d;
-                });
+        Optional<DishResponseDto> dish = pickWeightedId(weighted)
+                .flatMap(dishRepository::findById)
+                .map(dishMapper::toResponseDto);
+        dish.ifPresent(d -> dishRatingService.enrichWithRatings(List.of(d)));
+        return dish;
     }
 
     private static Optional<Integer> pickWeightedId(List<long[]> weighted) {
