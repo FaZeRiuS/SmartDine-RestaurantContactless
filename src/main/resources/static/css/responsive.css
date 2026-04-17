@@ -75,6 +75,44 @@
         color: var(--gold);
     }
 
+    .navbar-burger form {
+        width: 100%;
+        margin: 0;
+        display: flex;
+    }
+
+    .navbar-burger .logout-btn {
+        width: 100%;
+        padding: 10px 16px;
+        border-radius: var(--radius-md);
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--border);
+        transition: all 0.2s;
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        text-align: center;
+        box-sizing: border-box;
+    }
+
+    .navbar-burger .logout-btn:hover {
+        background: rgba(201, 169, 110, 0.1);
+        color: var(--gold);
+    }
+
+    .navbar-burger .logout-btn:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
+    }
+
     .navbar-burger .nav-divider {
         height: 1px;
         background: var(--border);
@@ -577,6 +615,44 @@
         width: 100%;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid var(--border);
+    }
+
+    .navbar-burger form {
+        width: 100%;
+        margin: 0;
+        display: flex;
+    }
+
+    .navbar-burger .logout-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.8rem 2rem;
+        font-weight: 500;
+        border-radius: var(--radius-xl);
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        text-align: center;
+        box-sizing: border-box;
+        transition: all 0.2s;
+    }
+
+    .navbar-burger .logout-btn:hover {
+        background: rgba(201, 169, 110, 0.12);
+        color: var(--gold);
+        border-color: var(--gold);
+    }
+
+    .navbar-burger .logout-btn:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
     }
 
     .navbar-burger .nav-divider {

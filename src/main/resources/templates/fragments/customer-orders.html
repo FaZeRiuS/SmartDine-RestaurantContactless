@@ -25,7 +25,7 @@
                         </div>
                         <div class="cart-item-qty" th:text="|× ${item.quantity}|">×0</div>
                         <div class="cart-item-price"
-                             th:text="|${#numbers.formatDecimal(item.price.multiply(T(java.math.BigDecimal).valueOf(item.quantity)), 1, 2)} &#x20B4;|">0</div>
+                             th:text="|${#numbers.formatDecimal(item.price.multiply(T(java.math.BigDecimal).valueOf(item.quantity.doubleValue())), 1, 2)} &#x20B4;|">0</div>
                     </div>
                 </div>
                 <div class="active-order-footer">

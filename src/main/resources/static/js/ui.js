@@ -440,14 +440,30 @@ function enhanceTablist(tablist) {
             : null;
         if (!current || current.parentElement !== tablist) return;
 
-        if (key === 'ArrowRight' || key === 'ArrowLeft' || key === 'Home' || key === 'End') {
-            // Horizontal arrow handling is overridden by global sequential traversal (see initSequentialKeyboardTraversal).
-            // Keep only Home/End as a convenience within the tablist.
-            const enabledTabs = Array.from(tablist.querySelectorAll('.menu-tab'))
-                .filter(t => !t.disabled && t.getAttribute('aria-disabled') !== 'true');
-            if (enabledTabs.length === 0) return;
+        const enabledTabs = Array.from(tablist.querySelectorAll('.menu-tab'))
+            .filter(t => !t.disabled && t.getAttribute('aria-disabled') !== 'true');
+        if (enabledTabs.length === 0) return;
+
+        if (key === 'Home' || key === 'End') {
             e.preventDefault();
             const t = key === 'Home' ? enabledTabs[0] : enabledTabs[enabledTabs.length - 1];
+            t?.focus({ preventScroll: true });
+            scrollTabIntoView(tablist, t);
+            return;
+        }
+
+        if (key === 'ArrowRight' || key === 'ArrowLeft') {
+            if (!isDesktopSequentialArrowNav()) return;
+            const idx = enabledTabs.indexOf(current);
+            if (idx < 0) return;
+            const delta = key === 'ArrowRight' ? 1 : -1;
+            const neighborIdx = idx + delta;
+            if (neighborIdx < 0 || neighborIdx >= enabledTabs.length) {
+                if (focusSequentialNeighborNoWrap(current, delta)) e.preventDefault();
+                return;
+            }
+            e.preventDefault();
+            const t = enabledTabs[neighborIdx];
             t?.focus({ preventScroll: true });
             scrollTabIntoView(tablist, t);
             return;
@@ -492,6 +508,69 @@ function scrollTabIntoView(tablist, tab) {
     } catch (e) {
         // ignore
     }
+}
+
+/** PC keyboard arrow enhancement: wide viewport, primary pointer not coarse (touch). */
+function isDesktopSequentialArrowNav() {
+    try {
+        if (!window.matchMedia) return true;
+        if (!window.matchMedia('(min-width: 769px)').matches) return false;
+        if (window.matchMedia('(pointer: coarse)').matches) return false;
+        return true;
+    } catch (e) {
+        return true;
+    }
+}
+
+function sequentialFocusableIsVisible(el) {
+    try {
+        if (!el) return false;
+        if (el.disabled) return false;
+        if (el.getAttribute && el.getAttribute('aria-disabled') === 'true') return false;
+        const rect = el.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+        const style = window.getComputedStyle(el);
+        if (style.visibility === 'hidden' || style.display === 'none') return false;
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+function getSequentialFocusableElements() {
+    const selector = [
+        '#mainNav a',
+        '.menu-tabs .menu-tab',
+        '.dishes-grid .dish-card',
+        '.dishes-grid button, .dishes-grid a, .dishes-grid input, .dishes-grid select, .dishes-grid textarea',
+        '.mobile-nav a.mobile-nav-item'
+    ].join(',');
+    return Array.from(document.querySelectorAll(selector))
+        .filter(el => el && typeof el.focus === 'function' && sequentialFocusableIsVisible(el));
+}
+
+/**
+ * Move focus to the next/previous sequential target (no wrap). Used to leave tablists / dish grids at edges.
+ */
+function focusSequentialNeighborNoWrap(fromEl, dir) {
+    const list = getSequentialFocusableElements();
+    if (list.length === 0 || !fromEl) return false;
+    let idx = list.indexOf(fromEl);
+    if (idx < 0) {
+        const card = fromEl.closest ? fromEl.closest('.dish-card') : null;
+        if (card) idx = list.indexOf(card);
+    }
+    if (idx < 0) return false;
+    const nextIdx = idx + dir;
+    if (nextIdx < 0 || nextIdx >= list.length) return false;
+    const next = list[nextIdx];
+    next.focus({ preventScroll: true });
+    try { next.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* ignore */ }
+    if (next.classList && next.classList.contains('menu-tab')) {
+        const tl = next.closest('.menu-tabs');
+        if (tl) scrollTabIntoView(tl, next);
+    }
+    return true;
 }
 
 function bindSwipeToSwitchTabs(swipeArea, tablist) {
@@ -571,6 +650,7 @@ function enhanceHeaderNavKeyboard(scope) {
     mainNav.addEventListener('keydown', (e) => {
         const key = e.key;
         if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
+        if (!isDesktopSequentialArrowNav()) return;
 
         const activeEl = document.activeElement;
         if (!activeEl || activeEl.tagName !== 'A' || !mainNav.contains(activeEl)) return;
@@ -653,8 +733,36 @@ function enhanceDishGridKeyboard(scope) {
                 return;
             }
 
-            e.preventDefault();
             const cols = getColumns();
+            const desktopArrows = isDesktopSequentialArrowNav();
+
+            if (key === 'ArrowRight') {
+                if (desktopArrows && currentIdx >= cards.length - 1) {
+                    if (focusSequentialNeighborNoWrap(currentCard, 1)) e.preventDefault();
+                    return;
+                }
+            } else if (key === 'ArrowLeft') {
+                if (desktopArrows && currentIdx <= 0) {
+                    if (focusSequentialNeighborNoWrap(currentCard, -1)) e.preventDefault();
+                    return;
+                }
+            } else if (key === 'ArrowDown') {
+                const rawDown = currentIdx + cols;
+                const clampedDown = Math.min(cards.length - 1, Math.max(0, rawDown));
+                if (desktopArrows && clampedDown === currentIdx && rawDown > currentIdx) {
+                    if (focusSequentialNeighborNoWrap(currentCard, 1)) e.preventDefault();
+                    return;
+                }
+            } else if (key === 'ArrowUp') {
+                const rawUp = currentIdx - cols;
+                const clampedUp = Math.min(cards.length - 1, Math.max(0, rawUp));
+                if (desktopArrows && clampedUp === currentIdx && rawUp < currentIdx) {
+                    if (focusSequentialNeighborNoWrap(currentCard, -1)) e.preventDefault();
+                    return;
+                }
+            }
+
+            e.preventDefault();
             if (key === 'Home') moveTo(0);
             else if (key === 'End') moveTo(cards.length - 1);
             else if (key === 'ArrowRight') moveTo(currentIdx + 1);
@@ -806,43 +914,13 @@ function initSequentialKeyboardTraversal() {
         return !!el.isContentEditable;
     };
 
-    const isVisible = (el) => {
-        try {
-            if (!el) return false;
-            if (el.disabled) return false;
-            if (el.getAttribute && el.getAttribute('aria-disabled') === 'true') return false;
-            // offsetParent is null for display:none (but also for position:fixed); check rect too
-            const rect = el.getBoundingClientRect();
-            if (!rect || rect.width <= 0 || rect.height <= 0) return false;
-            const style = window.getComputedStyle(el);
-            if (style.visibility === 'hidden' || style.display === 'none') return false;
-            return true;
-        } catch (e) {
-            return false;
-        }
-    };
-
-    const focusablesInOrder = () => {
-        // We include the key UI regions requested by the user.
-        const selector = [
-            '#mainNav a',
-            '.menu-tabs .menu-tab',
-            '.dishes-grid .dish-card',
-            '.dishes-grid button, .dishes-grid a, .dishes-grid input, .dishes-grid select, .dishes-grid textarea',
-            '.mobile-nav a.mobile-nav-item'
-        ].join(',');
-
-        return Array.from(document.querySelectorAll(selector))
-            .filter(el => el && typeof el.focus === 'function' && isVisible(el));
-    };
-
     const inManagedArea = (el) => {
         if (!el || !el.closest) return false;
         return !!el.closest('#mainNav, .menu-tabs, .dishes-grid, .mobile-nav');
     };
 
     const moveFocus = (dir) => {
-        const list = focusablesInOrder();
+        const list = getSequentialFocusableElements();
         if (list.length === 0) return;
         const active = document.activeElement;
         let idx = list.indexOf(active);
@@ -854,6 +932,10 @@ function initSequentialKeyboardTraversal() {
         const next = list[(idx + dir + list.length) % list.length] || list[0];
         next.focus({ preventScroll: true });
         try { next.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* ignore */ }
+        if (next.classList && next.classList.contains('menu-tab')) {
+            const tl = next.closest('.menu-tabs');
+            if (tl) scrollTabIntoView(tl, next);
+        }
     };
 
     document.addEventListener('keydown', (e) => {
@@ -863,6 +945,8 @@ function initSequentialKeyboardTraversal() {
         const key = e.key;
         if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
 
+        if (!isDesktopSequentialArrowNav()) return;
+
         const active = document.activeElement;
         if (isEditable(active)) return;
         if (!inManagedArea(active)) return;
@@ -870,6 +954,8 @@ function initSequentialKeyboardTraversal() {
         // This global sequential traversal runs in capture phase and can otherwise
         // prevent component-level keydown handlers from ever firing.
         if (active && active.closest && active.closest('.dishes-grid')) return;
+        // Tablists handle prev/next tab + horizontal scroll on desktop (bubble phase).
+        if (active && active.classList && active.classList.contains('menu-tab')) return;
 
         e.preventDefault();
         // Top-down sequential behavior: Up/Left => previous, Down/Right => next

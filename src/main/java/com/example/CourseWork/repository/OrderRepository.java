@@ -29,9 +29,17 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
     Page<Order> findAllByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
-    @EntityGraph(attributePaths = { "items", "items.dish" })
-    Page<Order> findAllByUserIdAndStatusInOrderByCreatedAtDesc(
-            String userId, Collection<OrderStatus> statuses, Pageable pageable);
+    /**
+     * Eager-fetch order lines for customer history (OSIV is off — collections must be initialized in one query).
+     */
+    @Query(
+            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish "
+                    + "WHERE o.userId = :userId AND o.status IN :statuses",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.userId = :userId AND o.status IN :statuses")
+    Page<Order> findPageWithItemsAndDishesForUserAndStatuses(
+            @Param("userId") String userId,
+            @Param("statuses") Collection<OrderStatus> statuses,
+            Pageable pageable);
 
     Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
 

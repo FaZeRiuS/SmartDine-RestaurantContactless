@@ -154,7 +154,7 @@ public class OrderReadServiceImpl implements OrderReadService {
     public Page<OrderResponseDto> getOrderHistoryForStatuses(
             String userId, Collection<OrderStatus> statuses, Pageable pageable) {
         Page<OrderResponseDto> page = orderRepository
-                .findAllByUserIdAndStatusInOrderByCreatedAtDesc(userId, statuses, pageable)
+                .findPageWithItemsAndDishesForUserAndStatuses(userId, statuses, pageable)
                 .map(orderMapper::toResponseDto);
         enrichOrdersWithReviews(page.getContent());
         return page;

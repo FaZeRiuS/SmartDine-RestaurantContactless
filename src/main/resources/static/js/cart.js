@@ -179,7 +179,7 @@ function checkActiveOrder() {
 }
 
 const ADD_TO_CART_LABEL = '\u{1F6D2} \u0423 \u043a\u043e\u0448\u0438\u043a';
-const ADD_TO_ORDER_LABEL = '\u{1F6CE}\uFE0F \u0414\u043e\u0434\u0430\u0442\u0438 \u0434\u043e \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f';
+const ADD_TO_ORDER_LABEL = '\u{1F6CE}\uFE0F \u0414\u043e\u0434\u0430\u0442\u0438 \u043d\u0430 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f';
 
 function dishNameForAddButton(btn) {
     const card = btn.closest('.dish-card');
@@ -188,7 +188,7 @@ function dishNameForAddButton(btn) {
 }
 
 /**
- * When customer has an active unpaid order (NEW/PREPARING/READY), show "Додати до замовлення" on menu cards.
+ * When customer has an active unpaid order (NEW/PREPARING/READY), show "Додати на замовлення" on menu cards.
  */
 async function updateAddToCartButtonLabels() {
     try {
@@ -213,7 +213,7 @@ async function updateAddToCartButtonLabels() {
             const name = dishNameForAddButton(btn);
             if (isActive && unpaid) {
                 btn.textContent = ADD_TO_ORDER_LABEL;
-                btn.setAttribute('aria-label', name ? `Додати ${name} до активного замовлення` : 'Додати до замовлення');
+                btn.setAttribute('aria-label', name ? `Додати ${name} на замовлення` : 'Додати на замовлення');
             } else {
                 btn.textContent = ADD_TO_CART_LABEL;
                 btn.setAttribute('aria-label', name ? `Додати ${name} у кошик` : 'Додати у кошик');
