@@ -214,7 +214,7 @@
             <a th:href="@{/menu(table=${tableNumber})}" class="btn btn-secondary">Переглянути все →</a>
         </div>
 
-        <div class="menu-tabs">
+        <div class="menu-tabs" data-swipe-target="#menuCategoriesRoot" aria-label="Категорії меню">
             <button type="button" class="menu-tab active"
                     th:attr="hx-get=@{/htmx/menu/categories-body(filter='all',view='index')}"
                     hx-target="#menuCategoriesRoot"

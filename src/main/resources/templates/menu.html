@@ -24,7 +24,9 @@
         </div>
 
         <!-- Menu Tabs -->
-        <div class="menu-tabs mb-4" th:if="${menus != null && !menus.isEmpty()}">
+        <div class="menu-tabs mb-4" th:if="${menus != null && !menus.isEmpty()}"
+             data-swipe-target="#menuCategoriesRoot"
+             aria-label="Категорії меню">
             <button type="button" class="menu-tab" th:classappend="${selectedMenuId == null ? 'active' : ''}"
                     th:attr="hx-get=@{/htmx/menu/categories-body(filter='all',view='menu')}"
                     hx-target="#menuCategoriesRoot"

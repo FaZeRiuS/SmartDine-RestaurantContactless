@@ -20,7 +20,7 @@
                     data-toast-success-type="success">&#128260; Оновити</button>
     </div>
 
-    <div class="menu-tabs">
+    <div class="menu-tabs" data-swipe-target="#staffBoardRoot" aria-label="Фільтр замовлень">
         <button type="button" class="menu-tab"
                 th:classappend="${staffFilter == 'all'} ? ' active' : ''"
                 th:attr="hx-get=@{/htmx/staff/orders/board(filter=all)},

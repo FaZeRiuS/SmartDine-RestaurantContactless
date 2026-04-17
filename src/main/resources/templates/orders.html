@@ -13,7 +13,7 @@
         <p class="section-subtitle">Переглядайте статус активних та історію ваших минулих замовлень</p>
     </div>
 
-    <div class="menu-tabs fade-in-up">
+    <div class="menu-tabs fade-in-up" data-swipe-target="#customerOrdersRoot" aria-label="Вкладки замовлень">
         <button type="button" class="menu-tab customer-order-tab active"
                 th:attr="hx-get=@{/htmx/customer/orders(tab=active)}"
                 hx-target="#customerOrdersRoot"

@@ -8,6 +8,20 @@ function initSharedUI() {
     }
     initPushNotifications();
     checkUrlParams();
+    initAccessibleTabsIn(document);
+
+    // Re-init after HTMX swaps (tabs/content can be injected)
+    if (!document.documentElement.dataset.a11yTabsHtmxBound) {
+        document.documentElement.dataset.a11yTabsHtmxBound = '1';
+        document.body?.addEventListener('htmx:afterSwap', function (evt) {
+            const t = evt && evt.detail ? evt.detail.target : null;
+            initAccessibleTabsIn(t || document);
+        });
+        document.body?.addEventListener('htmx:oobAfterSwap', function (evt) {
+            const t = evt && evt.detail ? evt.detail.target : null;
+            initAccessibleTabsIn(t || document);
+        });
+    }
 
     // 7. Auto-cleanup for toasts (including those from HTMX OOB)
     const toastContainer = document.getElementById('toastContainer');
@@ -36,6 +50,7 @@ function initSharedUI() {
 window.initSharedUI = initSharedUI;
 window.renderStars = renderStars;
 window.initStarPickersIn = initStarPickersIn;
+window.initAccessibleTabsIn = initAccessibleTabsIn;
 
 /**
  * Sends a critical error log to the server for PWA/Lifecycle monitoring.
@@ -375,4 +390,161 @@ function urlBase64ToUint8Array(base64String) {
         outputArray[i] = rawData.charCodeAt(i);
     }
     return outputArray;
+}
+
+// ── Keyboard + Swipe Accessible Tabs (menu-tabs) ──────────────────────────────
+
+function initAccessibleTabsIn(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('.menu-tabs').forEach(tablist => {
+        enhanceTablist(tablist);
+    });
+}
+
+function enhanceTablist(tablist) {
+    if (!tablist || tablist.dataset.a11yTabsInit === '1') return;
+    tablist.dataset.a11yTabsInit = '1';
+
+    const tabs = Array.from(tablist.querySelectorAll('.menu-tab'));
+    if (tabs.length === 0) return;
+
+    tablist.setAttribute('role', tablist.getAttribute('role') || 'tablist');
+
+    tabs.forEach((tab, i) => {
+        if (!tab.id) tab.id = `tab-${Math.random().toString(36).slice(2)}-${i}`;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', tab.classList.contains('active') ? 'true' : 'false');
+        tab.setAttribute('tabindex', tab.classList.contains('active') ? '0' : '-1');
+
+        tab.addEventListener('click', () => syncTabStateFromDom(tablist));
+    });
+
+    tablist.addEventListener('keydown', (e) => {
+        const key = e.key;
+        const current = document.activeElement && document.activeElement.classList.contains('menu-tab')
+            ? document.activeElement
+            : null;
+        if (!current || current.parentElement !== tablist) return;
+
+        const enabledTabs = Array.from(tablist.querySelectorAll('.menu-tab'))
+            .filter(t => !t.disabled && t.getAttribute('aria-disabled') !== 'true');
+        const idx = enabledTabs.indexOf(current);
+        if (idx < 0) return;
+
+        const focusTabAt = (newIdx) => {
+            const t = enabledTabs[(newIdx + enabledTabs.length) % enabledTabs.length];
+            if (!t) return;
+            enabledTabs.forEach(x => x.setAttribute('tabindex', x === t ? '0' : '-1'));
+            t.focus({ preventScroll: true });
+            scrollTabIntoView(tablist, t);
+        };
+
+        if (key === 'ArrowRight' || key === 'ArrowLeft' || key === 'Home' || key === 'End') {
+            e.preventDefault();
+            if (key === 'Home') focusTabAt(0);
+            else if (key === 'End') focusTabAt(enabledTabs.length - 1);
+            else if (key === 'ArrowRight') focusTabAt(idx + 1);
+            else focusTabAt(idx - 1);
+            return;
+        }
+
+        if (key === 'Enter' || key === ' ') {
+            e.preventDefault();
+            current.click();
+        }
+    });
+
+    // Swipe support (mobile): add `data-swipe-target="#someId"` on tablist.
+    const targetSelector = tablist.getAttribute('data-swipe-target');
+    if (targetSelector) {
+        const swipeTarget = document.querySelector(targetSelector);
+        if (swipeTarget) bindSwipeToSwitchTabs(swipeTarget, tablist);
+    }
+
+    syncTabStateFromDom(tablist);
+}
+
+function syncTabStateFromDom(tablist) {
+    const tabs = Array.from(tablist.querySelectorAll('.menu-tab'));
+    if (tabs.length === 0) return;
+
+    const active = tabs.find(t => t.classList.contains('active')) || tabs[0];
+    tabs.forEach(t => {
+        t.setAttribute('aria-selected', t === active ? 'true' : 'false');
+        t.setAttribute('tabindex', t === active ? '0' : '-1');
+    });
+}
+
+function scrollTabIntoView(tablist, tab) {
+    try {
+        const left = tab.offsetLeft;
+        const right = left + tab.offsetWidth;
+        const viewLeft = tablist.scrollLeft;
+        const viewRight = viewLeft + tablist.clientWidth;
+        if (left < viewLeft) tablist.scrollTo({ left: Math.max(0, left - 16), behavior: 'smooth' });
+        else if (right > viewRight) tablist.scrollTo({ left: right - tablist.clientWidth + 16, behavior: 'smooth' });
+    } catch (e) {
+        // ignore
+    }
+}
+
+function bindSwipeToSwitchTabs(swipeArea, tablist) {
+    if (!swipeArea || !tablist || swipeArea.dataset.a11ySwipeInit === '1') return;
+    swipeArea.dataset.a11ySwipeInit = '1';
+
+    const isTouchLike = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const getTabs = () => Array.from(tablist.querySelectorAll('.menu-tab'))
+        .filter(t => !t.disabled && t.getAttribute('aria-disabled') !== 'true');
+
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    let startTime = 0;
+
+    const onStart = (x, y) => {
+        if (!isTouchLike()) return;
+        startX = x;
+        startY = y;
+        startTime = Date.now();
+        tracking = true;
+    };
+
+    const onEnd = (x, y) => {
+        if (!tracking) return;
+        tracking = false;
+
+        const dx = x - startX;
+        const dy = y - startY;
+        const dt = Date.now() - startTime;
+
+        // Ignore mostly-vertical gestures and very short swipes
+        if (Math.abs(dx) < 40) return;
+        if (Math.abs(dy) > Math.abs(dx) * 0.75) return;
+        if (dt > 800) return;
+
+        const tabs = getTabs();
+        if (tabs.length < 2) return;
+        const active = tabs.find(t => t.classList.contains('active')) || tabs[0];
+        const idx = tabs.indexOf(active);
+        if (idx < 0) return;
+
+        // Swipe left => next tab, swipe right => prev tab
+        const nextIdx = dx < 0 ? idx + 1 : idx - 1;
+        const next = tabs[(nextIdx + tabs.length) % tabs.length];
+        if (!next) return;
+        next.click();
+        scrollTabIntoView(tablist, next);
+    };
+
+    swipeArea.addEventListener('touchstart', (e) => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        onStart(t.clientX, t.clientY);
+    }, { passive: true });
+
+    swipeArea.addEventListener('touchend', (e) => {
+        const t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        onEnd(t.clientX, t.clientY);
+    }, { passive: true });
 }
