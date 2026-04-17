@@ -539,7 +539,13 @@ function sequentialFocusableIsVisible(el) {
 
 function getSequentialFocusableElements() {
     const selector = [
+        '.navbar-inner > a.navbar-brand',
         '#mainNav a',
+        '.header-actions > a.header-icon-btn',
+        '.header-profile-desktop > a.header-profile-btn',
+        '.burger-menu-container > .menu-toggle',
+        '.navbar-burger.open a',
+        '.navbar-burger.open .logout-btn',
         '.menu-tabs .menu-tab',
         '.dishes-grid .dish-card',
         '.dishes-grid button, .dishes-grid a, .dishes-grid input, .dishes-grid select, .dishes-grid textarea',
@@ -662,14 +668,29 @@ function enhanceHeaderNavKeyboard(scope) {
         if (idx < 0) return;
 
         e.preventDefault();
-        let nextIdx = idx;
-        if (key === 'Home') nextIdx = 0;
-        else if (key === 'End') nextIdx = links.length - 1;
-        else if (key === 'ArrowRight') nextIdx = idx + 1;
-        else nextIdx = idx - 1;
-
-        const next = links[(nextIdx + links.length) % links.length];
-        next?.focus({ preventScroll: true });
+        if (key === 'Home') {
+            links[0]?.focus({ preventScroll: true });
+            return;
+        }
+        if (key === 'End') {
+            links[links.length - 1]?.focus({ preventScroll: true });
+            return;
+        }
+        if (key === 'ArrowRight') {
+            if (idx >= links.length - 1) {
+                focusSequentialNeighborNoWrap(activeEl, 1);
+                return;
+            }
+            links[idx + 1]?.focus({ preventScroll: true });
+            return;
+        }
+        if (key === 'ArrowLeft') {
+            if (idx <= 0) {
+                focusSequentialNeighborNoWrap(activeEl, -1);
+                return;
+            }
+            links[idx - 1]?.focus({ preventScroll: true });
+        }
     });
 }
 
@@ -916,7 +937,7 @@ function initSequentialKeyboardTraversal() {
 
     const inManagedArea = (el) => {
         if (!el || !el.closest) return false;
-        return !!el.closest('#mainNav, .menu-tabs, .dishes-grid, .mobile-nav');
+        return !!el.closest('#mainNav, .menu-tabs, .dishes-grid, .mobile-nav, .navbar-inner');
     };
 
     const moveFocus = (dir) => {
@@ -956,6 +977,8 @@ function initSequentialKeyboardTraversal() {
         if (active && active.closest && active.closest('.dishes-grid')) return;
         // Tablists handle prev/next tab + horizontal scroll on desktop (bubble phase).
         if (active && active.classList && active.classList.contains('menu-tab')) return;
+        // Primary nav links use enhanceHeaderNavKeyboard (incl. escape to profile / burger).
+        if (active && active.closest && active.closest('#mainNav')) return;
 
         e.preventDefault();
         // Top-down sequential behavior: Up/Left => previous, Down/Right => next

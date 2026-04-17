@@ -148,6 +148,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.25rem;
+    align-items: stretch;
 }
 
 .dish-card {
@@ -189,9 +190,11 @@
 
 .dish-card:focus-visible,
 .dish-card:focus-within {
-    outline: 3px solid var(--gold);
-    outline-offset: 2px;
-    border-color: var(--gold);
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+    border-color: var(--border-gold);
+    box-shadow: 0 0 0 1px rgba(201, 169, 110, 0.35);
+    z-index: 1;
 }
 
 .dish-card-content {
@@ -199,8 +202,22 @@
     flex-direction: column;
     gap: 8px;
     padding: 0 1.25rem 1.25rem;
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
+}
+
+/* Absorb extra row height so CTAs align across cards in the same grid row */
+.dish-card-content > .dish-rating {
+    flex-shrink: 0;
+}
+
+.dish-card-content > .dish-description {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.dish-card-content > .dish-tags {
+    flex-shrink: 0;
 }
 
 .dish-card-header {
@@ -262,6 +279,27 @@
     gap: 8px;
     align-items: center;
     margin-top: auto;
+    flex-shrink: 0;
+    width: 100%;
+    padding-top: 0.35rem;
+}
+
+.dish-actions form {
+    width: 100%;
+    margin: 0;
+}
+
+.dish-actions .btn {
+    width: 100%;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+}
+
+@media (min-width: 769px) {
+    .dish-card {
+        min-height: 100%;
+    }
 }
 
 /* Dish images */
@@ -513,6 +551,31 @@
     display: flex;
     flex-direction: column;
     gap: var(--gap-sm);
+}
+
+/* Equal-width pay + "add dishes" actions */
+.active-order-pay-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: var(--gap-sm);
+}
+
+.active-order-pay-row > #paymentActions,
+.active-order-pay-row > .flex-1 {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.active-order-pay-row .btn {
+    width: 100%;
+    box-sizing: border-box;
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
 }
 
 /* Cart page: limit items height */
