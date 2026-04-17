@@ -33,6 +33,8 @@
                         <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
                              th:src="${dish.imageUrl}"
                              th:alt="${dish.name}"
+                             width="800"
+                             height="600"
                              loading="lazy"
                              decoding="async"
                              class="dish-image">

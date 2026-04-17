@@ -79,6 +79,8 @@
                     <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
                          th:src="${dish.imageUrl}"
                          th:alt="${dish.name}"
+                         width="800"
+                         height="600"
                          decoding="async"
                          loading="lazy"
                          class="dish-image">
@@ -144,6 +146,8 @@
                     <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
                          th:src="${dish.imageUrl}"
                          th:alt="${dish.name}"
+                         width="800"
+                         height="600"
                          th:loading="${stat.index < 2 ? 'eager' : 'lazy'}"
                          th:attr="fetchpriority=${stat.index < 2 ? 'high' : 'auto'}"
                          decoding="async"
