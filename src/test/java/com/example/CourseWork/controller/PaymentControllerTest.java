@@ -1,23 +1,14 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.LiqPayCallbackDto;
 import com.example.CourseWork.dto.LiqPayCheckoutFormDto;
-import com.example.CourseWork.mapper.OrderMapper;
-import com.example.CourseWork.model.Order;
-import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.LiqPayService;
-import com.example.CourseWork.service.SseService;
 import com.example.CourseWork.service.PaymentCallbackService;
 import com.example.CourseWork.service.PaymentCheckoutService;
 import org.junit.jupiter.api.Test;
-import java.math.BigDecimal;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
-
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -30,16 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PaymentControllerTest extends BaseControllerTest {
 
     @MockitoBean
-    private OrderRepository orderRepository;
-
-    @MockitoBean
     private LiqPayService liqPayService;
-
-    @MockitoBean
-    private OrderMapper orderMapper;
-
-    @MockitoBean
-    private SseService sseService;
 
     @MockitoBean
     private PaymentCallbackService paymentCallbackService;
@@ -50,13 +32,6 @@ class PaymentControllerTest extends BaseControllerTest {
     @Test
     void initPayment_ShouldReturnCheckoutView() throws Exception {
         // Arrange
-        Order order = new Order();
-        order.setId(1);
-        order.setUserId("user-123");
-        order.setPaymentStatus(PaymentStatus.PENDING);
-
-        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
-
         LiqPayCheckoutFormDto form = new LiqPayCheckoutFormDto(
                 "https://liqpay.ua/api/3/checkout",
                 "some-data",
@@ -77,12 +52,6 @@ class PaymentControllerTest extends BaseControllerTest {
     @Test
     void initPayment_ShouldDenyNonOwner() throws Exception {
         // Arrange
-        Order order = new Order();
-        order.setId(1);
-        order.setUserId("user-123");
-
-        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
-
         // Act & Assert
         // User is "other-user", but order belongs to "user-123"
         when(paymentCheckoutService.prepareCheckout(1))
@@ -98,16 +67,6 @@ class PaymentControllerTest extends BaseControllerTest {
     @Test
     void callback_ShouldProcessSuccessPayment() throws Exception {
         // Arrange
-        java.util.UUID userId = java.util.UUID.randomUUID();
-        Order order = new Order();
-        order.setId(100);
-        order.setPaymentStatus(PaymentStatus.PENDING);
-        order.setStatus(OrderStatus.READY);
-        order.setUserId(userId.toString());
-        order.setTotalPrice(BigDecimal.valueOf(500.0));
-
-        when(orderRepository.findById(100)).thenReturn(Optional.of(order));
-
         LiqPayCallbackDto callback = new LiqPayCallbackDto();
         callback.setOrderId("order_100_123456");
         callback.setStatus("success");
@@ -123,7 +82,7 @@ class PaymentControllerTest extends BaseControllerTest {
                 .andExpect(content().string("OK"));
 
         verify(paymentCallbackService).handleCallbackSuccess(any());
-        verify(sseService).sendOrderUpdate(eq(userId.toString()), any());
+        verify(paymentCallbackService).publishOrderUpdateToUser(100);
     }
 
     @Test

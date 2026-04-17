@@ -8,5 +8,11 @@ public interface PaymentCallbackService {
      * Must be idempotent.
      */
     void handleCallbackSuccess(LiqPayCallbackDto callback);
+
+    /**
+     * Loads the order with lines and dishes inside a transaction and pushes the snapshot to the owner via SSE.
+     * Required when OSIV is disabled — mapping must not run on a detached {@code Order}.
+     */
+    void publishOrderUpdateToUser(Integer dbOrderId);
 }
 

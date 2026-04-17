@@ -3,12 +3,15 @@ package com.example.CourseWork.service.impl;
 import com.example.CourseWork.addition.OrderStatus;
 import com.example.CourseWork.addition.PaymentStatus;
 import com.example.CourseWork.dto.LiqPayCallbackDto;
+import com.example.CourseWork.dto.OrderResponseDto;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
+import com.example.CourseWork.mapper.OrderMapper;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.LoyaltyService;
 import com.example.CourseWork.service.PaymentCallbackService;
+import com.example.CourseWork.service.SseService;
 import com.example.CourseWork.util.LiqPayUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,10 +24,19 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
 
     private final OrderRepository orderRepository;
     private final LoyaltyService loyaltyService;
+    private final OrderMapper orderMapper;
+    private final SseService sseService;
 
-    public PaymentCallbackServiceImpl(OrderRepository orderRepository, LoyaltyService loyaltyService) {
+    public PaymentCallbackServiceImpl(
+            OrderRepository orderRepository,
+            LoyaltyService loyaltyService,
+            OrderMapper orderMapper,
+            SseService sseService
+    ) {
         this.orderRepository = orderRepository;
         this.loyaltyService = loyaltyService;
+        this.orderMapper = orderMapper;
+        this.sseService = sseService;
     }
 
     @Override
@@ -46,6 +58,18 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
         orderRepository.save(order);
 
         earnCashbackIfEligible(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void publishOrderUpdateToUser(Integer dbOrderId) {
+        @SuppressWarnings("null")
+        Order order = orderRepository.findByIdWithItemsAndDishes(dbOrderId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
+        OrderResponseDto response = orderMapper.toResponseDto(order);
+        if (order.getUserId() != null) {
+            sseService.sendOrderUpdate(order.getUserId(), response);
+        }
     }
 
     private void earnCashbackIfEligible(Order order) {

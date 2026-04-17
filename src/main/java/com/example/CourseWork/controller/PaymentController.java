@@ -2,17 +2,10 @@ package com.example.CourseWork.controller;
 
 import com.example.CourseWork.dto.LiqPayCallbackDto;
 import com.example.CourseWork.dto.LiqPayCheckoutFormDto;
-import com.example.CourseWork.dto.OrderResponseDto;
 import com.example.CourseWork.exception.BadRequestException;
-import com.example.CourseWork.exception.NotFoundException;
-import com.example.CourseWork.exception.ErrorMessages;
-import com.example.CourseWork.mapper.OrderMapper;
-import com.example.CourseWork.model.Order;
-import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.LiqPayService;
 import com.example.CourseWork.service.PaymentCallbackService;
 import com.example.CourseWork.service.PaymentCheckoutService;
-import com.example.CourseWork.service.SseService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -29,25 +22,16 @@ import com.example.CourseWork.util.LiqPayUtil;
 @RequestMapping
 public class PaymentController {
 
-    private final OrderRepository orderRepository;
     private final LiqPayService liqPayService;
-    private final OrderMapper orderMapper;
-    private final SseService sseService;
     private final PaymentCallbackService paymentCallbackService;
     private final PaymentCheckoutService paymentCheckoutService;
 
     public PaymentController(
-            OrderRepository orderRepository,
             LiqPayService liqPayService,
-            OrderMapper orderMapper,
-            SseService sseService,
             PaymentCallbackService paymentCallbackService,
             PaymentCheckoutService paymentCheckoutService
     ) {
-        this.orderRepository = orderRepository;
         this.liqPayService = liqPayService;
-        this.orderMapper = orderMapper;
-        this.sseService = sseService;
         this.paymentCallbackService = paymentCallbackService;
         this.paymentCheckoutService = paymentCheckoutService;
     }
@@ -106,14 +90,7 @@ public class PaymentController {
         paymentCallbackService.handleCallbackSuccess(callback);
 
         Integer dbOrderId = LiqPayUtil.extractDbOrderId(callback.getOrderId());
-        @SuppressWarnings("null")
-        Order order = orderRepository.findById(dbOrderId)
-                .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
-
-        OrderResponseDto response = orderMapper.toResponseDto(order);
-        if (order.getUserId() != null) {
-            sseService.sendOrderUpdate(order.getUserId(), response);
-        }
+        paymentCallbackService.publishOrderUpdateToUser(dbOrderId);
 
         return ResponseEntity.ok("OK");
     }

@@ -698,9 +698,13 @@
     padding: 1.5rem !important;
 }
 
-.history-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--gold-faint);
+/* Touch devices synthesize :hover after tap; it sticks until tap elsewhere.
+   Only apply lift/highlight when the primary input truly supports hover. */
+@media (hover: hover) {
+    .history-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--gold-faint);
+    }
 }
 
 .history-card-date {
