@@ -7,7 +7,6 @@ import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.impl.MenuServiceImpl;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.*;
@@ -31,13 +30,7 @@ class MenuServiceTest {
     private MenuMapper menuMapper;
 
     @Mock
-    private RecommendationService recommendationService;
-
-    @Mock
     private DishRatingService dishRatingService;
-
-    @Mock
-    private CurrentUserIdentity currentUserIdentity;
 
     private MenuServiceImpl menuService;
     private Clock testClock;
@@ -49,9 +42,7 @@ class MenuServiceTest {
         menuService = new MenuServiceImpl(
                 menuRepository,
                 menuMapper,
-                recommendationService,
                 dishRatingService,
-                currentUserIdentity,
                 testClock
         );
     }

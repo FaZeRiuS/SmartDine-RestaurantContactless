@@ -7,7 +7,6 @@ import com.example.CourseWork.mapper.MenuMapper;
 import com.example.CourseWork.model.Menu;
 import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.MenuService;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +18,6 @@ import java.time.LocalTime;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 
-import com.example.CourseWork.service.RecommendationService;
 import com.example.CourseWork.service.DishRatingService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,9 +28,7 @@ public class MenuServiceImpl implements MenuService {
 
     private final MenuRepository menuRepository;
     private final MenuMapper menuMapper;
-    private final RecommendationService recommendationService;
     private final DishRatingService dishRatingService;
-    private final CurrentUserIdentity currentUserIdentity;
     private final Clock appClock;
 
     @Transactional
@@ -62,31 +58,8 @@ public class MenuServiceImpl implements MenuService {
                 .map(menuMapper::toMenuWithDishesDto)
                 .collect(Collectors.toCollection(ArrayList::new));
                 
-        // Inject recommendations menu for customer UI only (never for staff/admin).
-        if (!isStaff) {
-            if (!currentUserIdentity.isGuest()) {
-                String userId = currentUserIdentity.currentUserId();
-                List<DishResponseDto> recommendedDishes = recommendationService.getRecommendations(userId);
-                if (recommendedDishes != null && !recommendedDishes.isEmpty()) {
-                    MenuWithDishesDto recommendationsMenu = new MenuWithDishesDto();
-                    recommendationsMenu.setId(-1);
-                    recommendationsMenu.setName("Recommendations for You");
-                    recommendationsMenu.setDishes(recommendedDishes);
-                    // Add to the front so it's the first menu they see
-                    dtos.add(0, recommendationsMenu);
-                }
-            } else {
-                // For anonymous users, get popular dishes using a dummy ID to bypass user tag matching but keep popularity scoring
-                List<DishResponseDto> popularDishes = recommendationService.getRecommendations("anonymous-user");
-                if (popularDishes != null && !popularDishes.isEmpty()) {
-                    MenuWithDishesDto popularMenu = new MenuWithDishesDto();
-                    popularMenu.setId(-2);
-                    popularMenu.setName("Popular Dishes");
-                    popularMenu.setDishes(popularDishes);
-                    dtos.add(0, popularMenu);
-                }
-            }
-        }
+        // Note: We intentionally do NOT inject synthetic recommendation menus into the main menu list.
+        // Recommendations/popular dishes are shown as dedicated sections on the home page instead.
 
         // Enrich all dishes in all menus with aggregated ratings (avg + count)
         java.util.List<com.example.CourseWork.dto.DishResponseDto> allDishes = dtos.stream()

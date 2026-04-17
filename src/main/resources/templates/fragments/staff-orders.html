@@ -103,7 +103,7 @@
                         th:attr="hx-delete=@{/htmx/staff/orders/{id}/call-waiter(id=${order.id},filter=${staffFilter})},
                                  hx-target='#staffBoardRoot',
                                  hx-swap='outerHTML'"
-                        data-toast-pending="Позначаємо виклик офіціанта як виконаний...">&#128104;&#8205;&#9794;&#65039; Підійти до столу</button>
+                        data-toast-pending="Позначаємо виклик офіціанта як виконаний...">&#128694; Підійти до столу</button>
 
                 <button type="button" class="btn btn-warning btn-sm"
                         th:if="${order.status.name() == 'NEW'}"

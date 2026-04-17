@@ -17,7 +17,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @AutoConfigureMockMvc
 @org.springframework.context.annotation.Import({ com.example.CourseWork.config.SecurityConfig.class,
-        com.example.CourseWork.config.SecurityProperties.class })
+        com.example.CourseWork.config.SecurityProperties.class,
+        com.example.CourseWork.config.OAuth2ClientTestStubConfig.class })
 @org.springframework.test.context.ActiveProfiles("test")
 public abstract class BaseControllerTest {
 

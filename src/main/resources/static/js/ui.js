@@ -25,6 +25,12 @@ function initSharedUI() {
             const t = evt && evt.detail ? evt.detail.target : null;
             initAccessibleTabsIn(t || document);
             initKeyboardNavigationIn(t || document);
+            // Ensure HTMX behaviors are attached for OOB-inserted nodes (e.g., toast forms).
+            try {
+                if (window.htmx && typeof window.htmx.process === 'function' && t) {
+                    window.htmx.process(t);
+                }
+            } catch (e) { /* ignore */ }
         });
     }
 
@@ -740,7 +746,10 @@ function initMobileSiteTabSwipe() {
         const currentPath = normalizePath(window.location.pathname || '/');
         const idx = links.findIndex(a => {
             try {
-                return normalizePath(new URL(a.href).pathname) === currentPath;
+                const linkPath = normalizePath(new URL(a.href).pathname);
+                if (linkPath === currentPath) return true;
+                // Treat subpaths as belonging to the parent tab (e.g. /menu/123)
+                return linkPath !== '/' && currentPath.startsWith(linkPath + '/');
             } catch (e) {
                 return false;
             }
@@ -857,6 +866,10 @@ function initSequentialKeyboardTraversal() {
         const active = document.activeElement;
         if (isEditable(active)) return;
         if (!inManagedArea(active)) return;
+        // Let specialized handlers (e.g. dish grid navigation) own arrow keys.
+        // This global sequential traversal runs in capture phase and can otherwise
+        // prevent component-level keydown handlers from ever firing.
+        if (active && active.closest && active.closest('.dishes-grid')) return;
 
         e.preventDefault();
         // Top-down sequential behavior: Up/Left => previous, Down/Right => next

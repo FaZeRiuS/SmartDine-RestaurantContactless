@@ -57,8 +57,10 @@ public class HtmxAdminMenusController {
             menuService.createMenu(dto);
         }
         model.addAttribute("menus", menuService.getAllMenusWithDishes());
+        model.addAttribute("toastMessage", "✅ Меню збережено");
+        model.addAttribute("toastType", "toast-success");
         response.setHeader("HX-Trigger", "admin:closeMenuModal");
-        return "fragments/admin-menus-table :: menusTable";
+        return "fragments/admin-menus-table :: menusTable_with_toast";
     }
 
     // PUT endpoint kept for backward compatibility with any older clients.

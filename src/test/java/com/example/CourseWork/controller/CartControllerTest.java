@@ -3,12 +3,14 @@ package com.example.CourseWork.controller;
 import com.example.CourseWork.dto.CartItemDto;
 import com.example.CourseWork.dto.CartResponseDto;
 import com.example.CourseWork.service.CartService;
+import com.example.CourseWork.service.OrderService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,6 +25,9 @@ class CartControllerTest extends BaseControllerTest {
 
     @MockitoBean
     private CartService cartService;
+
+    @MockitoBean
+    private OrderService orderService;
 
     @Test
     void getCart_ShouldReturnCartForCurrentUser() throws Exception {
@@ -43,6 +48,7 @@ class CartControllerTest extends BaseControllerTest {
         // Arrange
         CartResponseDto response = new CartResponseDto();
         when(cartService.addItemToCart(eq("user-1"), any(CartItemDto.class))).thenReturn(response);
+        when(orderService.getMyActiveOrder("user-1")).thenReturn(Optional.empty());
 
         // Act & Assert
         mockMvc.perform(post("/api/cart/items")

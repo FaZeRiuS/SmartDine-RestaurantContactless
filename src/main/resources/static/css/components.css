@@ -286,7 +286,7 @@
     transition: opacity var(--transition);
 }
 
-.ui-ready .modal-overlay {
+.ui-ready .modal-overlay.active {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }

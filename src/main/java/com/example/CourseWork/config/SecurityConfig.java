@@ -10,6 +10,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -52,7 +54,13 @@ public class SecurityConfig {
     // ─── Single SecurityFilterChain: supports both JWT and OAuth2 Login ───
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-            OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService) throws Exception {
+            OAuth2UserService<OidcUserRequest, OidcUser> oidcUserService,
+            ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+
+        OidcClientInitiatedLogoutSuccessHandler oidcLogoutSuccessHandler =
+                new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
+        oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/");
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
@@ -128,7 +136,7 @@ public class SecurityConfig {
                                 .oidcUserService(oidcUserService))
                         .defaultSuccessUrl("/", true))
                 .logout(logout -> logout
-                        .logoutSuccessUrl("/")
+                        .logoutSuccessHandler(oidcLogoutSuccessHandler)
                         .invalidateHttpSession(true)
                         .clearAuthentication(true))
                 .headers(headers -> headers

@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
-import java.util.Optional;
+
 public interface DishRepository extends JpaRepository<Dish, Integer> {
     List<Dish> findByIsAvailableTrue();
 
@@ -67,7 +67,7 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
     List<Dish> findRecommendedDishes(@Param("userId") String userId);
 
     @Query(value = """
-        SELECT d.*
+        SELECT d.id, COUNT(oi2.id) as cnt
         FROM dish d
         JOIN order_item oi2 ON d.id = oi2.dish_id
         JOIN order_item oi1 ON oi1.order_id = oi2.order_id
@@ -75,34 +75,34 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
           AND d.id != :baseDishId
           AND d.is_available = true
           AND NOT EXISTS (
-              SELECT 1 
-              FROM dish_menus m1 
-              JOIN dish_menus m2 ON m1.menu_id = m2.menu_id 
+              SELECT 1
+              FROM dish_menus m1
+              JOIN dish_menus m2 ON m1.menu_id = m2.menu_id
               WHERE m1.dish_id = :baseDishId AND m2.dish_id = d.id
           )
         GROUP BY d.id
-        ORDER BY count(oi2.id) DESC
-        LIMIT 1
+        ORDER BY COUNT(oi2.id) DESC
+        LIMIT :limit
         """, nativeQuery = true)
-    Optional<Dish> findSmartComboForDish(@Param("baseDishId") Integer baseDishId);
+    List<Object[]> findSmartComboCandidatesForDish(@Param("baseDishId") Integer baseDishId, @Param("limit") int limit);
 
     @Query(value = """
-        SELECT d.*
+        SELECT d.id, COUNT(oi.id) as cnt
         FROM dish d
         LEFT JOIN order_item oi ON d.id = oi.dish_id
         WHERE d.is_available = true
           AND d.id != :baseDishId
           AND NOT EXISTS (
-              SELECT 1 
-              FROM dish_menus m1 
-              JOIN dish_menus m2 ON m1.menu_id = m2.menu_id 
+              SELECT 1
+              FROM dish_menus m1
+              JOIN dish_menus m2 ON m1.menu_id = m2.menu_id
               WHERE m1.dish_id = :baseDishId AND m2.dish_id = d.id
           )
         GROUP BY d.id
-        ORDER BY count(oi.id) DESC
-        LIMIT 1
+        ORDER BY COUNT(oi.id) DESC
+        LIMIT :limit
         """, nativeQuery = true)
-    Optional<Dish> findPopularComboFallback(@Param("baseDishId") Integer baseDishId);
+    List<Object[]> findPopularComboFallbackCandidates(@Param("baseDishId") Integer baseDishId, @Param("limit") int limit);
 
     @Query(value = """
         SELECT COUNT(*) > 0

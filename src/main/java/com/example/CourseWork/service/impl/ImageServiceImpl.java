@@ -42,7 +42,7 @@ public class ImageServiceImpl implements ImageService {
                         .size(w, w)
                         .keepAspectRatio(true)
                         .outputFormat("webp")
-                        .outputQuality(w <= 480 ? 0.74 : 0.80)
+                        .outputQuality(w <= 480 ? 0.78 : 0.80)
                         .toFile(targetPath.toFile());
             } catch (Throwable t) {
                 // Catch Throwable to handle UnsatisfiedLinkError for WebP on some systems (like Mac aarch64)

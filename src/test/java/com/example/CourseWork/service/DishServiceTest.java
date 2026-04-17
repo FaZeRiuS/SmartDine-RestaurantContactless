@@ -35,12 +35,15 @@ class DishServiceTest {
     @Mock
     private DishRatingService dishRatingService;
 
+    @Mock
+    private RecommendationService recommendationService;
+
     private DishService dishService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        dishService = new DishServiceImpl(dishRepository, menuRepository, dishMapper, dishRatingService);
+        dishService = new DishServiceImpl(dishRepository, menuRepository, dishMapper, dishRatingService, recommendationService);
     }
 
     @Test

@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
+<div th:fragment="dishesTable_with_toast">
+    <th:block th:if="${toastMessage != null and !toastMessage.isBlank()}"
+              th:replace="~{fragments/toast :: oobToast(message=${toastMessage}, toastType=${toastType})}"></th:block>
+    <div th:replace="~{fragments/admin-dishes-table :: dishesTable}"></div>
+</div>
+
 <div th:fragment="dishesTable">
     <table class="data-table" id="dishesTable">
         <thead>

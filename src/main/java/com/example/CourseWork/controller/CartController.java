@@ -2,12 +2,18 @@ package com.example.CourseWork.controller;
 
 import com.example.CourseWork.dto.CartItemDto;
 import com.example.CourseWork.dto.CartResponseDto;
+import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.addition.PaymentStatus;
+import com.example.CourseWork.exception.ConflictException;
 import com.example.CourseWork.service.CartService;
+import com.example.CourseWork.service.OrderService;
 import com.example.CourseWork.service.security.CurrentUserIdentity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -15,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 public class CartController {
 
     private final CartService cartService;
+    private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
 
     @GetMapping
@@ -24,7 +31,12 @@ public class CartController {
 
     @PostMapping("/items")
     public ResponseEntity<CartResponseDto> addItemToCart(@Valid @RequestBody CartItemDto itemDto) {
-        return ResponseEntity.ok(cartService.addItemToCart(currentUserIdentity.currentUserId(), itemDto));
+        String userId = currentUserIdentity.currentUserId();
+        Optional<OrderResponseDto> active = orderService.getMyActiveOrder(userId);
+        if (active.isPresent() && active.get().getPaymentStatus() == PaymentStatus.SUCCESS) {
+            throw new ConflictException("Активне замовлення вже оплачене — додавання страв тимчасово недоступне");
+        }
+        return ResponseEntity.ok(cartService.addItemToCart(userId, itemDto));
     }
 
     @PutMapping("/items/{itemId}/quantity")

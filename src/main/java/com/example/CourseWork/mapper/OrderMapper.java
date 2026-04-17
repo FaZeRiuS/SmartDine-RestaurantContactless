@@ -4,10 +4,12 @@ import com.example.CourseWork.dto.OrderItemResponseDto;
 import com.example.CourseWork.dto.OrderResponseDto;
 import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.model.Order;
+import com.example.CourseWork.model.OrderItem;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,14 +39,15 @@ public class OrderMapper {
         dto.setTableNumber(order.getTableNumber());
         dto.setNeedsWaiter(order.isNeedsWaiter());
 
-        List<OrderItemResponseDto> items = order.getItems().stream().map(item -> {
+        List<OrderItemResponseDto> items = (order.getItems() == null ? Collections.<OrderItem>emptyList() : order.getItems())
+                .stream().map(item -> {
             OrderItemResponseDto itemDto = new OrderItemResponseDto();
             itemDto.setId(item.getId());
             Dish dish = item.getDish();
             if (dish != null) {
                 itemDto.setDishId(dish.getId());
                 itemDto.setDishName(dish.getName());
-                itemDto.setPrice(dish.getPrice());
+                itemDto.setPrice(dish.getPrice() == null ? BigDecimal.ZERO : dish.getPrice());
             } else {
                 itemDto.setDishId(null);
                 itemDto.setDishName("(видалена страва)");

@@ -11,6 +11,7 @@ import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.DishRatingService;
 import com.example.CourseWork.service.DishService;
+import com.example.CourseWork.service.RecommendationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ public class DishServiceImpl implements DishService {
     private final MenuRepository menuRepository;
     private final DishMapper dishMapper;
     private final DishRatingService dishRatingService;
+    private final RecommendationService recommendationService;
 
     @Override
     public DishResponseDto createDish(DishDto dto) {
@@ -110,20 +112,7 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public Optional<DishResponseDto> getSmartCombo(Integer dishId, List<Integer> existingIds) {
-        Dish dish = dishRepository.findSmartComboForDish(dishId)
-                .orElseGet(() -> dishRepository.findPopularComboFallback(dishId).orElse(null));
-                
-        if (dish != null && existingIds != null && !existingIds.isEmpty()) {
-            boolean sharesMenu = dishRepository.checkIfSharesMenu(dish.getId(), existingIds);
-            if (sharesMenu) {
-                return Optional.empty();
-            }
-        }
-        
-        if (dish == null) return Optional.empty();
-        DishResponseDto dto = dishMapper.toResponseDto(dish);
-        dishRatingService.enrichWithRatings(java.util.List.of(dto));
-        return Optional.of(dto);
+        return recommendationService.getCrossSellRecommendation(dishId, existingIds);
     }
     @Override
     public void updateDishImage(Integer id, String imageUrl) {

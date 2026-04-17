@@ -9,6 +9,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -23,6 +24,11 @@ public class SseServiceImpl implements SseService {
 
     @Value("${app.sse.timeout-ms:3600000}")
     private long sseTimeout;
+
+    /**
+     * Some browsers/proxies buffer very small SSE frames. A ~2KB payload helps ensure flushing.
+     */
+    private static final String HEARTBEAT_PAYLOAD = " ".repeat(2048);
 
     @Override
     public SseEmitter subscribe(String userId, boolean isStaff) {
@@ -111,8 +117,11 @@ public class SseServiceImpl implements SseService {
 
     private void sendHeartbeat(SseEmitter emitter) {
         try {
-            // SSE comment line (ignored by EventSource). Non-empty comment avoids edge cases with empty frames.
-            emitter.send(SseEmitter.event().comment("keep-alive"));
+            // Use a small named event rather than a comment to improve delivery/flush through intermediaries.
+            emitter.send(SseEmitter.event()
+                    .name("ping")
+                    .data(Objects.requireNonNull(HEARTBEAT_PAYLOAD))
+                    .reconnectTime(10000));
         } catch (Exception ignored) {
             // Emitter will be removed via onError/onCompletion
         }

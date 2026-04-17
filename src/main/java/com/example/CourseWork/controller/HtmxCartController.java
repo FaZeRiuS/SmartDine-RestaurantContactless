@@ -4,7 +4,9 @@ import com.example.CourseWork.dto.*;
 import com.example.CourseWork.service.CartService;
 import com.example.CourseWork.service.OrderService;
 import com.example.CourseWork.addition.PaymentStatus;
+import com.example.CourseWork.exception.ConflictException;
 import com.example.CourseWork.service.security.CurrentUserIdentity;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,6 +21,10 @@ import java.util.stream.Collectors;
 @RequestMapping("/htmx/cart")
 @RequiredArgsConstructor
 public class HtmxCartController {
+
+    private static final String SESSION_KEY_SMART_COMBO_LAST_SHOWN_AT = "smartComboLastShownAtMs";
+    // Reduce spam: show smart combo offer at most once per cooldown window.
+    private static final long SMART_COMBO_COOLDOWN_MS = 3 * 60 * 1000L; // 3 minutes
 
     private final CartService cartService;
     private final OrderService orderService;
@@ -37,7 +43,8 @@ public class HtmxCartController {
     public String addItemToCart(@RequestParam Integer dishId, 
                                 @RequestParam(defaultValue = "1") Integer quantity,
                                 @RequestParam(required = false, defaultValue = "") String specialRequest,
-                                Model model) {
+                                Model model,
+                                HttpSession session) {
         
         String userId = currentUserIdentity.currentUserId();
         Optional<OrderResponseDto> activeOrderOpt = orderService.getMyActiveOrder(userId);
@@ -45,6 +52,9 @@ public class HtmxCartController {
         
         if (activeOrderOpt.isPresent()) {
             OrderResponseDto activeOrder = activeOrderOpt.get();
+            if (activeOrder.getPaymentStatus() == PaymentStatus.SUCCESS) {
+                throw new ConflictException("Активне замовлення вже оплачене — додавання страв тимчасово недоступне");
+            }
             if (activeOrder.getPaymentStatus() != PaymentStatus.SUCCESS) {
                 // Directly add to the UNPAID order
                 OrderItemDto itemDto = new OrderItemDto();
@@ -76,9 +86,12 @@ public class HtmxCartController {
         }
 
         // Recommendation logic (Smart Combo)
-        var recommendation = recommendationService.getCrossSellRecommendation(dishId, existingDishIds);
-        if (recommendation.isPresent()) {
-            model.addAttribute("recommendDish", recommendation.get());
+        if (shouldShowSmartCombo(session)) {
+            var recommendation = recommendationService.getCrossSellRecommendation(dishId, existingDishIds);
+            if (recommendation.isPresent()) {
+                model.addAttribute("recommendDish", recommendation.get());
+                markSmartComboShown(session);
+            }
         }
 
         CartResponseDto cartForBadge = (CartResponseDto) model.getAttribute("cart");
@@ -90,6 +103,24 @@ public class HtmxCartController {
         model.addAttribute("message", addedToOrder ? "🛎️ Страву додано до активного замовлення!" : "🛒 Страву додано у кошик!");
         model.addAttribute("toastType", "toast-success");
         return "fragments/cart :: toast";
+    }
+
+    private static boolean shouldShowSmartCombo(HttpSession session) {
+        if (session == null) return true;
+        Object v = session.getAttribute(SESSION_KEY_SMART_COMBO_LAST_SHOWN_AT);
+        if (v instanceof Long last) {
+            return (System.currentTimeMillis() - last) >= SMART_COMBO_COOLDOWN_MS;
+        }
+        if (v instanceof Number n) {
+            long last = n.longValue();
+            return (System.currentTimeMillis() - last) >= SMART_COMBO_COOLDOWN_MS;
+        }
+        return true;
+    }
+
+    private static void markSmartComboShown(HttpSession session) {
+        if (session == null) return;
+        session.setAttribute(SESSION_KEY_SMART_COMBO_LAST_SHOWN_AT, System.currentTimeMillis());
     }
 
     @DeleteMapping("/items/{itemId}")

@@ -58,8 +58,10 @@ public class HtmxAdminDishesController {
             dishService.createDish(dto);
         }
         model.addAttribute("dishes", dishService.getAllDishes());
+        model.addAttribute("toastMessage", "✅ Страву збережено");
+        model.addAttribute("toastType", "toast-success");
         response.setHeader("HX-Trigger", "admin:closeDishModal");
-        return "fragments/admin-dishes-table :: dishesTable";
+        return "fragments/admin-dishes-table :: dishesTable_with_toast";
     }
 
     @PutMapping("/{id}")

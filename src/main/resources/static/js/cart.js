@@ -139,6 +139,8 @@ document.body?.addEventListener('htmx:afterSwap', (evt) => {
         t.classList.add('hidden');
     }
     syncHomeLayoutAfterActiveOrderSwap();
+    updateAddToCartButtonLabels();
+    enforcePaidActiveOrderLock();
 
     // Cart page UX: if there is an active (unpaid) order, hide cart content block to avoid
     // showing an empty cart alongside the active order card (items are added to order directly).
@@ -156,8 +158,104 @@ document.body?.addEventListener('htmx:afterSwap', (evt) => {
     }
 });
 
+document.body?.addEventListener('htmx:afterSwap', (evt) => {
+    const t = evt.detail?.target;
+    if (!t || t.id !== 'menuCategoriesRoot') return;
+    updateAddToCartButtonLabels();
+});
+
+// Forms use hx-swap="none" + toast OOB; refresh labels and active-order panel so UX matches API state.
+document.body?.addEventListener('htmx:afterRequest', (evt) => {
+    if (!evt.detail?.successful) return;
+    const elt = evt.detail?.elt;
+    if (!elt || !elt.closest?.('form[hx-post="/htmx/cart/items"]')) return;
+    updateAddToCartButtonLabels();
+    refreshActiveOrderPanel();
+    enforcePaidActiveOrderLock();
+});
+
 function checkActiveOrder() {
     refreshActiveOrderPanel();
+}
+
+const ADD_TO_CART_LABEL = '\u{1F6D2} \u0423 \u043a\u043e\u0448\u0438\u043a';
+const ADD_TO_ORDER_LABEL = '\u{1F6CE}\uFE0F \u0414\u043e\u0434\u0430\u0442\u0438 \u0434\u043e \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f';
+
+function dishNameForAddButton(btn) {
+    const card = btn.closest('.dish-card');
+    const n = card?.querySelector('.dish-name')?.textContent?.trim();
+    return n || '';
+}
+
+/**
+ * When customer has an active unpaid order (NEW/PREPARING/READY), show "Додати до замовлення" on menu cards.
+ */
+async function updateAddToCartButtonLabels() {
+    try {
+        const res = await fetch('/api/orders/my-active', { credentials: 'same-origin' });
+        if (res.status === 204) {
+            document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+                btn.textContent = ADD_TO_CART_LABEL;
+                const name = dishNameForAddButton(btn);
+                btn.setAttribute('aria-label', name ? `Додати ${name} у кошик` : 'Додати у кошик');
+            });
+            return;
+        }
+        if (!res.ok) return;
+        const order = await res.json();
+        if (!order) return;
+
+        const activeStatuses = ['NEW', 'PREPARING', 'READY'];
+        const isActive = order.status && activeStatuses.includes(order.status);
+        const unpaid = order.paymentStatus !== 'SUCCESS';
+
+        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+            const name = dishNameForAddButton(btn);
+            if (isActive && unpaid) {
+                btn.textContent = ADD_TO_ORDER_LABEL;
+                btn.setAttribute('aria-label', name ? `Додати ${name} до активного замовлення` : 'Додати до замовлення');
+            } else {
+                btn.textContent = ADD_TO_CART_LABEL;
+                btn.setAttribute('aria-label', name ? `Додати ${name} у кошик` : 'Додати у кошик');
+            }
+        });
+    } catch (e) {
+        /* ignore */
+    }
+}
+
+window.updateAddToCartButtonLabels = updateAddToCartButtonLabels;
+
+async function enforcePaidActiveOrderLock() {
+    try {
+        const res = await fetch('/api/orders/my-active', { credentials: 'same-origin' });
+        if (res.status === 204) return; // no active order
+        if (!res.ok) return;
+
+        const order = await res.json();
+        if (!order || order.paymentStatus !== 'SUCCESS') return;
+
+        const msg = '⚠️ Активне замовлення вже оплачене — додавання страв недоступне';
+        if (typeof showToast === 'function') showToast(msg, 'info');
+
+        // Disable add-to-cart / add-to-order HTMX submit buttons (menu cards, toasts, etc.)
+        document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]')
+            .forEach(btn => {
+                try {
+                    btn.disabled = true;
+                    btn.setAttribute('aria-disabled', 'true');
+                } catch { /* ignore */ }
+            });
+
+        // Disable repeat last order button (home widget)
+        const repeatBtn = document.getElementById('repeatOrderBtn');
+        if (repeatBtn) {
+            repeatBtn.disabled = true;
+            repeatBtn.setAttribute('aria-disabled', 'true');
+        }
+    } catch (e) {
+        // ignore UI errors
+    }
 }
 
 function openActiveOrderReviewModal() {
@@ -341,6 +439,6 @@ window.refreshCartUI = function () {
 
 // ── Auto-load ──
 document.addEventListener('DOMContentLoaded', () => {
-    // Initial load happens in layout.html after identity is fetched.
+    updateAddToCartButtonLabels();
 });
 

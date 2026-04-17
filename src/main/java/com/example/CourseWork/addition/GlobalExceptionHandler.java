@@ -1,6 +1,7 @@
 package com.example.CourseWork.addition;
 
 import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.exception.ConflictException;
 import com.example.CourseWork.exception.ForbiddenException;
 import com.example.CourseWork.exception.InsufficientPointsException;
 import com.example.CourseWork.exception.NotFoundException;
@@ -82,6 +83,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleBadRequest(BadRequestException ex) {
         String message = exposeErrorDetails ? ex.getMessage() : "Bad request";
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(ApiErrorResponse.of(message));
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    @SuppressWarnings("null")
+    public ResponseEntity<ApiErrorResponse> handleConflict(ConflictException ex) {
+        String message = exposeErrorDetails ? ex.getMessage() : "Conflict";
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(ApiErrorResponse.of(message));
     }

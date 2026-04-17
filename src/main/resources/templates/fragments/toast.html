@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Generic toast (OOB append). Expects: message, toastType -->
+<div th:fragment="oobToast(message, toastType)" hx-swap-oob="beforeend:#toastContainer">
+    <div class="toast"
+         th:classappend="${
+            (
+              toastType != null
+                ? (' ' + (#strings.startsWith(toastType, 'toast-') ? toastType : 'toast-' + toastType))
+                : ' toast-success'
+            )
+         }">
+        <div class="toast-body-main">
+            <div class="d-flex align-center gap-3">
+                <span th:text="${message != null ? message : 'Готово'}">OK</span>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+

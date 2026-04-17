@@ -27,6 +27,12 @@ public class CartServiceImpl implements CartService {
     private final DishRepository dishRepository;
     private final CartMapper cartMapper;
 
+    private static String normalizeSpecialRequest(String value) {
+        if (value == null) return "";
+        String v = value.trim();
+        return v.isBlank() ? "" : v;
+    }
+
     @Transactional
     @Override
     public CartResponseDto getCartByUserId(String userId) {
@@ -66,9 +72,10 @@ public class CartServiceImpl implements CartService {
         if (Boolean.FALSE.equals(dish.getIsAvailable())) {
             throw new BadRequestException(ErrorMessages.DISH_NOT_AVAILABLE);
         }
+        final String req = normalizeSpecialRequest(itemDto.getSpecialRequest());
         CartItem existingItem = cart.getItems().stream()
                 .filter(item -> item.getDish().getId().equals(dish.getId()) &&
-                        Objects.equals(item.getSpecialRequest(), itemDto.getSpecialRequest()))
+                        Objects.equals(normalizeSpecialRequest(item.getSpecialRequest()), req))
                 .findFirst()
                 .orElse(null);
 
@@ -79,7 +86,7 @@ public class CartServiceImpl implements CartService {
             item.setCart(cart);
             item.setDish(dish);
             item.setQuantity(itemDto.getQuantity());
-            item.setSpecialRequest(itemDto.getSpecialRequest());
+            item.setSpecialRequest(req);
             cart.getItems().add(item);
         }
 
@@ -120,7 +127,7 @@ public class CartServiceImpl implements CartService {
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_ITEM_NOT_FOUND));
 
-        item.setSpecialRequest(specialRequest);
+        item.setSpecialRequest(normalizeSpecialRequest(specialRequest));
         cartRepository.save(cart);
         return cartMapper.toResponseDto(cart);
     }

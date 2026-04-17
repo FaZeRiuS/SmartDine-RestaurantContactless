@@ -1,5 +1,6 @@
 window.eventSource = null;
 window.sseConnected = false;
+window.currentSseUserId = null;
 
 /**
  * Opens the SSE (Server-Sent Events) stream for order and staff notifications.
@@ -10,10 +11,43 @@ function initSse(userId) {
         return;
     }
 
+    window.currentSseUserId = userId;
     startSseConnection(userId);
 }
 
 function startSseConnection(userId) {
+    window.currentSseUserId = userId;
+
+    // Exponential backoff reconnect state.
+    if (!window.__sseReconnect) {
+        window.__sseReconnect = { attempt: 0, timer: null };
+    }
+    const st = window.__sseReconnect;
+
+    const clearReconnectTimer = () => {
+        if (st.timer) {
+            clearTimeout(st.timer);
+            st.timer = null;
+        }
+    };
+
+    const scheduleReconnect = () => {
+        if (!window.currentSseUserId) return;
+        if (st.timer) return;
+        const attempt = Math.min(10, st.attempt || 0);
+        const base = Math.min(30000, 800 * Math.pow(2, attempt)); // 0.8s, 1.6s, 3.2s ... up to 30s
+        const jitter = Math.floor(Math.random() * 400);
+        st.timer = setTimeout(() => {
+            st.timer = null;
+            st.attempt = Math.min(20, (st.attempt || 0) + 1);
+            try {
+                startSseConnection(window.currentSseUserId);
+            } catch {
+                // ignore
+            }
+        }, base + jitter);
+    };
+
     if (eventSource && eventSource.readyState !== 2) { // 2 = CLOSED
         eventSource.close();
         window.sseConnected = false;
@@ -27,6 +61,8 @@ function startSseConnection(userId) {
 
     eventSource.addEventListener('connected', () => {
         window.sseConnected = true;
+        st.attempt = 0;
+        clearReconnectTimer();
     });
 
     eventSource.addEventListener('order-update', (event) => {
@@ -48,7 +84,7 @@ function startSseConnection(userId) {
     eventSource.addEventListener('staff-notification', (event) => {
         const msg = event.data || "";
         if (msg.includes("[RELOAD]")) {
-            setTimeout(() => refreshUiAfterReloadNotification(), 1500);
+            setTimeout(() => refreshUiAfterReloadNotification(), 200);
         } else if (typeof loadOrders === 'function') {
             loadOrders();
         }
@@ -57,8 +93,13 @@ function startSseConnection(userId) {
     eventSource.addEventListener('order-notification', (event) => {
         const msg = event.data || "";
         if (msg.includes("[RELOAD]")) {
-            setTimeout(() => refreshUiAfterReloadNotification(), 1500);
+            setTimeout(() => refreshUiAfterReloadNotification(), 200);
         }
+    });
+
+    // Heartbeat from server (flush through proxies). No-op, but keeps the stream active.
+    eventSource.addEventListener('ping', () => {
+        // intentionally empty
     });
 
     eventSource.onerror = () => {
@@ -66,6 +107,7 @@ function startSseConnection(userId) {
             return;
         }
         window.sseConnected = false;
+        scheduleReconnect();
     };
 }
 
@@ -123,6 +165,34 @@ function refreshUiAfterReloadNotification() {
 }
 
 window.refreshUiAfterReloadNotification = refreshUiAfterReloadNotification;
+
+// Safari/Background-tab mitigation: when tab becomes visible again, force a resync for staff board.
+// EventSource callbacks/timers can be throttled/suspended in background.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+
+    // Only do this on pages that actually have staff board UI.
+    if (!document.getElementById('staffBoardRoot')) return;
+
+    try {
+        if (typeof loadOrders === 'function') loadOrders();
+    } catch {
+        // ignore
+    }
+
+    const uid = window.currentSseUserId || window.currentUserId;
+    if (!uid) return;
+
+    try {
+        if (window.eventSource) {
+            try { window.eventSource.close(); } catch { /* ignore */ }
+            window.sseConnected = false;
+        }
+        startSseConnection(uid);
+    } catch {
+        // ignore
+    }
+});
 
 if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     let sseAfterSwTimer = null;
