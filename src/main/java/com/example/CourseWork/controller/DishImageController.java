@@ -65,10 +65,10 @@ public class DishImageController {
     }
 
     /**
-     * Compresses and saves an uploaded image as WebP (max 800×800px, quality 0.82).
+     * Compresses and saves an uploaded image as WebP (max 800×800px) and generates a thumbnail (max 400×400px).
      * WebP saves ~50% vs. JPEG at equivalent visual quality.
      *
-     * @return public URL of the saved image (e.g. "/uploads/uuid.webp")
+     * @return public URL of the saved original image (e.g. "/uploads/uuid.webp")
      */
     private String processAndSaveImage(MultipartFile file) throws IOException {
         Path uploadPath = Paths.get(uploadDir);
@@ -76,19 +76,36 @@ public class DishImageController {
             Files.createDirectories(uploadPath);
         }
 
-        String filename = UUID.randomUUID() + ".jpg";
-        Path filePath = uploadPath.resolve(filename);
+        String baseName = UUID.randomUUID().toString();
+        String mainFilename = baseName + ".webp";
+        String thumbFilename = baseName + "-thumb.webp";
 
-        // Ensure the uploaded stream is closed to avoid resource leaks in the container.
-        try (InputStream inputStream = file.getInputStream()) {
-            Thumbnails.of(inputStream)
+        Path mainPath = uploadPath.resolve(mainFilename);
+        Path thumbPath = uploadPath.resolve(thumbFilename);
+
+        // We read it once into memory to avoid multiple stream reads or temp files
+        byte[] imageBytes = file.getBytes();
+
+        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes)) {
+            // 1. Generate Main Image (800px)
+            Thumbnails.of(bais)
                     .size(800, 800)
                     .keepAspectRatio(true)
-                    .outputFormat("jpg")
+                    .outputFormat("webp")
                     .outputQuality(0.82)
-                    .toFile(filePath.toFile());
+                    .toFile(mainPath.toFile());
         }
 
-        return "/uploads/" + filename;
+        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes)) {
+            // 2. Generate Thumbnail (400px)
+            Thumbnails.of(bais)
+                    .size(400, 400)
+                    .keepAspectRatio(true)
+                    .outputFormat("webp")
+                    .outputQuality(0.75) // Slightly lower quality for thumbs
+                    .toFile(thumbPath.toFile());
+        }
+
+        return "/uploads/" + mainFilename;
     }
 }
