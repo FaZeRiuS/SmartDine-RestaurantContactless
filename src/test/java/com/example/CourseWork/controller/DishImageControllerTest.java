@@ -1,14 +1,17 @@
 package com.example.CourseWork.controller;
 
 import com.example.CourseWork.service.DishService;
+import com.example.CourseWork.service.ImageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -25,6 +28,9 @@ class DishImageControllerTest extends BaseControllerTest {
     @MockitoBean
     private DishService dishService;
 
+    @MockitoBean
+    private ImageService imageService;
+
     @Test
     void uploadDishImage_ShouldSaveFileAndUpdateDish() throws Exception {
         // Arrange
@@ -37,11 +43,14 @@ class DishImageControllerTest extends BaseControllerTest {
                 "file", "test.jpg", "image/jpeg", imageBytes
         );
 
+        when(imageService.processAndSaveImage(any())).thenReturn("/uploads/test.webp");
+
         // Act & Assert
         mockMvc.perform(multipart("/api/admin/dishes/1/image")
                         .file(file)
                         .with(withUser("admin-1", "ADMINISTRATOR"))
                         .with(csrf()))
+                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrl").exists());
 

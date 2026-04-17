@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="uk" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:fragment="head">
+<head th:fragment="head(pageTitle, pageDescription)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle != null ? pageTitle + ' — SmartDine' : 'SmartDine — Безконтактне замовлення'}">SmartDine</title>
-    <meta name="description" th:content="${pageDescription != null ? pageDescription : 'SmartDine — система безконтактного замовлення страв у ресторані через QR-код'}">
+    <title th:text="${pageTitle != null && !#strings.isEmpty(pageTitle) ? pageTitle + ' — SmartDine' : 'SmartDine — Безконтактне замовлення'}">SmartDine</title>
+    <meta name="description" th:content="${pageDescription != null && !#strings.isEmpty(pageDescription) ? pageDescription : 'SmartDine — система безконтактного замовлення страв у ресторані через QR-код'}">
     <meta name="theme-color" content="#0a0a0a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uk" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head}" th:with="pageTitle='Помилка', pageDescription='Щось пішло не так. Поверніться на головну або перегляньте меню.'}">
+<head th:replace="~{fragments/layout :: head(pageTitle='Помилка', pageDescription='Щось пішло не так. Поверніться на головну або перегляньте меню.')}">
 </head>
 <body>
 
