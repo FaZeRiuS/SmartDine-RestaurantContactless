@@ -296,6 +296,8 @@
                 }
             } catch (e) { /* ignore */ }
         </script>
+        <th:block th:if="${toastMessage != null && !#strings.isEmpty(#strings.trim(toastMessage))}"
+                  th:replace="~{fragments/toast :: oobToast(message=${toastMessage}, toastType=${toastType})}"/>
     </th:block>
 </th:block>
 

@@ -11,7 +11,7 @@ function initSharedUI() {
     initAccessibleTabsIn(document);
     initKeyboardNavigationIn(document);
     initMobileSiteTabSwipe();
-    initSequentialKeyboardTraversal();
+    initSpatialArrowNavigation();
 
     // Re-init after HTMX swaps (tabs/content can be injected)
     if (!document.documentElement.dataset.a11yTabsHtmxBound) {
@@ -207,6 +207,8 @@ function showToast(message, type = 'info', action = null) {
         }
     }, duration);
 }
+
+window.showToast = showToast;
 
 /**
  * Modal Management
@@ -452,23 +454,6 @@ function enhanceTablist(tablist) {
             return;
         }
 
-        if (key === 'ArrowRight' || key === 'ArrowLeft') {
-            if (!isDesktopSequentialArrowNav()) return;
-            const idx = enabledTabs.indexOf(current);
-            if (idx < 0) return;
-            const delta = key === 'ArrowRight' ? 1 : -1;
-            const neighborIdx = idx + delta;
-            if (neighborIdx < 0 || neighborIdx >= enabledTabs.length) {
-                if (focusSequentialNeighborNoWrap(current, delta)) e.preventDefault();
-                return;
-            }
-            e.preventDefault();
-            const t = enabledTabs[neighborIdx];
-            t?.focus({ preventScroll: true });
-            scrollTabIntoView(tablist, t);
-            return;
-        }
-
         if (key === 'Enter' || key === ' ') {
             e.preventDefault();
             current.click();
@@ -537,48 +522,6 @@ function sequentialFocusableIsVisible(el) {
     }
 }
 
-function getSequentialFocusableElements() {
-    const selector = [
-        '.navbar-inner > a.navbar-brand',
-        '#mainNav a',
-        '.header-actions > a.header-icon-btn',
-        '.header-profile-desktop > a.header-profile-btn',
-        '.burger-menu-container > .menu-toggle',
-        '.navbar-burger.open a',
-        '.navbar-burger.open .logout-btn',
-        '.menu-tabs .menu-tab',
-        '.dishes-grid .dish-card',
-        '.dishes-grid button, .dishes-grid a, .dishes-grid input, .dishes-grid select, .dishes-grid textarea',
-        '.mobile-nav a.mobile-nav-item'
-    ].join(',');
-    return Array.from(document.querySelectorAll(selector))
-        .filter(el => el && typeof el.focus === 'function' && sequentialFocusableIsVisible(el));
-}
-
-/**
- * Move focus to the next/previous sequential target (no wrap). Used to leave tablists / dish grids at edges.
- */
-function focusSequentialNeighborNoWrap(fromEl, dir) {
-    const list = getSequentialFocusableElements();
-    if (list.length === 0 || !fromEl) return false;
-    let idx = list.indexOf(fromEl);
-    if (idx < 0) {
-        const card = fromEl.closest ? fromEl.closest('.dish-card') : null;
-        if (card) idx = list.indexOf(card);
-    }
-    if (idx < 0) return false;
-    const nextIdx = idx + dir;
-    if (nextIdx < 0 || nextIdx >= list.length) return false;
-    const next = list[nextIdx];
-    next.focus({ preventScroll: true });
-    try { next.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* ignore */ }
-    if (next.classList && next.classList.contains('menu-tab')) {
-        const tl = next.closest('.menu-tabs');
-        if (tl) scrollTabIntoView(tl, next);
-    }
-    return true;
-}
-
 function bindSwipeToSwitchTabs(swipeArea, tablist) {
     if (!swipeArea || !tablist || swipeArea.dataset.a11ySwipeInit === '1') return;
     swipeArea.dataset.a11ySwipeInit = '1';
@@ -643,157 +586,9 @@ function bindSwipeToSwitchTabs(swipeArea, tablist) {
 // ── General keyboard navigation (header nav, dish grids) ─────────────────────
 
 function initKeyboardNavigationIn(root) {
-    const scope = root && root.querySelectorAll ? root : document;
-    enhanceHeaderNavKeyboard(scope);
-    enhanceDishGridKeyboard(scope);
-}
-
-function enhanceHeaderNavKeyboard(scope) {
-    const mainNav = (scope.getElementById && scope.getElementById('mainNav')) || document.getElementById('mainNav');
-    if (!mainNav || mainNav.dataset.a11yNavInit === '1') return;
-    mainNav.dataset.a11yNavInit = '1';
-
-    mainNav.addEventListener('keydown', (e) => {
-        const key = e.key;
-        if (key !== 'ArrowLeft' && key !== 'ArrowRight' && key !== 'Home' && key !== 'End') return;
-        if (!isDesktopSequentialArrowNav()) return;
-
-        const activeEl = document.activeElement;
-        if (!activeEl || activeEl.tagName !== 'A' || !mainNav.contains(activeEl)) return;
-
-        const links = Array.from(mainNav.querySelectorAll('a')).filter(a => !a.hasAttribute('disabled') && a.getAttribute('aria-disabled') !== 'true');
-        if (links.length === 0) return;
-
-        const idx = links.indexOf(activeEl);
-        if (idx < 0) return;
-
-        e.preventDefault();
-        if (key === 'Home') {
-            links[0]?.focus({ preventScroll: true });
-            return;
-        }
-        if (key === 'End') {
-            links[links.length - 1]?.focus({ preventScroll: true });
-            return;
-        }
-        if (key === 'ArrowRight') {
-            if (idx >= links.length - 1) {
-                focusSequentialNeighborNoWrap(activeEl, 1);
-                return;
-            }
-            links[idx + 1]?.focus({ preventScroll: true });
-            return;
-        }
-        if (key === 'ArrowLeft') {
-            if (idx <= 0) {
-                focusSequentialNeighborNoWrap(activeEl, -1);
-                return;
-            }
-            links[idx - 1]?.focus({ preventScroll: true });
-        }
-    });
-}
-
-function enhanceDishGridKeyboard(scope) {
-    scope.querySelectorAll('.dishes-grid').forEach(grid => {
-        if (grid.dataset.a11yGridInit === '1') return;
-        grid.dataset.a11yGridInit = '1';
-
-        // Make cards keyboard focusable so Tab can walk cards sequentially
-        const cards = Array.from(grid.querySelectorAll('.dish-card'));
-        cards.forEach(card => {
-            if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '0');
-        });
-
-        // If user tabs into any element inside a card, keep a marker of "current" card
-        grid.addEventListener('focusin', (e) => {
-            const card = e.target && e.target.closest ? e.target.closest('.dish-card') : null;
-            if (!card || !grid.contains(card)) return;
-            cards.forEach(c => c.dataset.kbCurrent = c === card ? '1' : '');
-        });
-
-        grid.addEventListener('keydown', (e) => {
-            const key = e.key;
-            if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter'].includes(key)) return;
-
-            const activeEl = document.activeElement;
-            const currentCard = activeEl && activeEl.closest ? activeEl.closest('.dish-card') : null;
-            if (!currentCard || !grid.contains(currentCard)) return;
-
-            const currentIdx = cards.indexOf(currentCard);
-            if (currentIdx < 0) return;
-
-            const moveTo = (idx) => {
-                const card = cards[Math.min(cards.length - 1, Math.max(0, idx))];
-                if (!card) return;
-                cards.forEach(c => c.dataset.kbCurrent = c === card ? '1' : '');
-                card.focus({ preventScroll: true });
-                try { card.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (err) { /* ignore */ }
-            };
-
-            // Calculate columns from first row geometry (best-effort, responsive-safe)
-            const getColumns = () => {
-                const tops = cards.map(c => Math.round(c.getBoundingClientRect().top));
-                const firstTop = tops[0];
-                if (!Number.isFinite(firstTop)) return 1;
-                let cols = 0;
-                for (let i = 0; i < tops.length; i++) {
-                    if (tops[i] !== firstTop) break;
-                    cols++;
-                }
-                return Math.max(1, cols || 1);
-            };
-
-            if (key === 'Enter') {
-                // Prefer focusing the primary action in the card (add-to-cart)
-                const btn = currentCard.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-                if (btn && btn !== currentCard) {
-                    e.preventDefault();
-                    btn.focus({ preventScroll: true });
-                }
-                return;
-            }
-
-            const cols = getColumns();
-            const desktopArrows = isDesktopSequentialArrowNav();
-
-            if (key === 'ArrowRight') {
-                if (desktopArrows && currentIdx >= cards.length - 1) {
-                    if (focusSequentialNeighborNoWrap(currentCard, 1)) e.preventDefault();
-                    return;
-                }
-            } else if (key === 'ArrowLeft') {
-                if (desktopArrows && currentIdx <= 0) {
-                    if (focusSequentialNeighborNoWrap(currentCard, -1)) e.preventDefault();
-                    return;
-                }
-            } else if (key === 'ArrowDown') {
-                const rawDown = currentIdx + cols;
-                const clampedDown = Math.min(cards.length - 1, Math.max(0, rawDown));
-                if (desktopArrows && clampedDown === currentIdx && rawDown > currentIdx) {
-                    if (focusSequentialNeighborNoWrap(currentCard, 1)) e.preventDefault();
-                    return;
-                }
-            } else if (key === 'ArrowUp') {
-                const rawUp = currentIdx - cols;
-                const clampedUp = Math.min(cards.length - 1, Math.max(0, rawUp));
-                if (desktopArrows && clampedUp === currentIdx && rawUp < currentIdx) {
-                    if (focusSequentialNeighborNoWrap(currentCard, -1)) e.preventDefault();
-                    return;
-                }
-            }
-
-            e.preventDefault();
-            if (key === 'Home') moveTo(0);
-            else if (key === 'End') moveTo(cards.length - 1);
-            else if (key === 'ArrowRight') moveTo(currentIdx + 1);
-            else if (key === 'ArrowLeft') moveTo(currentIdx - 1);
-            else if (key === 'ArrowDown') moveTo(currentIdx + cols);
-            else if (key === 'ArrowUp') moveTo(currentIdx - cols);
-        });
-
-        // Grid itself does not need to be a tab stop
-    });
+    // Arrow keys: document-level spatial navigation (initSpatialArrowNavigation).
+    // Tab order follows the DOM (no extra tabindex on dish cards).
+    void root;
 }
 
 // ── Mobile swipe between site tabs (home/menu/cart) ─────────────────────────
@@ -922,67 +717,137 @@ function initMobileSiteTabSwipe() {
     }, { passive: true, capture: true });
 }
 
-// ── Sequential traversal (top-down) with arrows ─────────────────────────────
+// ── Spatial arrow navigation (desktop): nearest focusable in visual direction ─
 
-function initSequentialKeyboardTraversal() {
-    if (document.documentElement.dataset.seqKbInit === '1') return;
-    document.documentElement.dataset.seqKbInit = '1';
+const SPATIAL_FOCUS_SELECTOR = [
+    'a[href]',
+    'button:not([disabled])',
+    'input:not([disabled]):not([type="hidden"])',
+    'textarea:not([disabled])',
+    'select:not([disabled])',
+    'details summary',
+    '[tabindex]:not([tabindex="-1"]):not([disabled])'
+].join(',');
 
-    const isEditable = (el) => {
-        if (!el) return false;
-        const tag = el.tagName;
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
-        return !!el.isContentEditable;
-    };
+function getSpatialNavRoot(fromEl) {
+    try {
+        if (!fromEl || !fromEl.closest) return document.body;
+        const modal = fromEl.closest('[role="dialog"][aria-modal="true"], .modal.active');
+        return modal || document.body;
+    } catch (e) {
+        return document.body;
+    }
+}
 
-    const inManagedArea = (el) => {
-        if (!el || !el.closest) return false;
-        return !!el.closest('#mainNav, .menu-tabs, .dishes-grid, .mobile-nav, .navbar-inner');
-    };
+function collectSpatialFocusables(root) {
+    if (!root || !root.querySelectorAll) return [];
+    return Array.from(root.querySelectorAll(SPATIAL_FOCUS_SELECTOR)).filter((el) => {
+        if (!el || el === document.body || el === document.documentElement) return false;
+        if (el.getAttribute('aria-hidden') === 'true') return false;
+        if (el.getAttribute('aria-disabled') === 'true') return false;
+        return sequentialFocusableIsVisible(el);
+    });
+}
 
-    const moveFocus = (dir) => {
-        const list = getSequentialFocusableElements();
-        if (list.length === 0) return;
-        const active = document.activeElement;
-        let idx = list.indexOf(active);
-        if (idx < 0) {
-            // If focus is inside a dish-card (e.g. on button), start from that card
-            const card = active && active.closest ? active.closest('.dish-card') : null;
-            if (card) idx = list.indexOf(card);
+function spatialCenter(el) {
+    const r = el.getBoundingClientRect();
+    return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
+}
+
+function pickBestInHalfPlane(fromEl, pool, halfPlane) {
+    const o = spatialCenter(fromEl);
+    let best = null;
+    let bestD = Infinity;
+    for (let i = 0; i < pool.length; i++) {
+        const el = pool[i];
+        if (!el || el === fromEl) continue;
+        if (fromEl.contains && fromEl.contains(el)) continue;
+        const p = spatialCenter(el);
+        if (!halfPlane(p, o)) continue;
+        const dx = p.x - o.x;
+        const dy = p.y - o.y;
+        const d = dx * dx + dy * dy;
+        if (d < bestD) {
+            bestD = d;
+            best = el;
         }
-        const next = list[(idx + dir + list.length) % list.length] || list[0];
+    }
+    return best;
+}
+
+function spatialNeighbor(fromEl, key) {
+    const root = getSpatialNavRoot(fromEl);
+    const pool = collectSpatialFocusables(root);
+    const EPS = 6;
+
+    if (key === 'ArrowRight') {
+        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
+        return n;
+    }
+    if (key === 'ArrowLeft') {
+        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
+        return n;
+    }
+    if (key === 'ArrowDown') {
+        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
+        return n;
+    }
+    if (key === 'ArrowUp') {
+        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
+        return n;
+    }
+    return null;
+}
+
+function spatialArrowDeferToNative(active, key) {
+    if (!active) return true;
+    if (active.isContentEditable) return true;
+    const tag = active.tagName;
+    if (tag === 'TEXTAREA') return true;
+    if (tag === 'SELECT') return true;
+    if (tag === 'INPUT') {
+        const t = (active.type || '').toLowerCase();
+        if (t === 'number' || t === 'range' || t === 'date' || t === 'time' || t === 'datetime-local') return true;
+        if (['text', 'search', 'email', 'url', 'tel', 'password', ''].includes(t)) {
+            return key === 'ArrowLeft' || key === 'ArrowRight';
+        }
+    }
+    return false;
+}
+
+function initSpatialArrowNavigation() {
+    if (document.documentElement.dataset.spatialKbInit === '1') return;
+    document.documentElement.dataset.spatialKbInit = '1';
+
+    document.addEventListener('keydown', (e) => {
+        if (!e || e.altKey || e.ctrlKey || e.metaKey) return;
+        const key = e.key;
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(key)) return;
+        if (!isDesktopSequentialArrowNav()) return;
+
+        const active = document.activeElement;
+        if (!active || active === document.body) return;
+        if (spatialArrowDeferToNative(active, key)) return;
+
+        const next = spatialNeighbor(active, key);
+        if (!next) return;
+
+        e.preventDefault();
         next.focus({ preventScroll: true });
-        try { next.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) { /* ignore */ }
+        try {
+            next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        } catch (err) { /* ignore */ }
         if (next.classList && next.classList.contains('menu-tab')) {
             const tl = next.closest('.menu-tabs');
             if (tl) scrollTabIntoView(tl, next);
         }
-    };
-
-    document.addEventListener('keydown', (e) => {
-        if (!e) return;
-        if (e.altKey || e.ctrlKey || e.metaKey) return;
-
-        const key = e.key;
-        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
-
-        if (!isDesktopSequentialArrowNav()) return;
-
-        const active = document.activeElement;
-        if (isEditable(active)) return;
-        if (!inManagedArea(active)) return;
-        // Let specialized handlers (e.g. dish grid navigation) own arrow keys.
-        // This global sequential traversal runs in capture phase and can otherwise
-        // prevent component-level keydown handlers from ever firing.
-        if (active && active.closest && active.closest('.dishes-grid')) return;
-        // Tablists handle prev/next tab + horizontal scroll on desktop (bubble phase).
-        if (active && active.classList && active.classList.contains('menu-tab')) return;
-        // Primary nav links use enhanceHeaderNavKeyboard (incl. escape to profile / burger).
-        if (active && active.closest && active.closest('#mainNav')) return;
-
-        e.preventDefault();
-        // Top-down sequential behavior: Up/Left => previous, Down/Right => next
-        if (key === 'ArrowUp' || key === 'ArrowLeft') moveFocus(-1);
-        else moveFocus(1);
     }, { capture: true });
 }

@@ -111,6 +111,8 @@ public class HtmxOrderController {
             Model model) {
         UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
         orderLoyaltyService.applyCoverage(id, userId, amount);
+        model.addAttribute("toastMessage", "Бали лояльності застосовано.");
+        model.addAttribute("toastType", "toast-success");
         return renderActiveOrderPanel(home, model);
     }
 
@@ -122,6 +124,8 @@ public class HtmxOrderController {
             Model model) {
         UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
         orderTipService.setTip(id, userId, amount);
+        model.addAttribute("toastMessage", "Чайові збережено. Дякуємо!");
+        model.addAttribute("toastType", "toast-success");
         return renderActiveOrderPanel(home, model);
     }
 

@@ -190,10 +190,12 @@
 
 .dish-card:focus-visible,
 .dish-card:focus-within {
-    outline: 2px solid var(--gold);
-    outline-offset: 3px;
+    outline: none;
     border-color: var(--border-gold);
-    box-shadow: 0 0 0 1px rgba(201, 169, 110, 0.35);
+    /* Inset ring: avoids clipping from .dish-card overflow:hidden and .container overflow */
+    box-shadow:
+        inset 0 0 0 2px var(--gold),
+        0 0 0 1px rgba(201, 169, 110, 0.35);
     z-index: 1;
 }
 
