@@ -69,12 +69,13 @@ window.initKeyboardNavigationIn = initKeyboardNavigationIn;
  */
 async function logErrorToServer(message) {
     try {
+        // Do not set X-XSRF-TOKEN here: an empty string blocks csrf.js fetch patch from injecting the real token.
         await fetch('/api/notifications/log', {
             method: 'POST',
             headers: {
-                'Content-Type': 'text/plain',
-                'X-XSRF-TOKEN': getCsrfToken()
+                'Content-Type': 'text/plain'
             },
+            credentials: 'same-origin',
             body: String(message)
         });
     } catch (e) {
@@ -318,7 +319,7 @@ async function initPushNotifications() {
     // However, best practice is to ask after a user action (like placing an order).
     // For now, we'll try to subscribe if already granted, or just check.
     if (Notification.permission === 'granted') {
-        subscribeUserToPush();
+        void subscribeUserToPush();
     } else if (Notification.permission === 'default') {
         // Soft prompt or wait for action. 
         // Showing a toast as a soft prompt:
@@ -390,12 +391,14 @@ async function sendSubscriptionToServer(subscription) {
     };
 
     try {
+        // Omit X-XSRF-TOKEN: if getCsrfToken() is '' before /api/csrf completes, setting it prevents csrf.js fetch
+        // patch from adding the real token, so subscribe 403s until a full reload — push appears "delayed".
         await fetch('/api/notifications/subscribe', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-XSRF-TOKEN': getCsrfToken() // Assuming a helper or available token
+                'Content-Type': 'application/json'
             },
+            credentials: 'same-origin',
             body: JSON.stringify(payload)
         });
     } catch (err) {

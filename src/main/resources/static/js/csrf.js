@@ -90,7 +90,8 @@ function isUnsafeMethod(method) {
       if (token) {
         const existingHeaders = options.headers || {};
         const headers = existingHeaders instanceof Headers ? existingHeaders : new Headers(existingHeaders);
-        if (!headers.has(headerName)) {
+        const existing = headers.get(headerName);
+        if (!existing) {
           headers.set(headerName, token);
         }
         options.headers = headers;
