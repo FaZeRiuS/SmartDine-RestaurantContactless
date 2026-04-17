@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 /**
@@ -99,26 +100,25 @@ public class StartupImageMigrator implements CommandLineRunner {
 
         String baseName = FilenameUtils.getBaseName(filename);
         String webpFilename = baseName + ".webp";
-        String thumbFilename = baseName + "-thumb.webp";
         Path targetPath = uploadPath.resolve(webpFilename);
-        Path thumbPath = uploadPath.resolve(thumbFilename);
+        Path thumbPath = uploadPath.resolve(baseName + "-thumb.webp");
 
         try {
-            // 1. Convert to Main WebP (800px)
-            Thumbnails.of(sourcePath.toFile())
-                    .size(800, 800)
-                    .keepAspectRatio(true)
-                    .outputFormat("webp")
-                    .outputQuality(0.82)
-                    .toFile(targetPath.toFile());
+            // Generate responsive sizes.
+            List<Integer> widths = List.of(320, 480, 640, 800);
+            for (int w : widths) {
+                Path sized = uploadPath.resolve(baseName + "-w" + w + ".webp");
+                Thumbnails.of(sourcePath.toFile())
+                        .size(w, w)
+                        .keepAspectRatio(true)
+                        .outputFormat("webp")
+                        .outputQuality(w <= 480 ? 0.74 : 0.80)
+                        .toFile(sized.toFile());
+            }
 
-            // 2. Generate WebP Thumbnail (400px)
-            Thumbnails.of(sourcePath.toFile())
-                    .size(400, 400)
-                    .keepAspectRatio(true)
-                    .outputFormat("webp")
-                    .outputQuality(0.75)
-                    .toFile(thumbPath.toFile());
+            // Backwards compatibility: keep old filenames for existing URLs.
+            Files.copy(uploadPath.resolve(baseName + "-w800.webp"), targetPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(uploadPath.resolve(baseName + "-w320.webp"), thumbPath, StandardCopyOption.REPLACE_EXISTING);
 
             // 3. Move original to backup folder (User requirement: keep originals)
             FileUtils.moveFileToDirectory(sourcePath.toFile(), backupPath.toFile(), true);

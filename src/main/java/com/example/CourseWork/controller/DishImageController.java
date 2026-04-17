@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -77,35 +79,29 @@ public class DishImageController {
         }
 
         String baseName = UUID.randomUUID().toString();
-        String mainFilename = baseName + ".webp";
-        String thumbFilename = baseName + "-thumb.webp";
-
-        Path mainPath = uploadPath.resolve(mainFilename);
-        Path thumbPath = uploadPath.resolve(thumbFilename);
+        List<Integer> widths = List.of(320, 480, 640, 800);
 
         // We read it once into memory to avoid multiple stream reads or temp files
         byte[] imageBytes = file.getBytes();
 
-        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes)) {
-            // 1. Generate Main Image (800px)
-            Thumbnails.of(bais)
-                    .size(800, 800)
-                    .keepAspectRatio(true)
-                    .outputFormat("webp")
-                    .outputQuality(0.82)
-                    .toFile(mainPath.toFile());
+        for (int w : widths) {
+            Path targetPath = uploadPath.resolve(baseName + "-w" + w + ".webp");
+            try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes)) {
+                Thumbnails.of(bais)
+                        .size(w, w)
+                        .keepAspectRatio(true)
+                        .outputFormat("webp")
+                        .outputQuality(w <= 480 ? 0.74 : 0.80)
+                        .toFile(targetPath.toFile());
+            }
         }
 
-        try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes)) {
-            // 2. Generate Thumbnail (400px)
-            Thumbnails.of(bais)
-                    .size(400, 400)
-                    .keepAspectRatio(true)
-                    .outputFormat("webp")
-                    .outputQuality(0.75) // Slightly lower quality for thumbs
-                    .toFile(thumbPath.toFile());
-        }
+        // Backwards compatibility: keep the old URLs working.
+        // - main: /uploads/<uuid>.webp (points to 800w)
+        // - thumb: /uploads/<uuid>-thumb.webp (points to 320w)
+        Files.copy(uploadPath.resolve(baseName + "-w800.webp"), uploadPath.resolve(baseName + ".webp"), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(uploadPath.resolve(baseName + "-w320.webp"), uploadPath.resolve(baseName + "-thumb.webp"), StandardCopyOption.REPLACE_EXISTING);
 
-        return "/uploads/" + mainFilename;
+        return "/uploads/" + baseName + ".webp";
     }
 }

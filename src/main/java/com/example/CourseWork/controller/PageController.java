@@ -125,8 +125,18 @@ public class PageController {
     }
 
     private static DishResponseDto firstDishForLcp(List<DishResponseDto> personalized, List<DishResponseDto> popular) {
-        if (personalized != null && !personalized.isEmpty()) return personalized.getFirst();
-        if (popular != null && !popular.isEmpty()) return popular.getFirst();
+        DishResponseDto d = firstWithImage(personalized, 3);
+        if (d != null) return d;
+        return firstWithImage(popular, 3);
+    }
+
+    private static DishResponseDto firstWithImage(List<DishResponseDto> dishes, int limit) {
+        if (dishes == null || dishes.isEmpty()) return null;
+        int max = Math.min(limit, dishes.size());
+        for (int i = 0; i < max; i++) {
+            DishResponseDto d = dishes.get(i);
+            if (d != null && d.getImageUrl() != null && !d.getImageUrl().isBlank()) return d;
+        }
         return null;
     }
 
