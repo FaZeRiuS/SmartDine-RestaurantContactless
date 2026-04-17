@@ -597,10 +597,10 @@ function enhanceDishGridKeyboard(scope) {
         if (grid.dataset.a11yGridInit === '1') return;
         grid.dataset.a11yGridInit = '1';
 
-        // Make cards programmatically focusable for navigation (focus goes to the card container)
+        // Make cards keyboard focusable so Tab can walk cards sequentially
         const cards = Array.from(grid.querySelectorAll('.dish-card'));
         cards.forEach(card => {
-            if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '-1');
+            if (!card.hasAttribute('tabindex')) card.setAttribute('tabindex', '0');
         });
 
         // If user tabs into any element inside a card, keep a marker of "current" card
@@ -662,8 +662,7 @@ function enhanceDishGridKeyboard(scope) {
             else if (key === 'ArrowUp') moveTo(currentIdx - cols);
         });
 
-        // Ensure first card can be reached quickly when focusing grid (optional)
-        if (!grid.hasAttribute('tabindex')) grid.setAttribute('tabindex', '-1');
+        // Grid itself does not need to be a tab stop
     });
 }
 
@@ -681,11 +680,35 @@ function initMobileSiteTabSwipe() {
     let tracking = false;
     let startTime = 0;
 
+    const normalizePath = (p) => {
+        const s = String(p || '/');
+        if (s === '/') return '/';
+        return s.endsWith('/') ? s.slice(0, -1) : s;
+    };
+
+    const hasHorizontalScroll = (el) => {
+        try {
+            if (!el || el === document.body || el === document.documentElement) return false;
+            const style = window.getComputedStyle(el);
+            const ox = style.overflowX;
+            if (ox !== 'auto' && ox !== 'scroll') return false;
+            return el.scrollWidth > el.clientWidth + 4;
+        } catch (e) {
+            return false;
+        }
+    };
+
     const shouldIgnoreStart = (target) => {
         if (!target) return false;
-        // Don't hijack swipes meant for horizontal scrollers or tablists
+        // Don't hijack swipes meant for tablists / horizontal scrollers / interactive controls
         if (target.closest && target.closest('.menu-tabs')) return true;
-        if (target.closest && target.closest('.dishes-grid')) return false;
+        if (target.closest && target.closest('a, button, input, textarea, select, label')) return true;
+        // If any ancestor is a horizontal scroller, ignore
+        let el = target;
+        for (let i = 0; i < 6 && el; i++) {
+            if (hasHorizontalScroll(el)) return true;
+            el = el.parentElement;
+        }
         return false;
     };
 
@@ -716,10 +739,10 @@ function initMobileSiteTabSwipe() {
             .filter(a => a.href && a.offsetParent !== null);
         if (links.length < 2) return;
 
-        const currentPath = window.location.pathname || '/';
+        const currentPath = normalizePath(window.location.pathname || '/');
         const idx = links.findIndex(a => {
             try {
-                return new URL(a.href).pathname === currentPath;
+                return normalizePath(new URL(a.href).pathname) === currentPath;
             } catch (e) {
                 return false;
             }
@@ -732,17 +755,16 @@ function initMobileSiteTabSwipe() {
         window.location.href = next.href;
     };
 
-    // Bind to main if present (avoid swiping on the mobile nav itself)
-    const area = document.querySelector('main') || document.body;
-    area.addEventListener('touchstart', (e) => {
+    // Bind at document level (capture) so it works reliably across pages
+    document.addEventListener('touchstart', (e) => {
         const t = e.touches && e.touches[0];
         if (!t) return;
         onStart(t.clientX, t.clientY, e.target);
-    }, { passive: true });
+    }, { passive: true, capture: true });
 
-    area.addEventListener('touchend', (e) => {
+    document.addEventListener('touchend', (e) => {
         const t = e.changedTouches && e.changedTouches[0];
         if (!t) return;
         onEnd(t.clientX, t.clientY);
-    }, { passive: true });
+    }, { passive: true, capture: true });
 }
