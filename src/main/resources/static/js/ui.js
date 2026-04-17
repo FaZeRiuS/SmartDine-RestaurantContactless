@@ -772,6 +772,57 @@ function spatialCenter(el) {
     return { x: (r.left + r.right) / 2, y: (r.top + r.bottom) / 2 };
 }
 
+/** Edge-aligned picks: prefer next row/column (clear header → dishes, tabs → grid). */
+const SPATIAL_LATERAL_WEIGHT = 3.4;
+
+function rectBox(el) {
+    const r = el.getBoundingClientRect();
+    return {
+        r,
+        cx: (r.left + r.right) / 2,
+        cy: (r.top + r.bottom) / 2
+    };
+}
+
+function pickBestAlongAxis(fromEl, pool, axis) {
+    const o = rectBox(fromEl);
+    let best = null;
+    let bestS = Infinity;
+    for (let i = 0; i < pool.length; i++) {
+        const el = pool[i];
+        if (!el || el === fromEl) continue;
+        if (fromEl.contains && fromEl.contains(el)) continue;
+        const p = rectBox(el);
+        let primary;
+        let lateral;
+        if (axis === 'down') {
+            if (p.r.top < o.r.bottom - 8) continue;
+            primary = Math.max(0, p.r.top - o.r.bottom);
+            lateral = Math.abs(p.cx - o.cx);
+        } else if (axis === 'up') {
+            if (p.r.bottom > o.r.top + 8) continue;
+            primary = Math.max(0, o.r.top - p.r.bottom);
+            lateral = Math.abs(p.cx - o.cx);
+        } else if (axis === 'right') {
+            if (p.r.left < o.r.right - 8) continue;
+            primary = Math.max(0, p.r.left - o.r.right);
+            lateral = Math.abs(p.cy - o.cy);
+        } else if (axis === 'left') {
+            if (p.r.right > o.r.left + 8) continue;
+            primary = Math.max(0, o.r.left - p.r.right);
+            lateral = Math.abs(p.cy - o.cy);
+        } else {
+            continue;
+        }
+        const score = primary + lateral * SPATIAL_LATERAL_WEIGHT;
+        if (score < bestS) {
+            bestS = score;
+            best = el;
+        }
+    }
+    return best;
+}
+
 function pickBestInHalfPlane(fromEl, pool, halfPlane) {
     const o = spatialCenter(fromEl);
     let best = null;
@@ -799,30 +850,66 @@ function spatialNeighbor(fromEl, key) {
     const EPS = 6;
 
     if (key === 'ArrowRight') {
-        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
+        let n = pickBestAlongAxis(fromEl, pool, 'right');
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
         return n;
     }
     if (key === 'ArrowLeft') {
-        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
+        let n = pickBestAlongAxis(fromEl, pool, 'left');
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
         return n;
     }
     if (key === 'ArrowDown') {
-        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
+        let n = pickBestAlongAxis(fromEl, pool, 'down');
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y > o.y + EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
         return n;
     }
     if (key === 'ArrowUp') {
-        let n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
+        let n = pickBestAlongAxis(fromEl, pool, 'up');
+        if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.y < o.y - EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x > o.x + EPS);
         if (!n) n = pickBestInHalfPlane(fromEl, pool, (p, o) => p.x < o.x - EPS);
         return n;
     }
     return null;
+}
+
+/**
+ * @returns {boolean} true if custom scroll handled (caller skips nearest scrollIntoView)
+ */
+function spatialScrollIntoViewForTransition(fromEl, toEl, key) {
+    try {
+        if (!fromEl || !toEl || !fromEl.closest || !toEl.closest) return false;
+        const fromHeader = !!fromEl.closest('header, .navbar-inner, #mainNav, .navbar-burger.open');
+        const fromTabs = !!fromEl.closest('.menu-tabs');
+        const fromGrid = !!fromEl.closest('.dishes-grid');
+        const toGrid = !!toEl.closest('.dishes-grid');
+        const toHero = !!toEl.closest('#heroSection');
+        const toTabs = !!toEl.closest('.menu-tabs');
+        const vertical = key === 'ArrowDown' || key === 'ArrowUp';
+
+        if (vertical && fromTabs && toGrid) {
+            toEl.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+            return true;
+        }
+        if (key === 'ArrowDown' && fromHeader && (toGrid || toHero)) {
+            toEl.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+            return true;
+        }
+        if (key === 'ArrowUp' && fromGrid && toTabs) {
+            toEl.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+            return true;
+        }
+    } catch (e) {
+        // ignore
+    }
+    return false;
 }
 
 function spatialArrowDeferToNative(active, key) {
@@ -859,10 +946,13 @@ function initSpatialArrowNavigation() {
         if (!next) return;
 
         e.preventDefault();
+        const didSmoothRegionScroll = spatialScrollIntoViewForTransition(active, next, key);
         next.focus({ preventScroll: true });
-        try {
-            next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-        } catch (err) { /* ignore */ }
+        if (!didSmoothRegionScroll) {
+            try {
+                next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            } catch (err) { /* ignore */ }
+        }
         if (next.classList && next.classList.contains('menu-tab')) {
             const tl = next.closest('.menu-tabs');
             if (tl) scrollTabIntoView(tl, next);
