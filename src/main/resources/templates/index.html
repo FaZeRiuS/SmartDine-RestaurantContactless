@@ -84,8 +84,7 @@
                              th:alt="${dish.name}"
                              width="800"
                              height="600"
-                             th:loading="${stat.index < 2 ? 'eager' : 'lazy'}"
-                             th:attr="fetchpriority=${stat.index < 2 ? 'high' : 'auto'}"
+                             loading="lazy"
                              decoding="async"
                              class="dish-image">
                     </picture>
@@ -156,8 +155,7 @@
                              th:alt="${dish.name}"
                              width="800"
                              height="600"
-                             th:loading="${stat.index < 4 ? 'eager' : 'lazy'}"
-                             th:attr="fetchpriority=${stat.index < 4 ? 'high' : 'auto'}"
+                             th:loading="${stat.index < 2 ? 'eager' : 'lazy'}"
                              decoding="async"
                              class="dish-image">
                     </picture>
