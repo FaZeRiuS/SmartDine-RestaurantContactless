@@ -65,10 +65,23 @@ window.initAccessibleTabsIn = initAccessibleTabsIn;
 window.initKeyboardNavigationIn = initKeyboardNavigationIn;
 
 /**
+ * Push subscription often fails on devices without Google Play services (Chrome/Android) or with blocked
+ * push endpoints; those cases are expected and should not spam server error logs.
+ */
+function shouldSkipServerLogForPwa(message) {
+    const m = String(message);
+    return m.startsWith('PWA: Failed to subscribe user:')
+        || m.startsWith('PWA: VAPID public key not found');
+}
+
+/**
  * Sends a critical error log to the server for PWA/Lifecycle monitoring.
  */
 async function logErrorToServer(message) {
     try {
+        if (shouldSkipServerLogForPwa(message)) {
+            return;
+        }
         // Do not set X-XSRF-TOKEN here: an empty string blocks csrf.js fetch patch from injecting the real token.
         await fetch('/api/notifications/log', {
             method: 'POST',

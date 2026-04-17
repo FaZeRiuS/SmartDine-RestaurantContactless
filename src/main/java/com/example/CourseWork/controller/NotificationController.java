@@ -23,9 +23,27 @@ public class NotificationController {
     private final PushSubscriptionRepository subscriptionRepository;
     private final CurrentUserIdentity currentUserIdentity;
 
+    /**
+     * Matches {@code ui.js} {@code shouldSkipServerLogForPwa}: expected on many devices (no Google Play
+     * services, blocked push endpoints, missing VAPID env in dev).
+     */
+    private static boolean isExpectedPushClientNoise(String message) {
+        if (message == null) {
+            return false;
+        }
+        return message.startsWith("PWA: Failed to subscribe user:")
+                || message.startsWith("PWA: VAPID public key not found");
+    }
+
     @PostMapping("/log")
     public ResponseEntity<Void> logClientError(@RequestBody String message) {
         String userId = currentUserIdentity.currentUserId();
+        if (isExpectedPushClientNoise(message)) {
+            if (log.isDebugEnabled()) {
+                log.debug("[PWA] expected client limitation user={} message={}", userId, message);
+            }
+            return ResponseEntity.ok().build();
+        }
         log.error("[PWA-ERROR] user: {}, message: {}", userId, message);
         return ResponseEntity.ok().build();
     }
