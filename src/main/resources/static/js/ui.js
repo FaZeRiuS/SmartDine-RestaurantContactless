@@ -65,21 +65,12 @@ window.initAccessibleTabsIn = initAccessibleTabsIn;
 window.initKeyboardNavigationIn = initKeyboardNavigationIn;
 
 /**
- * Push subscription often fails on devices without Google Play services (Chrome/Android) or with blocked
- * push endpoints; those cases are expected and should not spam server error logs.
- */
-function shouldSkipServerLogForPwa(message) {
-    const m = String(message);
-    return m.startsWith('PWA: Failed to subscribe user:')
-        || m.startsWith('PWA: VAPID public key not found');
-}
-
-/**
- * Sends a critical error log to the server for PWA/Lifecycle monitoring.
+ * Optional telemetry to /api/notifications/log — only when {@code localStorage.debug === '1'} (see layout {@code __CLIENT_DEBUG}).
+ * Production keeps a clean experience: no stack traces or API bodies sent to the server.
  */
 async function logErrorToServer(message) {
     try {
-        if (shouldSkipServerLogForPwa(message)) {
+        if (!window.__CLIENT_DEBUG) {
             return;
         }
         // Do not set X-XSRF-TOKEN here: an empty string blocks csrf.js fetch patch from injecting the real token.
@@ -89,7 +80,7 @@ async function logErrorToServer(message) {
                 'Content-Type': 'text/plain'
             },
             credentials: 'same-origin',
-            body: String(message)
+            body: String(message).slice(0, 2000)
         });
     } catch (e) {
         // Silent fail to avoid infinite loops if network is down
@@ -97,32 +88,19 @@ async function logErrorToServer(message) {
 }
 
 /**
- * Returns text safe to show in toasts. Logs full details to the server unless allowMessageIf(msg) is true.
+ * Returns text safe to show in toasts. In production, never surfaces server/HTTP details unless {@code allowMessageIf(err.message)} (e.g. local validation).
  * @param {Error|unknown} err
  * @param {string} fallback user-facing Ukrainian message
  * @param {(msg: string) => boolean} [allowMessageIf] if returns true, err.message is shown (local validation, etc.)
  */
-/**
- * Some browsers expose only a stack frame (e.g. "@https://host/file.js:46:28") when Error.message is empty;
- * that is not actionable server-side and spams logs.
- */
-function isUninformativeClientUiStackOnly(detail) {
-    const d = String(detail).trim().split(/\r?\n/, 1)[0] || '';
-    return /^@?https?:\/\/\S+\.(js|mjs|html|jsx|tsx):\d+:\d+$/i.test(d)
-        || /^[\w$.]+@https?:\/\/\S+:\d+:\d+$/i.test(d);
-}
-
 function userFacingErrorMessage(err, fallback, allowMessageIf) {
     const msg = err && err.message != null ? String(err.message) : '';
     if (typeof allowMessageIf === 'function' && msg && allowMessageIf(msg)) {
         return msg;
     }
-    if (typeof logErrorToServer === 'function' && err) {
-        const detail = (typeof err.stack === 'string' && err.stack ? err.stack : msg || String(err)).slice(0, 4000);
-        if (!msg.trim() && isUninformativeClientUiStackOnly(detail)) {
-            return fallback;
-        }
-        void logErrorToServer('Client UI: ' + detail);
+    if (window.__CLIENT_DEBUG && typeof logErrorToServer === 'function' && err) {
+        const short = msg ? msg.slice(0, 500) : (err && err.name ? String(err.name) : 'Error');
+        void logErrorToServer('Client UI: ' + short);
     }
     return fallback;
 }

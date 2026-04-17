@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -71,6 +73,7 @@ public class OrderReviewServiceImpl implements OrderReviewService {
 
         // Replace dish reviews for this order atomically
         orderDishReviewRepository.deleteAllByOrderId(orderId);
+        orderDishReviewRepository.flush();
 
         Set<Integer> allowedDishIds = new HashSet<>();
         if (order.getItems() != null) {
@@ -81,6 +84,8 @@ public class OrderReviewServiceImpl implements OrderReviewService {
             });
         }
 
+        // Last rating wins if the client sends duplicate dish IDs
+        Map<Integer, Integer> ratingByDishId = new LinkedHashMap<>();
         if (dto.getDishRatings() != null) {
             for (OrderReviewRequestDto.DishRatingDto dr : dto.getDishRatings()) {
                 if (dr == null) continue;
@@ -93,19 +98,27 @@ public class OrderReviewServiceImpl implements OrderReviewService {
                 if (!allowedDishIds.contains(dishId)) {
                     continue;
                 }
-
-                Dish dish = dishRepository.findById(dishId).orElse(null);
-                if (dish == null) {
-                    continue;
-                }
-
-                OrderDishReview dishReview = new OrderDishReview();
-                dishReview.setOrder(order);
-                dishReview.setDish(dish);
-                dishReview.setUserId(userId);
-                dishReview.setRating(rating);
-                orderDishReviewRepository.save(dishReview);
+                ratingByDishId.put(dishId, rating);
             }
+        }
+
+        for (Map.Entry<Integer, Integer> e : ratingByDishId.entrySet()) {
+            Integer dishId = e.getKey();
+            Integer rating = e.getValue();
+            if (dishId == null || rating == null) {
+                continue;
+            }
+            Dish dish = dishRepository.findById(dishId).orElse(null);
+            if (dish == null) {
+                continue;
+            }
+
+            OrderDishReview dishReview = new OrderDishReview();
+            dishReview.setOrder(order);
+            dishReview.setDish(dish);
+            dishReview.setUserId(userId);
+            dishReview.setRating(rating);
+            orderDishReviewRepository.save(dishReview);
         }
     }
 }

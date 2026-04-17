@@ -42,21 +42,13 @@ async function submitOrderReview(orderId) {
 
         if (!res.ok) {
             const body = await res.text();
-            let parsed = '';
-            try {
-                const j = JSON.parse(body);
-                const m = j.message ?? j.error ?? j.detail;
-                if (m != null && String(m).trim()) parsed = String(m).trim();
-            } catch (ignore) { /* not JSON */ }
-            let text = parsed;
-            if (!text && body && body.trim()) {
-                const t = body.trim();
-                if (t.length < 400 && !t.startsWith('<')) text = t;
+            if (window.__CLIENT_DEBUG) {
+                try {
+                    console.warn('[review] request failed', res.status, body && body.slice(0, 500));
+                } catch (ignore) { /* ignore */ }
             }
-            if (!text) {
-                text = `Помилка відгуку (HTTP ${res.status})`;
-            }
-            throw new Error(text);
+            // Generic code only — user-facing text comes from userFacingErrorMessage fallback (no API/stack leakage).
+            throw new Error('REVIEW_SUBMIT_FAILED');
         }
 
         showToast('✅ Дякуємо за відгук!', 'success');

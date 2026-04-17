@@ -2,6 +2,7 @@ package com.example.CourseWork.repository;
 
 import com.example.CourseWork.model.OrderDishReview;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,7 +14,13 @@ import java.util.Optional;
 public interface OrderDishReviewRepository extends JpaRepository<OrderDishReview, Long> {
     Optional<OrderDishReview> findByOrderIdAndDishId(Integer orderId, Integer dishId);
 
-    void deleteAllByOrderId(Integer orderId);
+    /**
+     * Must target {@code order.id}; a derived {@code deleteAllByOrderId} does not reliably map to the
+     * {@code order} association and can delete nothing, causing duplicate key errors on re-submit.
+     */
+    @Modifying
+    @Query("DELETE FROM OrderDishReview r WHERE r.order.id = :orderId")
+    void deleteAllByOrderId(@Param("orderId") Integer orderId);
 
     List<OrderDishReview> findAllByOrderIdIn(List<Integer> orderIds);
 
