@@ -446,8 +446,12 @@ function enhanceTablist(tablist) {
         if (key === 'Home' || key === 'End') {
             e.preventDefault();
             const t = key === 'Home' ? enabledTabs[0] : enabledTabs[enabledTabs.length - 1];
-            t?.click();
-            t?.focus({ preventScroll: true });
+            if (t && t !== current) {
+                t.focus({ preventScroll: true });
+                t.click();
+            } else {
+                t?.focus({ preventScroll: true });
+            }
             scrollTabIntoView(tablist, t);
             return;
         }
@@ -457,11 +461,11 @@ function enhanceTablist(tablist) {
             const idx = enabledTabs.indexOf(current);
             if (idx < 0) return;
             const delta = key === 'ArrowRight' ? 1 : -1;
-            const neighborIdx = idx + delta;
-            if (neighborIdx < 0 || neighborIdx >= enabledTabs.length) return;
-            const t = enabledTabs[neighborIdx];
-            t.click();
+            const nextIdx = idx + delta;
+            if (nextIdx < 0 || nextIdx >= enabledTabs.length) return;
+            const t = enabledTabs[nextIdx];
             t.focus({ preventScroll: true });
+            t.click();
             scrollTabIntoView(tablist, t);
             return;
         }
@@ -489,7 +493,8 @@ function syncTabStateFromDom(tablist) {
     const active = tabs.find(t => t.classList.contains('active')) || tabs[0];
     tabs.forEach(t => {
         t.setAttribute('aria-selected', t === active ? 'true' : 'false');
-        // Roving tabindex: one tab stop for the list so Tab reaches dish buttons below.
+        // Roving tabindex (WAI-ARIA tabs): one tab stop for the list so Tab reaches header first,
+        // then the active category, then dish buttons (not every tab before content).
         t.setAttribute('tabindex', t === active ? '0' : '-1');
     });
 }
@@ -872,9 +877,9 @@ function initSpatialArrowNavigation() {
         const active = document.activeElement;
         if (!active || active === document.body) return;
         if (spatialArrowDeferToNative(active, key)) return;
-        // Let tablist own ←/→ between category tabs (roving tabindex; inactive tabs are not in DOM arrow list).
-        if (active.classList && active.classList.contains('menu-tab') && (key === 'ArrowLeft' || key === 'ArrowRight')) {
-            return;
+        // Let horizontal tab / Home / End stay on the tablist (bubble handler).
+        if (active.classList && active.classList.contains('menu-tab')) {
+            if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'Home' || key === 'End') return;
         }
 
         const next = spatialNeighbor(active, key);

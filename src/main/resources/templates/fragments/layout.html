@@ -223,7 +223,7 @@
     <script th:src="@{/js/sse.js}" defer></script>
 
     <script th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             function parseEmojis(root) {
                 try {
                     if (!window.twemoji || typeof window.twemoji.parse !== 'function') return;
@@ -244,11 +244,16 @@
                 window.__csrf.ensure().catch(function () { /* ignore */ });
             }
 
-            // 2. Service Worker Registration (Fire and forget, runs in background)
+            // 2. Service Worker: register and wait until install precache + activate finish.
+            //    Otherwise push/bootstrap can run before the SW is active and caching is done.
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('>>> PWA: Service Worker registered!', reg.scope))
-                    .catch(err => console.error('>>> PWA: SW failed:', err));
+                try {
+                    const reg = await navigator.serviceWorker.register('/sw.js');
+                    await navigator.serviceWorker.ready;
+                    console.log('>>> PWA: Service Worker ready (precache + activate)', reg.scope);
+                } catch (err) {
+                    console.error('>>> PWA: SW failed:', err);
+                }
             }
 
             // 3. Centralized Identity & UI Boot
@@ -284,7 +289,7 @@
                 }
             }
 
-            bootstrapApp();
+            await bootstrapApp();
 
             // Re-parse emojis after HTMX swaps (new fragments injected)
             document.body?.addEventListener('htmx:afterSwap', function (evt) {
