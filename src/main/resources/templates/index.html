@@ -13,7 +13,7 @@
 <div id="activeOrderContainer"
      class="container mb-4 hidden"
      hx-get="/htmx/orders/active-panel?home=true"
-     hx-trigger="load"
+     hx-trigger="load delay:800ms"
      hx-swap="innerHTML"></div>
 
 <!-- Last Order Suggestion (Home Page Widget) -->
@@ -71,7 +71,7 @@
         <div class="dishes-grid">
             <div class="dish-card fade-in-up" th:each="dish, stat : ${personalizedRecommendations}"
                  th:style="'animation-delay:' + ${stat.index * 0.1} + 's'"
-                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+                 th:classappend="${(dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable ' : '') + (stat.index == 0 ? 'lcp-no-anim' : '')}">
 
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 
@@ -143,7 +143,7 @@
         <div class="dishes-grid" th:if="${popularDishes != null && !popularDishes.isEmpty()}">
             <div class="dish-card fade-in-up" th:each="dish, stat : ${popularDishes}"
                  th:style="'animation-delay:' + ${stat.index * 0.1} + 's'"
-                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+                 th:classappend="${(dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable ' : '') + (stat.index == 0 ? 'lcp-no-anim' : '')}">
 
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 

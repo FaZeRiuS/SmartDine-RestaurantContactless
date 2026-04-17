@@ -234,6 +234,13 @@ h3+p {
     will-change: transform, opacity;
 }
 
+.lcp-no-anim,
+.lcp-no-anim.fade-in-up,
+.lcp-no-anim * {
+    animation: none !important;
+    transition: none !important;
+}
+
 .fade-in {
     animation: fadeIn 0.5s ease-out both;
 }

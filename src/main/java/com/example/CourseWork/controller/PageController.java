@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.http.HttpSession;
 
+import java.net.URI;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalTime;
@@ -107,7 +108,45 @@ public class PageController {
         model.addAttribute("popularDishes", popularDishes);
         model.addAttribute("menuView", "index");
 
+        // Performance hints: help browser start LCP image request earlier (preconnect/preload).
+        // LCP on this page is typically the first dish image.
+        DishResponseDto lcpDish = firstDishForLcp(personalized, popularDishes);
+        if (lcpDish != null && lcpDish.getImageUrl() != null && !lcpDish.getImageUrl().isBlank()) {
+            String lcpImageUrl = lcpDish.getImageUrl();
+            model.addAttribute("lcpImageUrl", lcpImageUrl);
+            String origin = extractOrigin(lcpImageUrl);
+            if (origin != null) {
+                model.addAttribute("lcpImagePreconnectOrigin", origin);
+            }
+            model.addAttribute("lcpImageCrossorigin", isAbsoluteHttpUrl(lcpImageUrl));
+        }
+
         return "index";
+    }
+
+    private static DishResponseDto firstDishForLcp(List<DishResponseDto> personalized, List<DishResponseDto> popular) {
+        if (personalized != null && !personalized.isEmpty()) return personalized.getFirst();
+        if (popular != null && !popular.isEmpty()) return popular.getFirst();
+        return null;
+    }
+
+    private static boolean isAbsoluteHttpUrl(String url) {
+        if (url == null) return false;
+        String u = url.trim();
+        return u.startsWith("http://") || u.startsWith("https://");
+    }
+
+    private static String extractOrigin(String url) {
+        if (!isAbsoluteHttpUrl(url)) return null;
+        try {
+            URI uri = URI.create(url.trim());
+            if (uri.getScheme() == null || uri.getHost() == null) return null;
+            int port = uri.getPort();
+            return port == -1 ? (uri.getScheme() + "://" + uri.getHost())
+                    : (uri.getScheme() + "://" + uri.getHost() + ":" + port);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     @GetMapping("/menu")

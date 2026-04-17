@@ -23,6 +23,14 @@
     
     <!-- Preload Critical CSS -->
     <link rel="preload" th:href="@{/images/logo.webp}" as="image" fetchpriority="high" type="image/webp">
+    <th:block th:if="${lcpImagePreconnectOrigin != null}">
+        <link rel="preconnect" th:href="${lcpImagePreconnectOrigin}" crossorigin>
+        <link rel="dns-prefetch" th:href="${'//' + #strings.substringAfter(lcpImagePreconnectOrigin, '://')}">
+    </th:block>
+    <th:block th:if="${lcpImageUrl != null}">
+        <link rel="preload" as="image" th:href="${lcpImageUrl}" fetchpriority="high"
+              th:attr="crossorigin=${lcpImageCrossorigin} ? 'anonymous' : null">
+    </th:block>
     <link rel="preload" th:href="@{/css/base.css(v=1.4)}" as="style">
     <link rel="preload" th:href="@{/css/layout.css(v=1.4)}" as="style">
     
@@ -66,7 +74,7 @@
         <a class="navbar-brand" th:href="@{/}">
             <picture>
                 <source th:srcset="@{/images/logo.webp}" type="image/webp">
-                <img th:src="@{/images/logo.png}" alt="SmartDine" class="brand-logo" fetchpriority="high" width="200" height="38">
+                <img th:src="@{/images/logo.webp}" alt="SmartDine" class="brand-logo" fetchpriority="high" width="200" height="38">
             </picture>
         </a>
 
@@ -167,7 +175,7 @@
             <span class="cart-badge-mobile"
                   id="mobile-cart-count"
                   hx-get="/htmx/cart/widget"
-                  hx-trigger="load"
+                          hx-trigger="load delay:800ms"
                   hx-swap="none">0</span>
         </span>
         <span class="mobile-nav-label">Кошик</span>
@@ -222,6 +230,14 @@
                     window.twemoji.parse(root || document.body, { folder: 'svg', ext: '.svg', className: 'twemoji' });
                 } catch (e) { /* ignore */ }
             }
+            function scheduleEmojiParse(root) {
+                const fn = function () { parseEmojis(root); };
+                if (typeof window.requestIdleCallback === 'function') {
+                    window.requestIdleCallback(fn, { timeout: 1500 });
+                } else {
+                    window.setTimeout(fn, 600);
+                }
+            }
 
             // 1. Warm up CSRF
             if (window.__csrf && typeof window.__csrf.ensure === 'function') {
@@ -250,13 +266,13 @@
                     if (typeof initSharedUI === 'function') initSharedUI();
                     if (typeof initSse === 'function') initSse(data.id);
                     if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
-                    parseEmojis(document.body);
+                    scheduleEmojiParse(document.body);
                     
                 } catch (err) {
                     console.warn('>>> BOOTSTRAP: Reduced functionality mode:', err.message);
                     if (typeof initSharedUI === 'function') initSharedUI();
                     if (typeof window.refreshCartUI === 'function') window.refreshCartUI();
-                    parseEmojis(document.body);
+                    scheduleEmojiParse(document.body);
                 } finally {
                     console.timeEnd('>>> BOOTSTRAP: Total Time');
                 }
@@ -267,18 +283,18 @@
             // Re-parse emojis after HTMX swaps (new fragments injected)
             document.body?.addEventListener('htmx:afterSwap', function (evt) {
                 const t = evt && evt.detail ? evt.detail.target : null;
-                parseEmojis(t || document.body);
+                scheduleEmojiParse(t || document.body);
             });
 
             // Ensure OOB-swapped fragments (like toasts) also get parsed.
             document.body?.addEventListener('htmx:oobAfterSwap', function (evt) {
                 const t = evt && evt.detail ? evt.detail.target : null;
-                parseEmojis(t || document.body);
+                scheduleEmojiParse(t || document.body);
             });
 
             // Ensure emojis are parsed even if CDN is slow.
             window.addEventListener('load', function () {
-                parseEmojis(document.body);
+                scheduleEmojiParse(document.body);
             });
         });
     </script>
