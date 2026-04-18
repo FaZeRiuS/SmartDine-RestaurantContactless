@@ -144,7 +144,6 @@
                 </details>
 
                 <details id="tipsAccordion" class="accordion"
-                         sec:authorize="hasRole('CUSTOMER')"
                          th:if="${activeOrder.paymentStatus.name() != 'SUCCESS'}">
                     <summary class="accordion-summary">Чайові</summary>
                     <div id="tipsSection" class="cart-summary mt-1 p-1">
