@@ -21,9 +21,19 @@
     color: var(--bg-primary);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
     box-shadow: var(--shadow-gold);
     transform: translateY(-1px);
+}
+
+.btn-primary:disabled,
+.btn-primary[disabled] {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-secondary {
