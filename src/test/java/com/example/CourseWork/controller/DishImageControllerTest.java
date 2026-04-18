@@ -1,7 +1,7 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.service.DishService;
-import com.example.CourseWork.service.ImageService;
+import com.example.CourseWork.service.menu.DishService;
+import com.example.CourseWork.service.image.ImageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.mock.web.MockMultipartFile;

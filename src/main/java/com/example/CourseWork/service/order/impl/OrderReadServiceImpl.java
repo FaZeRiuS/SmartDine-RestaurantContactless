@@ -1,8 +1,8 @@
 package com.example.CourseWork.service.order.impl;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.PaymentStatus;
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.model.OrderStatus;
+import com.example.CourseWork.model.PaymentStatus;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 import com.example.CourseWork.exception.ForbiddenException;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
@@ -14,7 +14,7 @@ import com.example.CourseWork.repository.OrderServiceReviewRepository;
 import com.example.CourseWork.service.order.OrderReadService;
 import com.example.CourseWork.service.order.component.OrderAccessPolicy;
 import com.example.CourseWork.service.order.component.OrderNotifier;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

@@ -4,7 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -35,7 +35,7 @@ public abstract class BaseControllerTest {
     protected CurrentUserIdentity currentUserIdentity;
 
     @MockitoBean(name = "loyaltyService")
-    protected com.example.CourseWork.service.LoyaltyService loyaltyService;
+    protected com.example.CourseWork.service.loyalty.LoyaltyService loyaltyService;
 
     @BeforeEach
     void setUpBase() {

@@ -1,7 +1,7 @@
 package com.example.CourseWork.repository;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.PaymentStatus;
+import com.example.CourseWork.model.OrderStatus;
+import com.example.CourseWork.model.PaymentStatus;
 import com.example.CourseWork.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

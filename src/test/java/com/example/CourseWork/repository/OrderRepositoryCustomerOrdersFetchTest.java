@@ -1,7 +1,7 @@
 package com.example.CourseWork.repository;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.PaymentStatus;
+import com.example.CourseWork.model.OrderStatus;
+import com.example.CourseWork.model.PaymentStatus;
 import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.model.OrderItem;

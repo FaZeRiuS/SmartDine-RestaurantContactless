@@ -1,13 +1,13 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.CartItemDto;
-import com.example.CourseWork.dto.CartResponseDto;
-import com.example.CourseWork.dto.OrderResponseDto;
-import com.example.CourseWork.addition.PaymentStatus;
+import com.example.CourseWork.dto.cart.CartItemDto;
+import com.example.CourseWork.dto.cart.CartResponseDto;
+import com.example.CourseWork.dto.order.OrderResponseDto;
+import com.example.CourseWork.model.PaymentStatus;
 import com.example.CourseWork.exception.ConflictException;
-import com.example.CourseWork.service.CartService;
-import com.example.CourseWork.service.OrderService;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
+import com.example.CourseWork.service.cart.CartService;
+import com.example.CourseWork.service.order.OrderService;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

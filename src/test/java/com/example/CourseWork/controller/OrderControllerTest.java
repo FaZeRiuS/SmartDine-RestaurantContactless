@@ -1,11 +1,11 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.OrderRequestDto;
-import com.example.CourseWork.dto.OrderResponseDto;
-import com.example.CourseWork.service.OrderLoyaltyService;
-import com.example.CourseWork.service.OrderReviewService;
-import com.example.CourseWork.service.OrderService;
-import com.example.CourseWork.service.OrderTipService;
+import com.example.CourseWork.dto.order.OrderRequestDto;
+import com.example.CourseWork.dto.order.OrderResponseDto;
+import com.example.CourseWork.service.order.OrderLoyaltyService;
+import com.example.CourseWork.service.order.OrderReviewService;
+import com.example.CourseWork.service.order.OrderService;
+import com.example.CourseWork.service.order.OrderTipService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.PageImpl;
@@ -67,8 +67,8 @@ class OrderControllerTest extends BaseControllerTest {
         // Arrange
         OrderResponseDto response = new OrderResponseDto();
         response.setId(1);
-        response.setStatus(com.example.CourseWork.addition.OrderStatus.PREPARING);
-        when(orderService.updateOrderStatus(eq(1), eq(com.example.CourseWork.addition.OrderStatus.PREPARING))).thenReturn(response);
+        response.setStatus(com.example.CourseWork.model.OrderStatus.PREPARING);
+        when(orderService.updateOrderStatus(eq(1), eq(com.example.CourseWork.model.OrderStatus.PREPARING))).thenReturn(response);
 
         // Act & Assert - Forbidden for Regular Customer
         mockMvc.perform(put("/api/orders/1/status")

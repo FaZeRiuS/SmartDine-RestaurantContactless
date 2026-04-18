@@ -1,6 +1,6 @@
 package com.example.CourseWork.service.order.impl;
 
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 import com.example.CourseWork.exception.BadRequestException;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;

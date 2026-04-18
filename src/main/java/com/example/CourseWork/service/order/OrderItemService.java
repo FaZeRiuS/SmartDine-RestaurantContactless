@@ -1,7 +1,7 @@
 package com.example.CourseWork.service.order;
 
-import com.example.CourseWork.dto.OrderRequestDto;
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.dto.order.OrderRequestDto;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 
 public interface OrderItemService {
     OrderResponseDto addItemsToOrder(Integer orderId, String userId, OrderRequestDto dto);

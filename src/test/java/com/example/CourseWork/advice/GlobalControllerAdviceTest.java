@@ -1,6 +1,6 @@
 package com.example.CourseWork.advice;
 
-import com.example.CourseWork.service.LoyaltyService;
+import com.example.CourseWork.service.loyalty.LoyaltyService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +32,7 @@ class GlobalControllerAdviceTest {
     @Mock
     private HttpServletRequest request;
     @Mock
-    private com.example.CourseWork.service.security.CurrentUserIdentity currentUserIdentity;
+    private com.example.CourseWork.security.CurrentUserIdentity currentUserIdentity;
     @Mock
     private SecurityContext securityContext;
     @Mock

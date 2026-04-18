@@ -1,9 +1,9 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.DishDto;
-import com.example.CourseWork.dto.DishResponseDto;
-import com.example.CourseWork.service.DishService;
-import com.example.CourseWork.service.RecommendationService;
+import com.example.CourseWork.dto.menu.DishDto;
+import com.example.CourseWork.dto.menu.DishResponseDto;
+import com.example.CourseWork.service.menu.DishService;
+import com.example.CourseWork.service.recommendation.RecommendationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;

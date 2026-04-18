@@ -1,7 +1,7 @@
 package com.example.CourseWork.mapper;
 
-import com.example.CourseWork.dto.CartItemDetailDto;
-import com.example.CourseWork.dto.CartResponseDto;
+import com.example.CourseWork.dto.cart.CartItemDetailDto;
+import com.example.CourseWork.dto.cart.CartResponseDto;
 import com.example.CourseWork.model.Cart;
 import com.example.CourseWork.model.Dish;
 import org.springframework.stereotype.Component;

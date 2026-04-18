@@ -47,7 +47,7 @@
                             </div>
                         </th:block>
                     </div>
-                    <a th:if="${order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).PENDING and tab == 'active'}"
+                    <a th:if="${order.paymentStatus == T(com.example.CourseWork.model.PaymentStatus).PENDING and tab == 'active'}"
                        th:href="@{/}"
                        class="btn btn-primary btn-sm w-full mt-1">&#x1F4B3; Перейти до оплати</a>
 
@@ -73,7 +73,7 @@
                     </th:block>
 
                     <th:block
- th:if="${order.serviceRating == null and order.paymentStatus == T(com.example.CourseWork.addition.PaymentStatus).SUCCESS and (order.status == T(com.example.CourseWork.addition.OrderStatus).READY or order.status == T(com.example.CourseWork.addition.OrderStatus).COMPLETED)}">
+ th:if="${order.serviceRating == null and order.paymentStatus == T(com.example.CourseWork.model.PaymentStatus).SUCCESS and (order.status == T(com.example.CourseWork.model.OrderStatus).READY or order.status == T(com.example.CourseWork.model.OrderStatus).COMPLETED)}">
                         <div class="cart-summary mt-1 p-1">
                             <div class="order-review-header mb-1">Залишити відгук</div>
                             <div class="d-flex justify-between align-center gap-2">

@@ -1,9 +1,9 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.CartItemDto;
-import com.example.CourseWork.dto.CartResponseDto;
-import com.example.CourseWork.service.CartService;
-import com.example.CourseWork.service.OrderService;
+import com.example.CourseWork.dto.cart.CartItemDto;
+import com.example.CourseWork.dto.cart.CartResponseDto;
+import com.example.CourseWork.service.cart.CartService;
+import com.example.CourseWork.service.order.OrderService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;

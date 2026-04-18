@@ -1,7 +1,7 @@
 package com.example.CourseWork.mapper;
 
-import com.example.CourseWork.dto.OrderItemResponseDto;
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.dto.order.OrderItemResponseDto;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.model.Order;
 import com.example.CourseWork.model.OrderItem;

@@ -34,6 +34,16 @@
 
 ---
 
+## Структура коду (пакети)
+
+- **Шари**: `controller` (веб), `service/<домен>` + `service/<домен>/impl`, `repository`, `model`, `mapper`, `config`, `exception`.
+- **Сервіси за доменами** (як `service/order`): `order` (замовлення, чайові, відгуки, лояльність по замовленню), `cart`, `menu` (меню, страви, рейтинги), `payment` (LiqPay, checkout, callback), `loyalty`, `dashboard`, `recommendation`, `push`, `sse`, `image` (у т.ч. міграція зображень), `qr`.
+- **Контролери**: підпакети `controller.admin`, `controller.staff`, `controller.htmx` для групування за роллю та HTMX-фрагментами.
+- **DTO**: підпакети `dto.order`, `dto.cart`, `dto.menu`, `dto.loyalty`, `dto.payment`, `dto.push` плюс існуючий `dto.dashboard`.
+- **Інше**: `web.error` (REST-помилки), `bootstrap` (сідер даних, профіль `dev`), `i18n` (тексти сповіщень), `security` (ідентифікація користувача в запиті).
+
+---
+
 ## Налаштування та запуск
 
 ### Вимоги

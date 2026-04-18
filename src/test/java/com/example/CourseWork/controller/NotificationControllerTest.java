@@ -1,6 +1,6 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.PushSubscriptionDto;
+import com.example.CourseWork.dto.push.PushSubscriptionDto;
 import com.example.CourseWork.model.PushSubscription;
 import com.example.CourseWork.repository.PushSubscriptionRepository;
 import org.junit.jupiter.api.Test;

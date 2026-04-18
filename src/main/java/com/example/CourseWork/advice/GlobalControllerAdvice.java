@@ -15,8 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GlobalControllerAdvice {
 
-    private final com.example.CourseWork.service.LoyaltyService loyaltyService;
-    private final com.example.CourseWork.service.security.CurrentUserIdentity currentUserIdentity;
+    private final com.example.CourseWork.service.loyalty.LoyaltyService loyaltyService;
+    private final com.example.CourseWork.security.CurrentUserIdentity currentUserIdentity;
 
     @Value("${vapid.public.key}")
     private String vapidPublicKey;

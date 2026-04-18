@@ -1,7 +1,7 @@
 package com.example.CourseWork.service.order.component;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.PaymentStatus;
+import com.example.CourseWork.model.OrderStatus;
+import com.example.CourseWork.model.PaymentStatus;
 import com.example.CourseWork.exception.BadRequestException;
 import com.example.CourseWork.exception.ForbiddenException;
 import com.example.CourseWork.exception.ErrorMessages;

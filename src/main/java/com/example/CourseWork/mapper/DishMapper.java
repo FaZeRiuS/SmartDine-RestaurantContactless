@@ -1,6 +1,6 @@
 package com.example.CourseWork.mapper;
 
-import com.example.CourseWork.dto.DishResponseDto;
+import com.example.CourseWork.dto.menu.DishResponseDto;
 import com.example.CourseWork.model.Dish;
 import org.springframework.stereotype.Component;
 

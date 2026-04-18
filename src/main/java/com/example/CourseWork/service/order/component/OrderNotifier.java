@@ -1,10 +1,10 @@
 package com.example.CourseWork.service.order.component;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.NotificationMessages;
-import com.example.CourseWork.dto.OrderResponseDto;
-import com.example.CourseWork.service.PushNotificationService;
-import com.example.CourseWork.service.SseService;
+import com.example.CourseWork.model.OrderStatus;
+import com.example.CourseWork.i18n.NotificationMessages;
+import com.example.CourseWork.dto.order.OrderResponseDto;
+import com.example.CourseWork.service.push.PushNotificationService;
+import com.example.CourseWork.service.sse.SseService;
 import org.springframework.stereotype.Component;
 
 @Component

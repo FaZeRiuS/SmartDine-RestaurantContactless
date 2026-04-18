@@ -1,9 +1,9 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.LoyaltyBalanceDto;
-import com.example.CourseWork.dto.LoyaltySummaryDto;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
-import com.example.CourseWork.service.LoyaltyService;
+import com.example.CourseWork.dto.loyalty.LoyaltyBalanceDto;
+import com.example.CourseWork.dto.loyalty.LoyaltySummaryDto;
+import com.example.CourseWork.security.CurrentUserIdentity;
+import com.example.CourseWork.service.loyalty.LoyaltyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;

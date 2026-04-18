@@ -1,7 +1,7 @@
 package com.example.CourseWork.service.order.impl;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.model.OrderStatus;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 import com.example.CourseWork.exception.BadRequestException;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
@@ -10,7 +10,7 @@ import com.example.CourseWork.model.Order;
 import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.order.OrderWaiterService;
 import com.example.CourseWork.service.order.component.OrderNotifier;
-import com.example.CourseWork.addition.NotificationMessages;
+import com.example.CourseWork.i18n.NotificationMessages;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

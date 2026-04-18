@@ -1,6 +1,6 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.service.SseService;
+import com.example.CourseWork.service.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;

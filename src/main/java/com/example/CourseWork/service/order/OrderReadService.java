@@ -1,8 +1,8 @@
 package com.example.CourseWork.service.order;
 
-import com.example.CourseWork.addition.OrderStatus;
-import com.example.CourseWork.addition.PaymentStatus;
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.model.OrderStatus;
+import com.example.CourseWork.model.PaymentStatus;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

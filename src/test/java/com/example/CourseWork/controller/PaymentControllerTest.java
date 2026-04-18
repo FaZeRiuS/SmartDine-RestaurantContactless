@@ -1,10 +1,10 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.LiqPayCallbackDto;
-import com.example.CourseWork.dto.LiqPayCheckoutFormDto;
-import com.example.CourseWork.service.LiqPayService;
-import com.example.CourseWork.service.PaymentCallbackService;
-import com.example.CourseWork.service.PaymentCheckoutService;
+import com.example.CourseWork.dto.payment.LiqPayCallbackDto;
+import com.example.CourseWork.dto.payment.LiqPayCheckoutFormDto;
+import com.example.CourseWork.service.payment.LiqPayService;
+import com.example.CourseWork.service.payment.PaymentCallbackService;
+import com.example.CourseWork.service.payment.PaymentCheckoutService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;

@@ -1,7 +1,7 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.service.DishService;
-import com.example.CourseWork.service.ImageService;
+import com.example.CourseWork.service.menu.DishService;
+import com.example.CourseWork.service.image.ImageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;

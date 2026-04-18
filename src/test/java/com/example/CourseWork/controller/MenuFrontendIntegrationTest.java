@@ -1,11 +1,11 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.CartResponseDto;
-import com.example.CourseWork.dto.MenuWithDishesDto;
-import com.example.CourseWork.service.CartService;
-import com.example.CourseWork.service.DishService;
-import com.example.CourseWork.service.MenuService;
-import com.example.CourseWork.service.RecommendationService;
+import com.example.CourseWork.dto.cart.CartResponseDto;
+import com.example.CourseWork.dto.menu.MenuWithDishesDto;
+import com.example.CourseWork.service.cart.CartService;
+import com.example.CourseWork.service.menu.DishService;
+import com.example.CourseWork.service.menu.MenuService;
+import com.example.CourseWork.service.recommendation.RecommendationService;
 import org.htmlunit.WebClient;
 import org.htmlunit.html.HtmlPage;
 import org.junit.jupiter.api.BeforeEach;

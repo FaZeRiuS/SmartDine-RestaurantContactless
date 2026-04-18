@@ -1,10 +1,10 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.MenuResponseDto;
-import com.example.CourseWork.dto.MenuDto;
-import com.example.CourseWork.dto.MenuWithDishesDto;
-import com.example.CourseWork.service.MenuService;
-import com.example.CourseWork.service.QrCodeService;
+import com.example.CourseWork.dto.menu.MenuResponseDto;
+import com.example.CourseWork.dto.menu.MenuDto;
+import com.example.CourseWork.dto.menu.MenuWithDishesDto;
+import com.example.CourseWork.service.menu.MenuService;
+import com.example.CourseWork.service.qr.QrCodeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,7 +1,7 @@
 package com.example.CourseWork.mapper;
 
-import com.example.CourseWork.dto.MenuResponseDto;
-import com.example.CourseWork.dto.MenuWithDishesDto;
+import com.example.CourseWork.dto.menu.MenuResponseDto;
+import com.example.CourseWork.dto.menu.MenuWithDishesDto;
 import com.example.CourseWork.model.Menu;
 import org.springframework.stereotype.Component;
 

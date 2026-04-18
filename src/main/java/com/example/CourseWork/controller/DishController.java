@@ -1,10 +1,10 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.DishDto;
-import com.example.CourseWork.dto.DishResponseDto;
-import com.example.CourseWork.service.DishService;
-import com.example.CourseWork.service.RecommendationService;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
+import com.example.CourseWork.dto.menu.DishDto;
+import com.example.CourseWork.dto.menu.DishResponseDto;
+import com.example.CourseWork.service.menu.DishService;
+import com.example.CourseWork.service.recommendation.RecommendationService;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

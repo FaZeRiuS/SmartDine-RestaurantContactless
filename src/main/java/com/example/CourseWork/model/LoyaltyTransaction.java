@@ -1,6 +1,5 @@
 package com.example.CourseWork.model;
 
-import com.example.CourseWork.addition.LoyaltyTransactionType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;

@@ -1,7 +1,7 @@
 package com.example.CourseWork.service.order.impl;
 
-import com.example.CourseWork.addition.PaymentStatus;
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.model.PaymentStatus;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
 import com.example.CourseWork.mapper.OrderMapper;

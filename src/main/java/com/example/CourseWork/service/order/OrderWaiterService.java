@@ -1,6 +1,6 @@
 package com.example.CourseWork.service.order;
 
-import com.example.CourseWork.dto.OrderResponseDto;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 
 public interface OrderWaiterService {
     OrderResponseDto callWaiter(Integer orderId);

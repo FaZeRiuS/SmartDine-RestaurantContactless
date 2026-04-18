@@ -1,9 +1,9 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.PushSubscriptionDto;
+import com.example.CourseWork.dto.push.PushSubscriptionDto;
 import com.example.CourseWork.model.PushSubscription;
 import com.example.CourseWork.repository.PushSubscriptionRepository;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,14 +1,14 @@
 package com.example.CourseWork.controller;
 
-import com.example.CourseWork.dto.DishResponseDto;
-import com.example.CourseWork.dto.MenuWithDishesDto;
-import com.example.CourseWork.dto.CartResponseDto;
-import com.example.CourseWork.dto.CartItemDetailDto;
-import com.example.CourseWork.service.CartService;
-import com.example.CourseWork.service.DishService;
-import com.example.CourseWork.service.MenuService;
-import com.example.CourseWork.service.RecommendationService;
-import com.example.CourseWork.service.security.CurrentUserIdentity;
+import com.example.CourseWork.dto.menu.DishResponseDto;
+import com.example.CourseWork.dto.menu.MenuWithDishesDto;
+import com.example.CourseWork.dto.cart.CartResponseDto;
+import com.example.CourseWork.dto.cart.CartItemDetailDto;
+import com.example.CourseWork.service.cart.CartService;
+import com.example.CourseWork.service.menu.DishService;
+import com.example.CourseWork.service.menu.MenuService;
+import com.example.CourseWork.service.recommendation.RecommendationService;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -95,7 +95,7 @@ public class PageController {
 
             // Deduplicate: remove personalized items from popular list for this view
             java.util.Set<Integer> personalizedIds = personalized.stream()
-                    .map(com.example.CourseWork.dto.DishResponseDto::getId)
+                    .map(com.example.CourseWork.dto.menu.DishResponseDto::getId)
                     .collect(java.util.stream.Collectors.toSet());
 
             popularDishes = allAvailable.stream()
