@@ -37,6 +37,8 @@ public class Menu {
     @ToString.Include
     private LocalTime endTime;
 
-    @ManyToMany(mappedBy = "menus", cascade = CascadeType.ALL)
+    // Important: do NOT cascade REMOVE/ALL here.
+    // Deleting a menu must only remove rows from dish_menus, not delete Dish entities.
+    @ManyToMany(mappedBy = "menus")
     private List<Dish> dishes = new java.util.ArrayList<>();
 }
