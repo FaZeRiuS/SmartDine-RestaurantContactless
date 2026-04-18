@@ -83,6 +83,16 @@ function startSseConnection(userId) {
 
     eventSource.addEventListener('staff-notification', (event) => {
         const msg = event.data || "";
+        try {
+            const lower = String(msg).toLowerCase();
+            const isWaiterCall = lower.includes("waiter called") || lower.includes("waiter call dismissed");
+            if (isWaiterCall && typeof showToast === 'function') {
+                const toastType = lower.includes("dismissed") ? "success" : "info";
+                showToast(msg, toastType);
+            }
+        } catch {
+            // ignore (toast is optional)
+        }
         if (msg.includes("[RELOAD]")) {
             setTimeout(() => refreshUiAfterReloadNotification(), 200);
         } else if (typeof loadOrders === 'function') {

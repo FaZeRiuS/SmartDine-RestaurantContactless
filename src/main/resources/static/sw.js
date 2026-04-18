@@ -142,36 +142,54 @@ self.addEventListener('push', event => {
 
   const title = data.title || 'SmartDine';
   const origin = self.location.origin;
+  const dataUrl = (data && typeof data.url === 'string') ? data.url : '/';
   const options = {
     body: data.body || 'Оновлення у замовленні',
     icon: origin + '/icons/android-chrome-192x192.png',
     badge: origin + '/favicon.ico',
     data: {
-      url: data.url || '/'
+      url: dataUrl || '/'
     }
   };
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      // Safari (macOS) often keeps client.focused true when Safari is behind other apps.
-      // Only suppress when the tab is actually visible (WindowClient.visibilityState), otherwise
-      // we skip showNotification while WebKit still expects a visible notification for userVisibleOnly.
-      const isUserActiveOnSite = windowClients.some(client => {
-        if (!client.focused) return false;
-        if (typeof client.visibilityState === 'string' && client.visibilityState !== 'visible') {
+      // Requirement: show push only when user is NOT on the site.
+      // Staff exception: suppress staff notifications only when a visible tab is exactly /staff/orders.
+      const hasVisibleSiteTab = windowClients.some(client => {
+        try {
+          if (typeof client.visibilityState === 'string' && client.visibilityState !== 'visible') {
+            return false;
+          }
+          const u = new URL(client.url);
+          return u.origin === origin;
+        } catch (e) {
           return false;
         }
-        const url = new URL(client.url);
-        // suppression paths: staff pages, orders, cart, or main landing (where active order widget lives)
-        return url.pathname.startsWith('/staff/') ||
-               url.pathname === '/orders' ||
-               url.pathname === '/cart' ||
-               url.pathname === '/';
       });
 
-      if (isUserActiveOnSite) {
-        swLog('[Service Worker] Suppression: User has a visible focused tab on a relevant page, skipping native notification');
-        return;
+      const isStaffOrdersPush = typeof dataUrl === 'string' && dataUrl.startsWith('/staff/orders');
+      if (isStaffOrdersPush) {
+        const hasVisibleStaffOrdersTab = windowClients.some(client => {
+          try {
+            if (typeof client.visibilityState === 'string' && client.visibilityState !== 'visible') {
+              return false;
+            }
+            const u = new URL(client.url);
+            return u.origin === origin && u.pathname === '/staff/orders';
+          } catch (e) {
+            return false;
+          }
+        });
+        if (hasVisibleStaffOrdersTab) {
+          swLog('[Service Worker] Suppression: Visible /staff/orders tab detected, skipping staff notification');
+          return;
+        }
+      } else {
+        if (hasVisibleSiteTab) {
+          swLog('[Service Worker] Suppression: Visible site tab detected, skipping user notification');
+          return;
+        }
       }
 
       return self.registration.showNotification(title, options);

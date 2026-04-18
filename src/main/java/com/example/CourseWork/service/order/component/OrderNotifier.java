@@ -56,7 +56,8 @@ public class OrderNotifier {
         notifyUserOfUpdate(userId, order);
 
         String statusText = NotificationMessages.getLocalizedStatus(newStatus);
-        sendPushToUser(userId, NotificationMessages.pushUserOrderStatus(statusText));
+        String url = (userId != null && userId.startsWith("GUEST_")) ? "/" : "/orders";
+        sendPushToUser(userId, NotificationMessages.pushUserOrderStatus(statusText, url));
 
         if (newStatus == OrderStatus.READY) {
             sendPushToRole(NotificationMessages.ROLE_WAITER,

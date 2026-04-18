@@ -56,7 +56,12 @@ public final class NotificationMessages {
     }
 
     public static String pushUserOrderStatus(String statusText) {
-        return "{\"title\": \"SmartDine\", \"body\": \"" + statusText + "\", \"url\": \"/orders\"}";
+        return pushUserOrderStatus(statusText, "/orders");
+    }
+
+    public static String pushUserOrderStatus(String statusText, String url) {
+        String safeUrl = (url == null || url.isBlank()) ? "/" : url;
+        return "{\"title\": \"SmartDine\", \"body\": \"" + statusText + "\", \"url\": \"" + safeUrl + "\"}";
     }
 
     // SSE staff update payloads
