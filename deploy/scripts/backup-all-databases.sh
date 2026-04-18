@@ -29,6 +29,11 @@ rotate() {
 }
 
 mkdir -p "$BACKUP_DIR"
+if [[ ! -w "$BACKUP_DIR" ]]; then
+  log "ERROR: cannot write to BACKUP_DIR=$BACKUP_DIR"
+  log "Fix: sudo chown -R \"\$(id -un):\$(id -gn)\" \"$BACKUP_DIR\"  OR  run the script with sudo  OR  set BACKUP_DIR to a directory you own (e.g. under \$HOME)."
+  exit 1
+fi
 
 ts="$(date +%Y%m%d_%H%M%S)"
 
@@ -38,12 +43,12 @@ restaurant_dump="$BACKUP_DIR/restaurant_db_${ts}.dump"
 if ! docker compose -f "$COMPOSE_PROD" --project-directory "$SMART_DINE_ROOT" exec -T postgres \
   pg_dump -U postgres -d restaurant_db -Fc >"$restaurant_dump"; then
   log "ERROR: pg_dump failed for restaurant_db"
-  rm -f "$restaurant_dump"
+  rm -f "$restaurant_dump" 2>/dev/null || true
   exit 1
 fi
 if [[ ! -s "$restaurant_dump" ]]; then
   log "ERROR: empty dump: $restaurant_dump"
-  rm -f "$restaurant_dump"
+  rm -f "$restaurant_dump" 2>/dev/null || true
   exit 1
 fi
 log "OK: $restaurant_dump ($(wc -c <"$restaurant_dump" | tr -d ' ') bytes)"
@@ -58,12 +63,12 @@ if [[ "$SKIP_KEYCLOAK" != "1" ]]; then
   if ! docker compose -f "$COMPOSE_KEYCLOAK" --project-directory "$SMART_DINE_ROOT" exec -T keycloak-db \
     pg_dump -U keycloak -d keycloak -Fc >"$keycloak_dump"; then
     log "ERROR: pg_dump failed for keycloak"
-    rm -f "$keycloak_dump"
+    rm -f "$keycloak_dump" 2>/dev/null || true
     exit 1
   fi
   if [[ ! -s "$keycloak_dump" ]]; then
     log "ERROR: empty dump: $keycloak_dump"
-    rm -f "$keycloak_dump"
+    rm -f "$keycloak_dump" 2>/dev/null || true
     exit 1
   fi
   log "OK: $keycloak_dump ($(wc -c <"$keycloak_dump" | tr -d ' ') bytes)"
