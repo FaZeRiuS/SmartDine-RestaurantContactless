@@ -19,15 +19,14 @@ import java.util.UUID;
 @Service
 public class ImageServiceImpl implements ImageService {
 
+    // Keep production-friendly default (/app/uploads), but allow overriding via app.upload.dir.
     @Value("${app.upload.dir:/app/uploads}")
     private String uploadDir;
 
     @Override
     public String processAndSaveImage(MultipartFile file) throws IOException {
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
+        Path uploadPath = resolveUploadPath();
+        uploadPath = ensureUploadPath(uploadPath);
 
         String baseName = UUID.randomUUID().toString();
         List<Integer> widths = List.of(320, 480, 640, 800);
@@ -58,5 +57,39 @@ public class ImageServiceImpl implements ImageService {
         Files.copy(uploadPath.resolve(baseName + "-w320.webp"), uploadPath.resolve(baseName + "-thumb.webp"), StandardCopyOption.REPLACE_EXISTING);
 
         return "/uploads/" + baseName + ".webp";
+    }
+
+    private Path resolveUploadPath() {
+        Path p = Paths.get(uploadDir);
+        if (!p.isAbsolute()) {
+            p = Paths.get(System.getProperty("user.dir")).resolve(p).normalize();
+        }
+        return p;
+    }
+
+    private static Path ensureUploadPath(Path uploadPath) throws IOException {
+        try {
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            // Smoke-check writability (createDirectories doesn't guarantee write perms).
+            Path probe = uploadPath.resolve(".write_test");
+            Files.deleteIfExists(probe);
+            Files.createFile(probe);
+            Files.deleteIfExists(probe);
+            return uploadPath;
+        } catch (IOException e) {
+            // Fallback for dev environments without permission to write into /app/uploads.
+            Path fallback = Paths.get(System.getProperty("user.dir")).resolve("uploads").normalize();
+            log.warn("Upload dir '{}' not writable; falling back to '{}'", uploadPath, fallback);
+            if (!Files.exists(fallback)) {
+                Files.createDirectories(fallback);
+            }
+            Path probe = fallback.resolve(".write_test");
+            Files.deleteIfExists(probe);
+            Files.createFile(probe);
+            Files.deleteIfExists(probe);
+            return fallback;
+        }
     }
 }

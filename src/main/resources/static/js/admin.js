@@ -311,10 +311,21 @@ async function uploadDishImage() {
     formData.append('file', file);
 
     try {
+        // Explicitly attach CSRF token if already available.
+        // If token is not ready yet, DO NOT set header to empty string (would block csrf.js fetch patch).
+        const headers = new Headers();
+        try {
+            const token =
+                (typeof getCsrfToken === 'function' ? getCsrfToken() : '') ||
+                (window.__csrf && typeof window.__csrf.token === 'function' ? (window.__csrf.token() || '') : '');
+            if (token) headers.set('X-XSRF-TOKEN', token);
+        } catch (_) { /* ignore */ }
+
         const res = await fetch('/api/admin/dishes/upload-image', {
             method: 'POST',
             body: formData,
-            credentials: 'same-origin'
+            credentials: 'same-origin',
+            headers
         });
 
         if (!res.ok) {
@@ -326,6 +337,9 @@ async function uploadDishImage() {
                     if (j && j.error) msg = String(j.error);
                 }
             } catch (_) { /* keep default */ }
+            if (res.status === 403) {
+                msg = 'Немає доступу для завантаження (CSRF/сесія). Оновіть сторінку і спробуйте ще раз.';
+            }
             throw new Error(msg);
         }
 
