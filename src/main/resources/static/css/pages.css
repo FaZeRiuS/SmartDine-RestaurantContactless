@@ -246,9 +246,11 @@
     color: var(--text-primary);
 }
 
+/* Stronger than .text-muted so small rating text meets WCAG AA on card surfaces */
 .dish-rating {
     font-size: 1rem;
     margin-top: 0.25rem;
+    color: #bdb5a9;
 }
 
 .dish-price {

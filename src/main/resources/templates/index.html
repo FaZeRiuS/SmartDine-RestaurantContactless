@@ -98,12 +98,12 @@
                         <span class="dish-name" th:text="${dish.name}">Страва</span>
                         <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
                     </div>
-                    <div class="text-muted text-sm mt-1"
+                    <div class="dish-rating text-sm mt-1"
                          th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
                         ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
                         <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
                     </div>
-                    <div class="text-muted text-sm mt-1"
+                    <div class="dish-rating text-sm mt-1"
                          th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
                         ★ Немає оцінок
                     </div>
@@ -169,12 +169,12 @@
                         <span class="dish-name" th:text="${dish.name}">Страва</span>
                         <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
                     </div>
-                    <div class="text-muted text-sm mt-1"
+                    <div class="dish-rating text-sm mt-1"
                          th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
                         ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
                         <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
                     </div>
-                    <div class="text-muted text-sm mt-1"
+                    <div class="dish-rating text-sm mt-1"
                          th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
                         ★ Немає оцінок
                     </div>
