@@ -1,0 +1,92 @@
+## SmartDine Nginx reverse-proxy (example)
+#
+# Assumptions:
+# - Nginx runs on the host (outside Docker).
+# - Your Docker Compose publishes only to localhost:
+#   - app:      127.0.0.1:8081
+#   - keycloak: 127.0.0.1:8080 (with KC_HTTP_RELATIVE_PATH=/auth)
+#
+# Replace `<DOMAIN>` with your real domain before enabling.
+# TLS cert paths are managed by Certbot in production.
+
+server {
+    server_name <DOMAIN>;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    proxy_buffer_size 128k;
+    proxy_buffers 4 256k;
+    proxy_busy_buffers_size 256k;
+
+    # Keycloak (served under /auth)
+    location ^~ /auth/ {
+        proxy_pass http://127.0.0.1:8080/auth/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port 443;
+    }
+
+    # Main application
+    location / {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port 443;
+
+        client_max_body_size 10M;
+    }
+
+    # Server-Sent Events (SSE) endpoint
+    location /api/sse/ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Accel-Buffering no;
+        proxy_set_header Cache-Control no-cache;
+
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_set_header Connection '';
+        proxy_http_version 1.1;
+        chunked_transfer_encoding off;
+
+        proxy_read_timeout 3600s;
+    }
+
+    # Static-ish assets (proxied through the app)
+    location ~* \.(json|webmanifest|ico|png|jpg|jpeg|svg)$ {
+        proxy_pass http://127.0.0.1:8081;
+        proxy_set_header Host $host;
+
+        location ~* \.json$ {
+            proxy_pass http://127.0.0.1:8081;
+            add_header Content-Type application/manifest+json;
+        }
+
+        expires 7d;
+        add_header Cache-Control "public, no-transform";
+    }
+
+    # TLS is typically managed by Certbot:
+    listen 443 ssl http2;
+    ssl_certificate /etc/letsencrypt/live/<DOMAIN>/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<DOMAIN>/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+
+server {
+    listen 80;
+    server_name <DOMAIN>;
+    return 301 https://$host$request_uri;
+}
