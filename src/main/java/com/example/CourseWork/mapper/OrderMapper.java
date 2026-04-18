@@ -9,12 +9,19 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class OrderMapper {
+
+    private final Clock appClock;
+
+    public OrderMapper(Clock appClock) {
+        this.appClock = appClock;
+    }
     
     public OrderResponseDto toResponseDto(Order order) {
         OrderResponseDto dto = new OrderResponseDto();
@@ -22,7 +29,11 @@ public class OrderMapper {
         dto.setUserId(order.getUserId());
         dto.setStatus(order.getStatus());
         dto.setPaymentStatus(order.getPaymentStatus());
-        dto.setCreatedAt(order.getCreatedAt());
+        dto.setCreatedAt(
+                order.getCreatedAt() == null
+                        ? null
+                        : order.getCreatedAt().atZoneSameInstant(appClock.getZone()).toOffsetDateTime()
+        );
         dto.setTotalPrice(order.getTotalPrice());
         BigDecimal total = normalize(order.getTotalPrice());
         BigDecimal discount = (order.getLoyaltyDiscount() == null ? BigDecimal.ZERO : order.getLoyaltyDiscount())

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Clock;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -21,6 +22,7 @@ public class HtmxStaffOrdersController {
     private static final DateTimeFormatter RENDERED_AT = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final OrderService orderService;
+    private final Clock appClock;
 
     @GetMapping("/board")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF', 'WAITER')")
@@ -69,7 +71,7 @@ public class HtmxStaffOrdersController {
         model.addAttribute("ordersInProgress", inProgress);
         model.addAttribute("ordersReady", ready);
         model.addAttribute("boardEmpty", inProgress.isEmpty() && ready.isEmpty());
-        model.addAttribute("boardRenderedAt", RENDERED_AT.format(LocalTime.now()));
+        model.addAttribute("boardRenderedAt", RENDERED_AT.format(LocalTime.now(appClock)));
     }
 
     private static List<OrderResponseDto> applyFilter(List<OrderResponseDto> all, String filter) {

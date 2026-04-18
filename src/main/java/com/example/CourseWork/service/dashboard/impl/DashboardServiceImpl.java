@@ -11,9 +11,10 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -24,14 +25,16 @@ import java.util.stream.Collectors;
 public class DashboardServiceImpl implements DashboardService {
 
     private final OrderRepository orderRepository;
+    private final Clock appClock;
 
     @Override
     public DashboardViewDto getAdminDashboard() {
-        LocalDate today = LocalDate.now();
-        OffsetDateTime startOfToday = today.atStartOfDay().atOffset(ZoneOffset.UTC);
-        OffsetDateTime startOfTomorrow = today.plusDays(1).atStartOfDay().atOffset(ZoneOffset.UTC);
+        ZoneId zone = appClock.getZone();
+        LocalDate today = LocalDate.now(appClock);
+        OffsetDateTime startOfToday = today.atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime startOfTomorrow = today.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
 
-        OffsetDateTime startOf7Days = today.minusDays(6).atStartOfDay().atOffset(ZoneOffset.UTC); // inclusive window: today + previous 6 days
+        OffsetDateTime startOf7Days = today.minusDays(6).atStartOfDay(zone).toOffsetDateTime(); // inclusive window: today + previous 6 days
 
         BigDecimal revenueToday = safeMoney(orderRepository.sumRevenue(startOfToday, startOfTomorrow));
         BigDecimal revenueLast7 = safeMoney(orderRepository.sumRevenue(startOf7Days, startOfTomorrow));
