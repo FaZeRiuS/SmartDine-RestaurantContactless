@@ -122,7 +122,7 @@ public class HtmxOrderController {
             @RequestParam(required = false, defaultValue = "0") BigDecimal amount,
             @RequestParam(defaultValue = "false") boolean home,
             Model model) {
-        UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
+        String userId = currentUserIdentity.currentUserId();
         orderTipService.setTip(id, userId, amount);
         model.addAttribute("toastMessage", "Чайові збережено. Дякуємо!");
         model.addAttribute("toastType", "toast-success");

@@ -63,7 +63,7 @@ class OrderTipServiceTest {
         when(orderMapper.toResponseDto(any())).thenReturn(new OrderResponseDto());
 
         // Act
-        orderTipService.setTip(orderId, userId, new BigDecimal("50.00"));
+        orderTipService.setTip(orderId, userId.toString(), new BigDecimal("50.00"));
 
         // Assert
         assertEquals(new BigDecimal("50.00"), order.getTipAmount());
@@ -78,7 +78,7 @@ class OrderTipServiceTest {
         when(orderMapper.toResponseDto(any())).thenReturn(new OrderResponseDto());
 
         // Act
-        orderTipService.setTip(orderId, userId, new BigDecimal("20000.00"));
+        orderTipService.setTip(orderId, userId.toString(), new BigDecimal("20000.00"));
 
         // Assert
         assertEquals(new BigDecimal("10000.00"), order.getTipAmount());
@@ -93,7 +93,7 @@ class OrderTipServiceTest {
                 .when(orderPaymentPolicy).assertNotPaid(order);
 
         // Act & Assert
-        BadRequestException ex = assertThrows(BadRequestException.class, () -> orderTipService.setTip(orderId, userId, BigDecimal.TEN));
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> orderTipService.setTip(orderId, userId.toString(), BigDecimal.TEN));
         assertEquals(ErrorMessages.ORDER_ALREADY_PAID, ex.getMessage());
     }
 
@@ -106,7 +106,7 @@ class OrderTipServiceTest {
                 .when(orderPaymentPolicy).assertOwner(order, userId.toString());
 
         // Act & Assert
-        ForbiddenException ex = assertThrows(ForbiddenException.class, () -> orderTipService.setTip(orderId, userId, BigDecimal.TEN));
+        ForbiddenException ex = assertThrows(ForbiddenException.class, () -> orderTipService.setTip(orderId, userId.toString(), BigDecimal.TEN));
         assertEquals(ErrorMessages.ACCESS_DENIED, ex.getMessage());
     }
 }

@@ -157,7 +157,7 @@ public class OrderController {
             @PathVariable Integer id,
             @Valid @RequestBody(required = false) TipDto dto
     ) {
-        UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
+        String userId = currentUserIdentity.currentUserId();
         return ResponseEntity.ok(orderTipService.setTip(id, userId, dto != null ? dto.getAmount() : null));
     }
 

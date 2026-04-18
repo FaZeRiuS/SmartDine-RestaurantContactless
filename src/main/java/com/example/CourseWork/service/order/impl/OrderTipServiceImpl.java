@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,19 +29,23 @@ public class OrderTipServiceImpl implements OrderTipService {
 
     @Override
     @Transactional
-    public OrderResponseDto setTip(Integer orderId, UUID userId, BigDecimal amount) {
-        if (orderId == null) throw new BadRequestException(ErrorMessages.ORDER_ID_REQUIRED);
-        if (userId == null) throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
+    public OrderResponseDto setTip(Integer orderId, String userId, BigDecimal amount) {
+        if (orderId == null)
+            throw new BadRequestException(ErrorMessages.ORDER_ID_REQUIRED);
+        if (userId == null)
+            throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
-        orderPaymentPolicy.assertOwner(order, userId.toString());
+        orderPaymentPolicy.assertOwner(order, userId);
         orderPaymentPolicy.assertNotPaid(order);
 
         BigDecimal tip = normalizeMoney(amount);
-        if (tip.compareTo(BigDecimal.ZERO) < 0) tip = BigDecimal.ZERO.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
-        if (tip.compareTo(TIP_MAX) > 0) tip = TIP_MAX;
+        if (tip.compareTo(BigDecimal.ZERO) < 0)
+            tip = BigDecimal.ZERO.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
+        if (tip.compareTo(TIP_MAX) > 0)
+            tip = TIP_MAX;
 
         order.setTipAmount(tip);
         Order saved = orderRepository.save(order);
@@ -54,4 +57,3 @@ public class OrderTipServiceImpl implements OrderTipService {
         return v.setScale(MONEY_SCALE, RoundingMode.HALF_UP);
     }
 }
-
