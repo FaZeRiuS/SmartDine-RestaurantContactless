@@ -49,12 +49,58 @@ function configureMenuSaveForm() {
 function openMenuModal(data = null) {
     document.getElementById('menuEditId').value = data && data.id ? data.id : '';
     document.getElementById('menuName').value = data && data.name ? data.name : '';
-    document.getElementById('menuStartTime').value =
-        data && data.start && data.start !== 'null' ? data.start : '';
-    document.getElementById('menuEndTime').value =
-        data && data.end && data.end !== 'null' ? data.end : '';
+    const start = data && data.start && data.start !== 'null' ? data.start : '';
+    const end = data && data.end && data.end !== 'null' ? data.end : '';
+    document.getElementById('menuStartTime').value = start;
+    document.getElementById('menuEndTime').value = end;
+    const allDay = document.getElementById('menuAllDay');
+    if (allDay) {
+        allDay.checked = !(start && end);
+    }
+    applyMenuAllDayState();
     document.getElementById('menuModalTitle').textContent = data && data.id ? 'Редагувати меню' : 'Нове меню';
     openModal('menuModal');
+}
+
+function applyMenuAllDayState() {
+    const allDay = document.getElementById('menuAllDay');
+    const startEl = document.getElementById('menuStartTime');
+    const endEl = document.getElementById('menuEndTime');
+    if (!allDay || !startEl || !endEl) return;
+    const disabled = allDay.checked === true;
+    startEl.disabled = disabled;
+    endEl.disabled = disabled;
+    if (disabled) {
+        startEl.value = '';
+        endEl.value = '';
+    }
+}
+
+function toggleMenuAllDay() {
+    applyMenuAllDayState();
+}
+
+function onMenuTimeChanged() {
+    const allDay = document.getElementById('menuAllDay');
+    const startEl = document.getElementById('menuStartTime');
+    const endEl = document.getElementById('menuEndTime');
+    if (!allDay || !startEl || !endEl) return;
+    const hasAny = (startEl.value && startEl.value.trim() !== '') || (endEl.value && endEl.value.trim() !== '');
+    if (hasAny) {
+        allDay.checked = false;
+        startEl.disabled = false;
+        endEl.disabled = false;
+    } else {
+        allDay.checked = true;
+        applyMenuAllDayState();
+    }
+}
+
+function clearMenuTime(which) {
+    const el = which === 'end' ? document.getElementById('menuEndTime') : document.getElementById('menuStartTime');
+    if (!el) return;
+    el.value = '';
+    onMenuTimeChanged();
 }
 
 function refreshDishesTable() {

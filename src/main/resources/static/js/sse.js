@@ -85,10 +85,14 @@ function startSseConnection(userId) {
         const msg = event.data || "";
         try {
             const lower = String(msg).toLowerCase();
-            const isWaiterCall = lower.includes("waiter called") || lower.includes("waiter call dismissed");
-            if (isWaiterCall && typeof showToast === 'function') {
-                const toastType = lower.includes("dismissed") ? "success" : "info";
-                showToast(msg, toastType);
+            // Show localized toast only for "waiter called" (dismiss message is intentionally hidden).
+            if (lower.includes("waiter called") && typeof showToast === 'function') {
+                const m = String(msg).match(/Table\s*#\s*(\d+)/i);
+                const tableNo = m && m[1] ? m[1] : null;
+                const localized = tableNo
+                    ? ("Офіціанта викликано до столу №" + tableNo)
+                    : "Офіціанта викликано";
+                showToast(localized, "info");
             }
         } catch {
             // ignore (toast is optional)
