@@ -60,7 +60,6 @@ public class OrderWaiterServiceImpl implements OrderWaiterService {
         orderRepository.save(order);
 
         OrderResponseDto response = orderMapper.toResponseDto(order);
-        orderNotifier.sendStaffNotification(NotificationMessages.staffWaiterCallDismissed(order.getTableNumber()));
         orderNotifier.notifyUserOfUpdate(order.getUserId(), response);
 
         return response;

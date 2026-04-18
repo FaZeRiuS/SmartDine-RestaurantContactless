@@ -89,14 +89,14 @@
                 <div class="form-group">
                     <label class="form-label" for="menuStartTime">Час початку (необов'язково)</label>
                     <div class="d-flex gap-1">
-                        <input type="time" class="form-input" id="menuStartTime" name="startTime" onchange="onMenuTimeChanged()">
+                        <input type="time" class="form-input" id="menuStartTime" name="startTime" oninput="onMenuTimeChanged()" onchange="onMenuTimeChanged()">
                         <button type="button" class="btn btn-secondary btn-sm" onclick="clearMenuTime('start')" aria-label="Очистити час початку">Очистити</button>
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="menuEndTime">Час закінчення (необов'язково)</label>
                     <div class="d-flex gap-1">
-                        <input type="time" class="form-input" id="menuEndTime" name="endTime" onchange="onMenuTimeChanged()">
+                        <input type="time" class="form-input" id="menuEndTime" name="endTime" oninput="onMenuTimeChanged()" onchange="onMenuTimeChanged()">
                         <button type="button" class="btn btn-secondary btn-sm" onclick="clearMenuTime('end')" aria-label="Очистити час закінчення">Очистити</button>
                     </div>
                 </div>

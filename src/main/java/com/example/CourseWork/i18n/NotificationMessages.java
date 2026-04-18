@@ -31,10 +31,6 @@ public final class NotificationMessages {
         return "Waiter called for Table #" + tableNumber;
     }
 
-    public static String staffWaiterCallDismissed(Integer tableNumber) {
-        return "Waiter call dismissed for Table #" + tableNumber;
-    }
-
     // User notifications (SSE)
     public static String userOrderFinalized(Integer orderId, OrderStatus status) {
         return SSE_RELOAD_PREFIX + "Order " + orderId + " is finalized (" + status + ")";

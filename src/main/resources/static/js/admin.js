@@ -51,15 +51,59 @@ function openMenuModal(data = null) {
     document.getElementById('menuName').value = data && data.name ? data.name : '';
     const start = data && data.start && data.start !== 'null' ? data.start : '';
     const end = data && data.end && data.end !== 'null' ? data.end : '';
-    document.getElementById('menuStartTime').value = start;
-    document.getElementById('menuEndTime').value = end;
+    const startEl = document.getElementById('menuStartTime');
+    const endEl = document.getElementById('menuEndTime');
+    if (startEl) {
+        startEl.value = start;
+        startEl.dataset.prevValue = start;
+    }
+    if (endEl) {
+        endEl.value = end;
+        endEl.dataset.prevValue = end;
+    }
     const allDay = document.getElementById('menuAllDay');
     if (allDay) {
         allDay.checked = !(start && end);
     }
+    wireMenuTimeInputs();
     applyMenuAllDayState();
+    onMenuTimeChanged();
     document.getElementById('menuModalTitle').textContent = data && data.id ? 'Редагувати меню' : 'Нове меню';
     openModal('menuModal');
+}
+
+function wireMenuTimeInputs() {
+    const form = document.getElementById('menuSaveForm');
+    const startEl = document.getElementById('menuStartTime');
+    const endEl = document.getElementById('menuEndTime');
+    if (startEl && startEl.dataset.wired !== '1') {
+        startEl.addEventListener('input', onMenuTimeChanged);
+        startEl.addEventListener('change', onMenuTimeChanged);
+        startEl.dataset.wired = '1';
+    }
+    if (endEl && endEl.dataset.wired !== '1') {
+        endEl.addEventListener('input', onMenuTimeChanged);
+        endEl.addEventListener('change', onMenuTimeChanged);
+        endEl.dataset.wired = '1';
+    }
+    if (form && form.dataset.wired !== '1') {
+        form.addEventListener('submit', (e) => {
+            const allDay = document.getElementById('menuAllDay');
+            const start = document.getElementById('menuStartTime')?.value?.trim() || '';
+            const end = document.getElementById('menuEndTime')?.value?.trim() || '';
+            const allDayChecked = allDay ? allDay.checked === true : false;
+            if (!allDayChecked) {
+                const onlyOne = (start && !end) || (!start && end);
+                if (onlyOne) {
+                    e.preventDefault();
+                    if (typeof showToast === 'function') {
+                        showToast('Вкажіть і час початку, і час закінчення (або увімкніть «Весь день»).', 'error');
+                    }
+                }
+            }
+        });
+        form.dataset.wired = '1';
+    }
 }
 
 function applyMenuAllDayState() {
@@ -68,11 +112,20 @@ function applyMenuAllDayState() {
     const endEl = document.getElementById('menuEndTime');
     if (!allDay || !startEl || !endEl) return;
     const disabled = allDay.checked === true;
-    startEl.disabled = disabled;
-    endEl.disabled = disabled;
     if (disabled) {
+        // Save current values so we can restore them if user unchecks "All day".
+        startEl.dataset.prevValue = startEl.value || '';
+        endEl.dataset.prevValue = endEl.value || '';
         startEl.value = '';
         endEl.value = '';
+        startEl.disabled = true;
+        endEl.disabled = true;
+    } else {
+        startEl.disabled = false;
+        endEl.disabled = false;
+        // Restore previous values (if any) after leaving "All day".
+        if (!startEl.value && startEl.dataset.prevValue) startEl.value = startEl.dataset.prevValue;
+        if (!endEl.value && endEl.dataset.prevValue) endEl.value = endEl.dataset.prevValue;
     }
 }
 
