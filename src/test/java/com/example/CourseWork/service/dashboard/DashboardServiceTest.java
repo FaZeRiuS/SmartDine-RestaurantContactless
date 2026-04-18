@@ -12,6 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,12 +30,21 @@ class DashboardServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private Clock appClock;
+
     @InjectMocks
     private DashboardServiceImpl dashboardService;
+
+    private void mockClockKyivFixed() {
+        when(appClock.getZone()).thenReturn(ZoneId.of("Europe/Kyiv"));
+        when(appClock.instant()).thenReturn(Instant.parse("2026-04-15T10:00:00Z"));
+    }
 
     @Test
     void getAdminDashboard_ShouldCalculateSummaryCorrectly() {
         // Arrange
+        mockClockKyivFixed();
         when(orderRepository.sumRevenue(any(), any())).thenReturn(BigDecimal.valueOf(500.0));
         when(orderRepository.countSuccessfulOrders(any(), any())).thenReturn(10L);
         when(orderRepository.avgCheck(any(), any())).thenReturn(BigDecimal.valueOf(50.0));
@@ -51,6 +63,7 @@ class DashboardServiceTest {
     @Test
     void getAdminDashboard_ShouldHandleEmptyDataWithSafes() {
         // Arrange
+        mockClockKyivFixed();
         when(orderRepository.sumRevenue(any(), any())).thenReturn(null);
         when(orderRepository.countSuccessfulOrders(any(), any())).thenReturn(null);
         when(orderRepository.avgCheck(any(), any())).thenReturn(null);
@@ -69,6 +82,7 @@ class DashboardServiceTest {
     @Test
     void getAdminDashboard_ShouldFill24HoursInHourlyStats() {
         // Arrange
+        mockClockKyivFixed();
         HourCountView hour10 = mock(HourCountView.class);
         when(hour10.getOrderHour()).thenReturn(10);
         when(hour10.getCount()).thenReturn(5L);
@@ -89,6 +103,7 @@ class DashboardServiceTest {
     @Test
     void getAdminDashboard_ShouldMapTopDishesCorrectly() {
         // Arrange
+        mockClockKyivFixed();
         TopDishView dish1 = mock(TopDishView.class);
         when(dish1.getName()).thenReturn("Pizza");
         when(dish1.getQuantity()).thenReturn(20L);

@@ -9,14 +9,16 @@ import com.example.CourseWork.model.PaymentStatus;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OrderMapperTest {
 
-    private final OrderMapper orderMapper = new OrderMapper();
+    private final OrderMapper orderMapper = new OrderMapper(Clock.system(ZoneId.of("Europe/Kyiv")));
 
     @Test
     void toResponseDto_ShouldMapBasicFields() {
