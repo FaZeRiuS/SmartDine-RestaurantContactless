@@ -7,7 +7,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -23,40 +26,107 @@ public class ImageServiceImpl implements ImageService {
     @Value("${app.upload.dir:/app/uploads}")
     private String uploadDir;
 
+    /**
+     * WebP is fast and small, but can be unstable on some deployments depending on ImageIO plugins/native libs.
+     * Allow disabling on prod via env: APP_IMAGES_WEBP_ENABLED=false
+     */
+    @Value("${app.images.webp.enabled:true}")
+    private boolean webpEnabled;
+
     @Override
     public String processAndSaveImage(MultipartFile file) throws IOException {
         Path uploadPath = resolveUploadPath();
         uploadPath = ensureUploadPath(uploadPath);
 
         String baseName = UUID.randomUUID().toString();
-        List<Integer> widths = List.of(320, 480, 640, 800);
+        BufferedImage img = readAndValidateImage(file);
 
-        // We read it once into memory to avoid multiple stream reads or temp files
-        byte[] imageBytes = file.getBytes();
-
-        for (int w : widths) {
-            Path targetPath = uploadPath.resolve(baseName + "-w" + w + ".webp");
-            try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(imageBytes)) {
-                Thumbnails.of(bais)
-                        .size(w, w)
-                        .keepAspectRatio(true)
-                        .outputFormat("webp")
-                        .outputQuality(w <= 480 ? 0.78 : 0.80)
-                        .toFile(targetPath.toFile());
-            } catch (Throwable t) {
-                // Catch Throwable to handle UnsatisfiedLinkError for WebP on some systems (like Mac aarch64)
-                log.error("Failed to process image as WebP for width {}. Error: {}", w, t.getMessage());
-                throw new IOException("Image processing failed", t);
+        // Prefer WebP variants when enabled and writer exists; otherwise save original as-is.
+        if (webpEnabled && hasWebpWriter()) {
+            try {
+                writeWebpVariants(uploadPath, baseName, img);
+                // Backwards compatibility: keep the old URLs working.
+                // - main: /uploads/<uuid>.webp (points to 800w)
+                // - thumb: /uploads/<uuid>-thumb.webp (points to 320w)
+                Files.copy(uploadPath.resolve(baseName + "-w800.webp"), uploadPath.resolve(baseName + ".webp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(uploadPath.resolve(baseName + "-w320.webp"), uploadPath.resolve(baseName + "-thumb.webp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+                return "/uploads/" + baseName + ".webp";
+            } catch (Exception e) {
+                // Important: never let image processing take down the whole service.
+                log.error("WebP processing failed; falling back to original upload. {}", e.getMessage());
             }
         }
 
-        // Backwards compatibility: keep the old URLs working.
-        // - main: /uploads/<uuid>.webp (points to 800w)
-        // - thumb: /uploads/<uuid>-thumb.webp (points to 320w)
-        Files.copy(uploadPath.resolve(baseName + "-w800.webp"), uploadPath.resolve(baseName + ".webp"), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(uploadPath.resolve(baseName + "-w320.webp"), uploadPath.resolve(baseName + "-thumb.webp"), StandardCopyOption.REPLACE_EXISTING);
+        return saveOriginal(uploadPath, baseName, file);
+    }
 
-        return "/uploads/" + baseName + ".webp";
+    private static BufferedImage readAndValidateImage(MultipartFile file) throws IOException {
+        // Decode once and validate dimensions to avoid "image bombs" (huge decompressed bitmaps) and OOM/restarts.
+        try (InputStream in = file.getInputStream()) {
+            BufferedImage img = ImageIO.read(in);
+            if (img == null) {
+                throw new IOException("Unsupported image format");
+            }
+            int w = img.getWidth();
+            int h = img.getHeight();
+            long pixels = (long) w * (long) h;
+            // 20 megapixels cap: plenty for dish images, protects memory/cpu.
+            if (w <= 0 || h <= 0 || pixels > 20_000_000L) {
+                throw new IOException("Image too large");
+            }
+            return img;
+        }
+    }
+
+    private static boolean hasWebpWriter() {
+        try {
+            return ImageIO.getImageWritersByFormatName("webp").hasNext();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static void writeWebpVariants(Path uploadPath, String baseName, BufferedImage img) throws IOException {
+        List<Integer> widths = List.of(320, 480, 640, 800);
+        for (int w : widths) {
+            Path targetPath = uploadPath.resolve(baseName + "-w" + w + ".webp");
+            Thumbnails.of(img)
+                    .size(w, w)
+                    .keepAspectRatio(true)
+                    .outputFormat("webp")
+                    .outputQuality(w <= 480 ? 0.78 : 0.80)
+                    .toFile(targetPath.toFile());
+        }
+    }
+
+    private static String saveOriginal(Path uploadPath, String baseName, MultipartFile file) throws IOException {
+        String ext = guessSafeExtension(file);
+        String filename = baseName + ext;
+        Path target = uploadPath.resolve(filename);
+        try (InputStream in = file.getInputStream()) {
+            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return "/uploads/" + filename;
+    }
+
+    private static String guessSafeExtension(MultipartFile file) {
+        String ct = file.getContentType();
+        if (ct != null) {
+            String c = ct.toLowerCase();
+            if (c.contains("png")) return ".png";
+            if (c.contains("jpeg") || c.contains("jpg")) return ".jpg";
+            if (c.contains("webp")) return ".webp";
+        }
+        String name = file.getOriginalFilename();
+        if (name != null) {
+            String lower = name.toLowerCase();
+            if (lower.endsWith(".png")) return ".png";
+            if (lower.endsWith(".jpeg") || lower.endsWith(".jpg")) return ".jpg";
+            if (lower.endsWith(".webp")) return ".webp";
+        }
+        return ".jpg";
     }
 
     private Path resolveUploadPath() {
