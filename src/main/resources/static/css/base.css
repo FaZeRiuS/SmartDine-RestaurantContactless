@@ -426,6 +426,16 @@ h3+p {
     font-size: 0.85rem;
 }
 
+/* Make time inputs' "empty" state visually obvious */
+input[type="time"].time-empty {
+    color: var(--text-muted);
+    opacity: 0.85;
+}
+
+input[type="time"]:not(.time-empty) {
+    color: var(--text-primary);
+}
+
 /* Tip preset buttons */
 .tip-preset-btn {
     flex: 1;

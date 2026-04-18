@@ -18,6 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.time.LocalTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -30,7 +32,9 @@ public class HtmxAdminMenusController {
     @GetMapping("/table")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     public String menusTable(Model model) {
-        model.addAttribute("menus", menuService.getAllMenusWithDishes());
+        List<com.example.CourseWork.dto.menu.MenuWithDishesDto> menus = menuService.getAllMenusWithDishes();
+        menus.sort(Comparator.comparing(m -> m.getId() == null ? Integer.MAX_VALUE : m.getId()));
+        model.addAttribute("menus", menus);
         return "fragments/admin-menus-table :: menusTable";
     }
 
@@ -56,7 +60,9 @@ public class HtmxAdminMenusController {
         } else {
             menuService.createMenu(dto);
         }
-        model.addAttribute("menus", menuService.getAllMenusWithDishes());
+        List<com.example.CourseWork.dto.menu.MenuWithDishesDto> menus = menuService.getAllMenusWithDishes();
+        menus.sort(Comparator.comparing(m -> m.getId() == null ? Integer.MAX_VALUE : m.getId()));
+        model.addAttribute("menus", menus);
         model.addAttribute("toastMessage", "✅ Меню збережено");
         model.addAttribute("toastType", "toast-success");
         response.setHeader("HX-Trigger", "admin:closeMenuModal");
@@ -80,7 +86,9 @@ public class HtmxAdminMenusController {
         dto.setStartTime(parseTime(startTime));
         dto.setEndTime(parseTime(endTime));
         menuService.updateMenu(id, dto);
-        model.addAttribute("menus", menuService.getAllMenusWithDishes());
+        List<com.example.CourseWork.dto.menu.MenuWithDishesDto> menus = menuService.getAllMenusWithDishes();
+        menus.sort(Comparator.comparing(m -> m.getId() == null ? Integer.MAX_VALUE : m.getId()));
+        model.addAttribute("menus", menus);
         return "fragments/admin-menus-table :: menusTable";
     }
 
@@ -88,7 +96,9 @@ public class HtmxAdminMenusController {
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     public String deleteMenu(@PathVariable Integer id, Model model) {
         menuService.deleteMenu(id);
-        model.addAttribute("menus", menuService.getAllMenusWithDishes());
+        List<com.example.CourseWork.dto.menu.MenuWithDishesDto> menus = menuService.getAllMenusWithDishes();
+        menus.sort(Comparator.comparing(m -> m.getId() == null ? Integer.MAX_VALUE : m.getId()));
+        model.addAttribute("menus", menus);
         return "fragments/admin-menus-table :: menusTable";
     }
 

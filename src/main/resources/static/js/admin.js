@@ -127,10 +127,40 @@ function applyMenuAllDayState() {
         if (!startEl.value && startEl.dataset.prevValue) startEl.value = startEl.dataset.prevValue;
         if (!endEl.value && endEl.dataset.prevValue) endEl.value = endEl.dataset.prevValue;
     }
+    updateMenuTimeUi();
 }
 
 function toggleMenuAllDay() {
     applyMenuAllDayState();
+}
+
+function updateMenuTimeUi() {
+    const allDay = document.getElementById('menuAllDay');
+    const startEl = document.getElementById('menuStartTime');
+    const endEl = document.getElementById('menuEndTime');
+    const summary = document.getElementById('menuTimeSummary');
+    if (!startEl || !endEl) return;
+
+    const start = (startEl.value || '').trim();
+    const end = (endEl.value || '').trim();
+
+    startEl.classList.toggle('time-empty', start === '');
+    endEl.classList.toggle('time-empty', end === '');
+
+    if (!summary) return;
+    if (allDay && allDay.checked === true) {
+        summary.textContent = 'Обрано: Весь день';
+        return;
+    }
+    if (start && end) {
+        summary.textContent = 'Обрано: ' + start + ' — ' + end;
+        return;
+    }
+    if (start || end) {
+        summary.textContent = 'Обрано: ' + (start || '—') + ' — ' + (end || '—');
+        return;
+    }
+    summary.textContent = 'Обрано: Весь день';
 }
 
 function onMenuTimeChanged() {
@@ -147,6 +177,7 @@ function onMenuTimeChanged() {
         allDay.checked = true;
         applyMenuAllDayState();
     }
+    updateMenuTimeUi();
 }
 
 function clearMenuTime(which) {

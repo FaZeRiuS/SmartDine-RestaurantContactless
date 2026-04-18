@@ -19,6 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +34,9 @@ public class HtmxAdminDishesController {
     @GetMapping("/table")
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     public String dishesTable(Model model) {
-        model.addAttribute("dishes", dishService.getAllDishes());
+        List<com.example.CourseWork.dto.menu.DishResponseDto> dishes = dishService.getAllDishes();
+        dishes.sort(Comparator.comparing(d -> d.getId() == null ? Integer.MAX_VALUE : d.getId()));
+        model.addAttribute("dishes", dishes);
         return "fragments/admin-dishes-table :: dishesTable";
     }
 
@@ -57,7 +60,9 @@ public class HtmxAdminDishesController {
         } else {
             dishService.createDish(dto);
         }
-        model.addAttribute("dishes", dishService.getAllDishes());
+        List<com.example.CourseWork.dto.menu.DishResponseDto> dishes = dishService.getAllDishes();
+        dishes.sort(Comparator.comparing(d -> d.getId() == null ? Integer.MAX_VALUE : d.getId()));
+        model.addAttribute("dishes", dishes);
         model.addAttribute("toastMessage", "✅ Страву збережено");
         model.addAttribute("toastType", "toast-success");
         response.setHeader("HX-Trigger", "admin:closeDishModal");
@@ -78,7 +83,9 @@ public class HtmxAdminDishesController {
             Model model) {
         DishDto dto = buildDishDto(name, description, price, menuIds, tags, Boolean.TRUE.equals(isAvailable), imageUrl);
         dishService.updateDish(id, dto);
-        model.addAttribute("dishes", dishService.getAllDishes());
+        List<com.example.CourseWork.dto.menu.DishResponseDto> dishes = dishService.getAllDishes();
+        dishes.sort(Comparator.comparing(d -> d.getId() == null ? Integer.MAX_VALUE : d.getId()));
+        model.addAttribute("dishes", dishes);
         return "fragments/admin-dishes-table :: dishesTable";
     }
 
@@ -86,7 +93,9 @@ public class HtmxAdminDishesController {
     @PreAuthorize("hasAnyRole('ADMINISTRATOR', 'CHEF')")
     public String deleteDish(@PathVariable Integer id, Model model) {
         dishService.deleteDish(id);
-        model.addAttribute("dishes", dishService.getAllDishes());
+        List<com.example.CourseWork.dto.menu.DishResponseDto> dishes = dishService.getAllDishes();
+        dishes.sort(Comparator.comparing(d -> d.getId() == null ? Integer.MAX_VALUE : d.getId()));
+        model.addAttribute("dishes", dishes);
         return "fragments/admin-dishes-table :: dishesTable";
     }
 
