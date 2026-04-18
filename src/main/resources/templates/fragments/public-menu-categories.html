@@ -80,6 +80,7 @@
                                 <input type="hidden" name="specialRequest" value="">
                                 <button class="btn btn-primary add-to-cart-btn"
                                         type="submit"
+                                        th:disabled="${hasActivePaidOrder}"
                                         th:aria-label="|Додати ${dish.name} у кошик|">
                                     &#128722; У кошик
                                 </button>

@@ -5,6 +5,7 @@ import com.example.CourseWork.dto.menu.MenuWithDishesDto;
 import com.example.CourseWork.service.cart.CartService;
 import com.example.CourseWork.service.menu.DishService;
 import com.example.CourseWork.service.menu.MenuService;
+import com.example.CourseWork.service.order.OrderService;
 import com.example.CourseWork.service.recommendation.RecommendationService;
 import org.htmlunit.WebClient;
 import org.htmlunit.html.HtmlPage;
@@ -19,6 +20,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -43,6 +45,9 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
     private CartService cartService;
 
     @MockitoBean
+    private OrderService orderService;
+
+    @MockitoBean
     private Clock appClock;
 
     private WebClient webClient;
@@ -59,6 +64,8 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
         CartResponseDto emptyCart = new CartResponseDto();
         emptyCart.setItems(List.of());
         when(cartService.getCartByUserId(any())).thenReturn(emptyCart);
+
+        when(orderService.getMyActiveOrder(any())).thenReturn(Optional.empty());
     }
 
     @Test

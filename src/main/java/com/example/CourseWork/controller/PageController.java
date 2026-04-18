@@ -10,6 +10,8 @@ import com.example.CourseWork.service.menu.MenuService;
 import com.example.CourseWork.service.recommendation.RecommendationService;
 import com.example.CourseWork.security.CurrentUserIdentity;
 import org.springframework.beans.factory.annotation.Value;
+import com.example.CourseWork.service.order.OrderService;
+import com.example.CourseWork.dto.order.OrderResponseDto;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +28,7 @@ import java.time.Clock;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -35,6 +38,7 @@ public class PageController {
     private final DishService dishService;
     private final RecommendationService recommendationService;
     private final CartService cartService;
+    private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
     private final String keycloakPublicUrl;
     private final Clock appClock;
@@ -44,6 +48,7 @@ public class PageController {
             DishService dishService,
             RecommendationService recommendationService,
             CartService cartService,
+            OrderService orderService,
             CurrentUserIdentity currentUserIdentity,
             Clock appClock,
             @Value("${keycloak.public-url:http://localhost:8080}") String keycloakPublicUrl
@@ -52,6 +57,7 @@ public class PageController {
         this.dishService = dishService;
         this.recommendationService = recommendationService;
         this.cartService = cartService;
+        this.orderService = orderService;
         this.currentUserIdentity = currentUserIdentity;
         this.appClock = appClock;
         this.keycloakPublicUrl = keycloakPublicUrl;
@@ -76,6 +82,11 @@ public class PageController {
                 .collect(Collectors.toList());
 
         model.addAttribute("menus", activeMenus);
+
+        Optional<OrderResponseDto> activeOrderOpt = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
+        boolean hasActivePaidOrder = activeOrderOpt.isPresent() && 
+                com.example.CourseWork.model.PaymentStatus.SUCCESS.equals(activeOrderOpt.get().getPaymentStatus());
+        model.addAttribute("hasActivePaidOrder", hasActivePaidOrder);
 
         // 1. Personalized recommendations (logged-in customers only)
         List<DishResponseDto> personalized = List.of();
@@ -167,6 +178,11 @@ public class PageController {
 
         model.addAttribute("menus", displayMenus);
         model.addAttribute("selectedMenuId", id);
+
+        Optional<OrderResponseDto> activeOrderOpt = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
+        boolean hasActivePaidOrder = activeOrderOpt.isPresent() && 
+                com.example.CourseWork.model.PaymentStatus.SUCCESS.equals(activeOrderOpt.get().getPaymentStatus());
+        model.addAttribute("hasActivePaidOrder", hasActivePaidOrder);
 
         List<MenuWithDishesDto> menusForBody;
         if (id != null) {

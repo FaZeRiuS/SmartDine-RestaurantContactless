@@ -217,9 +217,9 @@
                         </button>
                     </div>
 
-                    <a th:unless="${homeActiveOrderWidget}" class="btn btn-secondary flex-1" th:href="@{/menu}"
+                    <a th:if="${!homeActiveOrderWidget and activeOrder.paymentStatus.name() != 'SUCCESS'}" class="btn btn-secondary flex-1" th:href="@{/menu}"
                        aria-label="Перейти до меню">Додати ще страв</a>
-                    <button th:if="${homeActiveOrderWidget}" type="button" class="btn btn-secondary flex-1"
+                    <button th:if="${homeActiveOrderWidget and activeOrder.paymentStatus.name() != 'SUCCESS'}" type="button" class="btn btn-secondary flex-1"
                             onclick="document.getElementById('menus-overview').scrollIntoView({behavior: 'smooth'})">
                         Додати ще страв
                     </button>
