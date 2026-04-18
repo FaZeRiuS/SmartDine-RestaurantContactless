@@ -17,7 +17,10 @@ import org.mockito.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
+
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -174,5 +177,64 @@ class DishServiceTest {
         dishService.deleteDish(dishId);
 
         Mockito.verify(dishRepository, Mockito.times(1)).deleteById(dishId);
+    }
+
+    @Test
+    void getPopularDishesForHome_respectsMaxTwoPerMenu() {
+        when(dishRepository.findAvailableDishesOrderedByOrderVolume(anyInt()))
+                .thenReturn(List.of(new Object[]{1, 100L}, new Object[]{2, 90L}, new Object[]{3, 80L}));
+        when(dishRepository.findDishMenuLinksForDishIds(anyList()))
+                .thenReturn(List.of(
+                        new Object[]{1, 10},
+                        new Object[]{2, 10},
+                        new Object[]{3, 10}
+                ));
+
+        Dish d1 = new Dish();
+        d1.setId(1);
+        d1.setName("A");
+        d1.setIsAvailable(true);
+        Dish d2 = new Dish();
+        d2.setId(2);
+        d2.setName("B");
+        d2.setIsAvailable(true);
+        when(dishRepository.findAllById(List.of(1, 2))).thenReturn(List.of(d1, d2));
+        when(dishMapper.toResponseDto(any(Dish.class))).thenAnswer(invocation -> {
+            Dish d = invocation.getArgument(0);
+            DishResponseDto dto = new DishResponseDto();
+            dto.setId(d.getId());
+            dto.setName(d.getName());
+            return dto;
+        });
+        doNothing().when(dishRatingService).enrichWithRatings(anyList());
+
+        List<DishResponseDto> popular = dishService.getPopularDishesForHome(6, 2, Set.of());
+
+        assertThat(popular).extracting(DishResponseDto::getId).containsExactly(1, 2);
+        verify(dishRepository).findAllById(List.of(1, 2));
+    }
+
+    @Test
+    void getPopularDishesForHome_excludesIds() {
+        when(dishRepository.findAvailableDishesOrderedByOrderVolume(anyInt()))
+                .thenReturn(List.of(new Object[]{1, 100}, new Object[]{2, 90}));
+        when(dishRepository.findDishMenuLinksForDishIds(anyList()))
+                .thenReturn(List.of(new Object[]{1, 5}, new Object[]{2, 5}));
+        Dish d2 = new Dish();
+        d2.setId(2);
+        d2.setName("B");
+        d2.setIsAvailable(true);
+        when(dishRepository.findAllById(List.of(2))).thenReturn(List.of(d2));
+        when(dishMapper.toResponseDto(d2)).thenAnswer(invocation -> {
+            DishResponseDto dto = new DishResponseDto();
+            dto.setId(2);
+            dto.setName("B");
+            return dto;
+        });
+        doNothing().when(dishRatingService).enrichWithRatings(anyList());
+
+        List<DishResponseDto> popular = dishService.getPopularDishesForHome(6, 2, Set.of(1));
+
+        assertThat(popular).extracting(DishResponseDto::getId).containsExactly(2);
     }
 }

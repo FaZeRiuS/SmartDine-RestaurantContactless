@@ -16,14 +16,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.Optional;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DishServiceImpl implements DishService {
+
+    private static final int POPULAR_HOME_CANDIDATE_POOL = 120;
 
     private final DishRepository dishRepository;
     private final MenuRepository menuRepository;
@@ -88,6 +93,81 @@ public class DishServiceImpl implements DishService {
                 .collect(Collectors.toList());
         dishRatingService.enrichWithRatings(dishes);
         return dishes;
+    }
+
+    @Override
+    public List<DishResponseDto> getPopularDishesForHome(int maxDishes, int maxPerMenu, Set<Integer> excludeDishIds) {
+        Set<Integer> exclude = excludeDishIds == null ? Set.of() : excludeDishIds;
+        List<Object[]> popularityRows = dishRepository.findAvailableDishesOrderedByOrderVolume(POPULAR_HOME_CANDIDATE_POOL);
+        if (popularityRows.isEmpty()) {
+            return List.of();
+        }
+
+        List<Integer> candidateIds = new ArrayList<>();
+        for (Object[] row : popularityRows) {
+            if (row != null && row.length >= 1 && row[0] != null) {
+                candidateIds.add(((Number) row[0]).intValue());
+            }
+        }
+        if (candidateIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Object[]> menuLinks = dishRepository.findDishMenuLinksForDishIds(candidateIds);
+        Map<Integer, List<Integer>> menusByDish = new HashMap<>();
+        for (Object[] link : menuLinks) {
+            if (link == null || link.length < 2 || link[0] == null || link[1] == null) {
+                continue;
+            }
+            int dishId = ((Number) link[0]).intValue();
+            int menuId = ((Number) link[1]).intValue();
+            menusByDish.computeIfAbsent(dishId, k -> new ArrayList<>()).add(menuId);
+        }
+
+        Map<Integer, Integer> selectedCountByMenu = new HashMap<>();
+        List<Integer> chosenIds = new ArrayList<>();
+
+        for (int dishId : candidateIds) {
+            if (exclude.contains(dishId)) {
+                continue;
+            }
+            List<Integer> menus = menusByDish.getOrDefault(dishId, List.of());
+            if (!canTakeDishForPopular(menus, selectedCountByMenu, maxPerMenu)) {
+                continue;
+            }
+            for (int menuId : menus) {
+                selectedCountByMenu.merge(menuId, 1, (a, b) -> a + b);
+            }
+            chosenIds.add(dishId);
+            if (chosenIds.size() >= maxDishes) {
+                break;
+            }
+        }
+
+        if (chosenIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Integer, Dish> byId = dishRepository.findAllById(chosenIds).stream()
+                .collect(Collectors.toMap(Dish::getId, d -> d));
+        List<DishResponseDto> result = new ArrayList<>();
+        for (int id : chosenIds) {
+            Dish d = byId.get(id);
+            if (d != null) {
+                result.add(dishMapper.toResponseDto(d));
+            }
+        }
+        dishRatingService.enrichWithRatings(result);
+        return result;
+    }
+
+    private static boolean canTakeDishForPopular(List<Integer> menuIds, Map<Integer, Integer> selectedCountByMenu, int maxPerMenu) {
+        for (int menuId : menuIds) {
+            if (selectedCountByMenu.getOrDefault(menuId, 0) >= maxPerMenu) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

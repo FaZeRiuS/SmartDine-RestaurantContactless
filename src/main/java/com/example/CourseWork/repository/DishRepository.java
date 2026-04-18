@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface DishRepository extends JpaRepository<Dish, Integer> {
@@ -75,6 +76,9 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
           AND d.id != :baseDishId
           AND d.is_available = true
           AND NOT EXISTS (
+              SELECT 1 FROM dish_tags dt_alc WHERE dt_alc.dish_id = d.id AND dt_alc.tag = 'alcohol'
+          )
+          AND NOT EXISTS (
               SELECT 1
               FROM dish_menus m1
               JOIN dish_menus m2 ON m1.menu_id = m2.menu_id
@@ -92,6 +96,9 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
         LEFT JOIN order_item oi ON d.id = oi.dish_id
         WHERE d.is_available = true
           AND d.id != :baseDishId
+          AND NOT EXISTS (
+              SELECT 1 FROM dish_tags dt_alc WHERE dt_alc.dish_id = d.id AND dt_alc.tag = 'alcohol'
+          )
           AND NOT EXISTS (
               SELECT 1
               FROM dish_menus m1
@@ -111,4 +118,25 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
         WHERE m1.dish_id = :dishId AND m2.dish_id IN (:existingIds) AND m1.dish_id != m2.dish_id
         """, nativeQuery = true)
     boolean checkIfSharesMenu(@Param("dishId") Integer dishId, @Param("existingIds") List<Integer> existingIds);
+
+    /**
+     * Available dishes that appeared in at least one order line, ordered by total ordered quantity (desc).
+     */
+    @Query(value = """
+        SELECT d.id, COALESCE(SUM(oi.quantity), 0) AS order_units
+        FROM dish d
+        INNER JOIN order_item oi ON oi.dish_id = d.id
+        WHERE d.is_available = true
+        GROUP BY d.id
+        ORDER BY 2 DESC, d.id ASC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<Object[]> findAvailableDishesOrderedByOrderVolume(@Param("limit") int limit);
+
+    @Query(value = """
+        SELECT dm.dish_id, dm.menu_id
+        FROM dish_menus dm
+        WHERE dm.dish_id IN (:dishIds)
+        """, nativeQuery = true)
+    List<Object[]> findDishMenuLinksForDishIds(@Param("dishIds") Collection<Integer> dishIds);
 }

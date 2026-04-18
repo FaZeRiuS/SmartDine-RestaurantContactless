@@ -13,6 +13,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.time.OffsetDateTime;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,6 +64,42 @@ class DishRepositoryAnalyticsTest {
         // Act & Assert
         assertThat(dishRepository.checkIfSharesMenu(d1.getId(), List.of(d2.getId()))).isTrue();
         assertThat(dishRepository.checkIfSharesMenu(d1.getId(), List.of(d3.getId()))).isFalse();
+    }
+
+    @Test
+    void findAvailableDishesOrderedByOrderVolume_ordersBySumQuantity() {
+        Menu menu = new Menu();
+        menu.setName("Dinner");
+        menuRepository.save(menu);
+        Dish quiet = createDish("Rare", true, menu);
+        Dish hot = createDish("Hot", true, menu);
+
+        Order order = new Order();
+        order.setUserId("volume-user");
+        order.setStatus(OrderStatus.COMPLETED);
+        order.setPaymentStatus(PaymentStatus.SUCCESS);
+        order.setCreatedAt(OffsetDateTime.now());
+        OrderItem iQuiet = new OrderItem();
+        iQuiet.setOrder(order);
+        iQuiet.setDish(quiet);
+        iQuiet.setQuantity(1);
+        OrderItem iHot = new OrderItem();
+        iHot.setOrder(order);
+        iHot.setDish(hot);
+        iHot.setQuantity(7);
+        List<OrderItem> items = new ArrayList<>();
+        items.add(iQuiet);
+        items.add(iHot);
+        order.setItems(items);
+        orderRepository.save(order);
+
+        List<Object[]> rows = dishRepository.findAvailableDishesOrderedByOrderVolume(10);
+
+        assertThat(rows).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(((Number) rows.get(0)[0]).intValue()).isEqualTo(hot.getId());
+
+        List<Object[]> links = dishRepository.findDishMenuLinksForDishIds(List.of(hot.getId(), quiet.getId()));
+        assertThat(links).extracting(l -> ((Number) l[0]).intValue()).contains(hot.getId(), quiet.getId());
     }
 
     private Dish createDish(String name, boolean available, Menu menu) {

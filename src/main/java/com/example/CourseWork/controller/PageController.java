@@ -77,14 +77,9 @@ public class PageController {
 
         model.addAttribute("menus", activeMenus);
 
-        // 1. Get Popular Dishes (General for all)
-        List<DishResponseDto> allAvailable = dishService.getAllAvailableDishes();
-        List<DishResponseDto> popularDishes = allAvailable.stream()
-                .limit(6)
-                .collect(Collectors.toList());
-
-        // 2. Get Personalized Recommendations (Only for matched users)
+        // 1. Personalized recommendations (logged-in customers only)
         List<DishResponseDto> personalized = List.of();
+        java.util.Set<Integer> excludeFromPopular = java.util.Collections.emptySet();
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof OidcUser oidcUser) {
             String userId = oidcUser.getSubject();
@@ -92,17 +87,13 @@ public class PageController {
             if (personalized.size() > 6) {
                 personalized = personalized.subList(0, 6);
             }
-
-            // Deduplicate: remove personalized items from popular list for this view
-            java.util.Set<Integer> personalizedIds = personalized.stream()
-                    .map(com.example.CourseWork.dto.menu.DishResponseDto::getId)
-                    .collect(java.util.stream.Collectors.toSet());
-
-            popularDishes = allAvailable.stream()
-                    .filter(d -> !personalizedIds.contains(d.getId()))
-                    .limit(6)
-                    .collect(Collectors.toList());
+            excludeFromPopular = personalized.stream()
+                    .map(DishResponseDto::getId)
+                    .collect(Collectors.toSet());
         }
+
+        // 2. Popular dishes: highest total ordered quantity, max 2 per menu, up to 6
+        List<DishResponseDto> popularDishes = dishService.getPopularDishesForHome(6, 2, excludeFromPopular);
 
         model.addAttribute("personalizedRecommendations", personalized);
         model.addAttribute("popularDishes", popularDishes);
