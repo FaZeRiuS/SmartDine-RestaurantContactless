@@ -280,14 +280,7 @@ function openDishModalWithData(dish) {
         const imageUrl = dish && dish.imageUrl ? dish.imageUrl : '';
         document.getElementById('dishImageUrl').value = imageUrl;
         document.getElementById('dishImageFile').value = '';
-        const preview = document.getElementById('dishImagePreview');
-        const img = preview ? preview.querySelector('img') : null;
-        if (preview && img && imageUrl) {
-            img.src = imageUrl;
-            preview.style.display = 'block';
-        } else if (preview) {
-            preview.style.display = 'none';
-        }
+        updateDishImagePreview(imageUrl);
 
         document.getElementById('dishModalTitle').textContent = id ? 'Редагувати страву' : 'Нова страва';
         openModal('dishModal');
@@ -346,9 +339,7 @@ async function uploadDishImage() {
         const data = await res.json();
         document.getElementById('dishImageUrl').value = data.imageUrl;
 
-        const preview = document.getElementById('dishImagePreview');
-        preview.querySelector('img').src = data.imageUrl;
-        preview.style.display = 'block';
+        updateDishImagePreview(data.imageUrl);
 
         showToast('\u2705 \u0424\u043e\u0442\u043e \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043e', 'success');
     } catch (err) {
@@ -364,6 +355,44 @@ async function uploadDishImage() {
         showToast('\u274c ' + display, 'error');
         fileInput.value = '';
     }
+}
+
+function normalizeDishImageUrl(raw) {
+    const v = (raw || '').trim();
+    if (!v) return '';
+    // If user pasted full origin, keep only path for same-origin uploads.
+    try {
+        const u = new URL(v, window.location.origin);
+        if (u.origin === window.location.origin) {
+            return u.pathname + u.search + u.hash;
+        }
+        return v;
+    } catch (_) {
+        return v;
+    }
+}
+
+function updateDishImagePreview(rawUrl) {
+    const url = normalizeDishImageUrl(rawUrl);
+    const preview = document.getElementById('dishImagePreview');
+    const img = preview ? preview.querySelector('img') : null;
+    if (!preview || !img) return;
+    if (url) {
+        img.src = url;
+        preview.style.display = 'block';
+    } else {
+        img.src = '';
+        preview.style.display = 'none';
+    }
+}
+
+function onDishImageUrlChanged() {
+    const el = document.getElementById('dishImageUrl');
+    if (!el) return;
+    // Normalize in-place to reduce copy/paste mistakes.
+    const normalized = normalizeDishImageUrl(el.value);
+    if (normalized !== el.value) el.value = normalized;
+    updateDishImagePreview(normalized);
 }
 
 function removeDishImage() {

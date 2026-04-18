@@ -153,7 +153,13 @@
                     <div class="dish-upload-container">
                         <!-- Intentionally not HTMX: multipart upload stays on fetch (see admin.js uploadDishImage). -->
                         <input type="file" id="dishImageFile" accept="image/*" class="form-input" style="margin-bottom: 0.5rem;" onchange="uploadDishImage()">
-                        <input type="hidden" id="dishImageUrl" name="imageUrl">
+                        <label class="form-label text-sm" for="dishImageUrl" style="margin-top: 0.25rem;">URL зображення (наприклад: /uploads/...) </label>
+                        <input type="text" id="dishImageUrl" name="imageUrl" class="form-input"
+                               placeholder="/uploads/your-image.webp"
+                               oninput="onDishImageUrlChanged()">
+                        <div class="text-muted text-xs mt-1">
+                            Якщо фото вже є на сервері, не завантажуйте його ще раз — просто вставте шлях виду <span class="text-gold">/uploads/...</span>.
+                        </div>
                         <div id="dishImagePreview" class="mt-1" style="display: none;">
                             <img src="" alt="Preview" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--border);">
                             <button class="btn btn-danger btn-sm mt-1" type="button" onclick="removeDishImage()">Видалити фото</button>
