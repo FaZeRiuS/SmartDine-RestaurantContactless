@@ -34,14 +34,15 @@
     margin-bottom: 1.5rem;
     line-height: 1.1;
     letter-spacing: -1px;
-    animation: fadeInUp 0.35s ease-out both;
+    /* Opacity-only: translateY in fadeInUp can contribute to CLS in perf tooling */
+    animation: fadeIn 0.35s ease-out both;
 }
 
 .hero p {
     font-size: 1.15rem;
     color: var(--text-secondary);
     margin-bottom: 2rem;
-    animation: fadeInUp 0.35s ease-out both;
+    animation: fadeIn 0.35s ease-out both;
 }
 
 .hero-cta {
@@ -55,13 +56,54 @@
     border-radius: var(--radius-xl);
     font-size: 1rem;
     transition: all var(--transition);
-    animation: fadeInUp 0.35s ease-out both;
+    animation: fadeIn 0.35s ease-out both;
 }
 
 .hero-cta:hover {
     color: var(--bg-primary);
     box-shadow: var(--shadow-gold);
     transform: translateY(-2px);
+}
+
+/* Hero breakpoints live here (sync-loaded) so mobile/tablet typography matches first paint.
+   responsive.css loads async — relying on it for hero sizes caused large CLS. */
+@media (max-width: 1100px) {
+    .hero h1 {
+        font-size: 2.2rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding: 2.5rem 1rem 1.5rem;
+    }
+
+    .hero h1 {
+        margin-bottom: 1rem;
+    }
+
+    .hero p {
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-cta {
+        padding: 10px 24px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding: 3rem 1rem 2rem;
+    }
+
+    .hero h1 {
+        font-size: 1.8rem;
+    }
 }
 
 
