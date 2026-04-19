@@ -80,7 +80,7 @@ function startSseConnection(userId) {
                 // ignore
             }
         }
-        refreshOrderDrivenUiFromSse();
+        refreshOrderDrivenUiFromSse(order);
         try {
             if (order) {
                 handleOrderNotification(order);
@@ -143,7 +143,7 @@ function startSseConnection(userId) {
 window.startSseConnection = startSseConnection;
 
 /** Cart badge, cart fragment, active-order panel — shared by order-update SSE and [RELOAD] refresh. */
-function refreshOrderDrivenUiFromSse() {
+function refreshOrderDrivenUiFromSse(order) {
     if (!window.htmx) {
         return;
     }
@@ -162,6 +162,24 @@ function refreshOrderDrivenUiFromSse() {
             // ignore
         }
     }
+
+    // Refresh menu categories if they were potentially locked/relabelled by an active order.
+    // This ensures server-rendered states (which carry 'disabled' logic) are in sync.
+    const menuRoot = document.getElementById('menuCategoriesRoot');
+    if (menuRoot) {
+        try {
+            const activeTab = document.querySelector('.menu-tab.active');
+            let refreshUrl = activeTab ? activeTab.getAttribute('hx-get') : null;
+            if (!refreshUrl) {
+                const view = document.getElementById('menus-overview') ? 'index' : 'menu';
+                refreshUrl = `/htmx/menu/categories-body?filter=all&view=${view}`;
+            }
+            window.htmx.ajax('GET', refreshUrl, { target: '#menuCategoriesRoot', swap: 'innerHTML' });
+        } catch {
+            // ignore
+        }
+    }
+
     const activeOrderEl = document.getElementById('activeOrderContainer');
     const activeUrl = activeOrderEl && activeOrderEl.getAttribute('hx-get');
     if (activeUrl) {

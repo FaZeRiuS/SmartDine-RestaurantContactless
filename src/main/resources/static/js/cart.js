@@ -232,13 +232,17 @@ function applyCartButtonStateFromOrder(order, extra) {
         }
     });
 
-    document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]').forEach(btn => {
+    // Select by class and by form/type to be safe (robustness)
+    const activeBtnSelector = '.add-to-cart-btn, form[hx-post="/htmx/cart/items"] button[type="submit"]';
+    document.querySelectorAll(activeBtnSelector).forEach(btn => {
         try {
             if (shouldLock) {
                 btn.disabled = true;
+                btn.setAttribute('disabled', 'disabled');
                 btn.setAttribute('aria-disabled', 'true');
             } else {
                 btn.disabled = false;
+                btn.removeAttribute('disabled');
                 btn.removeAttribute('aria-disabled');
             }
         } catch { /* ignore */ }
@@ -285,9 +289,12 @@ async function syncAddToCartButtonsWithActiveOrder(opts) {
         if (!res.ok) return;
 
         let order = null;
-        if (res.status !== 204) {
+        if (res.status === 200) {
             order = await res.json();
-            if (!order) return;
+        } else if (res.status === 204) {
+            // No active order found (order === null, which is correct for unlock)
+        } else {
+            // Handle other status codes if necessary, but for now just assume no order
         }
 
         const priorityUnlock = window.__cartButtonsUnlockPriorityUntil
