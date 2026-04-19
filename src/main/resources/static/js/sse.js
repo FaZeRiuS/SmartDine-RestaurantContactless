@@ -66,12 +66,27 @@ function startSseConnection(userId) {
     });
 
     eventSource.addEventListener('order-update', (event) => {
-        // Refresh UI even if JSON.parse fails (payload is only needed for toast).
+        let order = null;
+        try {
+            order = JSON.parse(event.data);
+        } catch {
+            // ignore
+        }
+        // Apply button state from server payload first — instant unlock on COMPLETED/CANCELLED (no stale HTTP race).
+        if (order && typeof window.applyAddToCartButtonsFromOrderSnapshot === 'function') {
+            try {
+                window.applyAddToCartButtonsFromOrderSnapshot(order);
+            } catch {
+                // ignore
+            }
+        }
         refreshOrderDrivenUiFromSse();
         try {
-            handleOrderNotification(JSON.parse(event.data));
+            if (order) {
+                handleOrderNotification(order);
+            }
         } catch {
-            // ignore malformed payload (toast only)
+            // ignore
         }
     });
 
@@ -156,13 +171,7 @@ function refreshOrderDrivenUiFromSse() {
             // ignore
         }
     }
-    if (typeof window.syncAddToCartButtonsWithActiveOrder === 'function') {
-        try {
-            window.syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: false });
-        } catch {
-            // ignore
-        }
-    }
+    // Do not call syncAddToCartButtonsWithActiveOrder here: a cached /api/orders/my-active can re-lock after SSE already unlocked.
 }
 
 /**
@@ -171,6 +180,13 @@ function refreshOrderDrivenUiFromSse() {
  */
 function refreshUiAfterReloadNotification() {
     refreshOrderDrivenUiFromSse();
+    if (typeof window.syncAddToCartButtonsWithActiveOrder === 'function') {
+        try {
+            window.syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: false });
+        } catch {
+            // ignore
+        }
+    }
     if (window.htmx) {
         if (typeof window.refreshCustomerOrdersList === 'function') {
             try {

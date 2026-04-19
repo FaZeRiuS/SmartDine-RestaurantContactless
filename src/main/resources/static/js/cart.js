@@ -205,6 +205,75 @@ function dishNameForAddButton(btn) {
     return n || '';
 }
 
+const ACTIVE_ORDER_STATUSES = ['NEW', 'PREPARING', 'READY'];
+
+/**
+ * Paid + still in kitchen flow → cannot add dishes. COMPLETED/CANCELLED with SUCCESS must NOT lock.
+ * @param {object | null} order
+ * @param {{ bypassLock?: boolean }} [extra]
+ */
+function applyCartButtonStateFromOrder(order, extra) {
+    const bypassLock = extra && extra.bypassLock === true;
+    const isActivePhase = !!(order && order.status && ACTIVE_ORDER_STATUSES.includes(order.status));
+    const unpaid = order && order.paymentStatus !== 'SUCCESS';
+    let shouldLock = !!(isActivePhase && order && order.paymentStatus === 'SUCCESS');
+    if (bypassLock) {
+        shouldLock = false;
+    }
+
+    document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+        const name = dishNameForAddButton(btn);
+        if (order && isActivePhase && unpaid) {
+            btn.textContent = ADD_TO_ORDER_LABEL;
+            btn.setAttribute('aria-label', name ? `Додати ${name} на замовлення` : 'Додати на замовлення');
+        } else {
+            btn.textContent = ADD_TO_CART_LABEL;
+            btn.setAttribute('aria-label', name ? `Додати ${name} у кошик` : 'Додати у кошик');
+        }
+    });
+
+    document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]').forEach(btn => {
+        try {
+            if (shouldLock) {
+                btn.disabled = true;
+                btn.setAttribute('aria-disabled', 'true');
+            } else {
+                btn.disabled = false;
+                btn.removeAttribute('aria-disabled');
+            }
+        } catch { /* ignore */ }
+    });
+
+    const repeatBtn = document.getElementById('repeatOrderBtn');
+    if (repeatBtn) {
+        if (shouldLock) {
+            repeatBtn.disabled = true;
+            repeatBtn.setAttribute('aria-disabled', 'true');
+        } else {
+            repeatBtn.disabled = false;
+            repeatBtn.removeAttribute('aria-disabled');
+        }
+    }
+
+    return { shouldLock };
+}
+
+/**
+ * Instant UI from SSE payload (no HTTP). Call before HTMX refresh so stale /api/orders/my-active cannot flash-lock.
+ * @param {object} order OrderResponseDto JSON
+ */
+function applyAddToCartButtonsFromOrderSnapshot(order) {
+    if (!order || typeof order !== 'object') return;
+    applyCartButtonStateFromOrder(order);
+    const active = ACTIVE_ORDER_STATUSES.includes(order.status);
+    const paid = order.paymentStatus === 'SUCCESS';
+    if (!(active && paid)) {
+        window.__cartButtonsUnlockPriorityUntil = Date.now() + 10000;
+    }
+}
+
+window.applyAddToCartButtonsFromOrderSnapshot = applyAddToCartButtonsFromOrderSnapshot;
+
 /**
  * Single source of truth: labels + paid-lock for add-to-cart / repeat-last-order.
  * @param {{ showPaidLockToast?: boolean }} opts
@@ -221,45 +290,12 @@ async function syncAddToCartButtonsWithActiveOrder(opts) {
             if (!order) return;
         }
 
-        const activeStatuses = ['NEW', 'PREPARING', 'READY'];
-        const isActive = order && order.status && activeStatuses.includes(order.status);
-        const unpaid = order && order.paymentStatus !== 'SUCCESS';
+        const priorityUnlock = window.__cartButtonsUnlockPriorityUntil
+            && Date.now() < window.__cartButtonsUnlockPriorityUntil;
+        const rawLock = !!(order && ACTIVE_ORDER_STATUSES.includes(order.status) && order.paymentStatus === 'SUCCESS');
+        const bypassLock = priorityUnlock && rawLock;
 
-        document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-            const name = dishNameForAddButton(btn);
-            if (order && isActive && unpaid) {
-                btn.textContent = ADD_TO_ORDER_LABEL;
-                btn.setAttribute('aria-label', name ? `Додати ${name} на замовлення` : 'Додати на замовлення');
-            } else {
-                btn.textContent = ADD_TO_CART_LABEL;
-                btn.setAttribute('aria-label', name ? `Додати ${name} у кошик` : 'Додати у кошик');
-            }
-        });
-
-        const shouldLock = !!(order && order.paymentStatus === 'SUCCESS');
-
-        document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]').forEach(btn => {
-            try {
-                if (shouldLock) {
-                    btn.disabled = true;
-                    btn.setAttribute('aria-disabled', 'true');
-                } else {
-                    btn.disabled = false;
-                    btn.removeAttribute('aria-disabled');
-                }
-            } catch { /* ignore */ }
-        });
-
-        const repeatBtn = document.getElementById('repeatOrderBtn');
-        if (repeatBtn) {
-            if (shouldLock) {
-                repeatBtn.disabled = true;
-                repeatBtn.setAttribute('aria-disabled', 'true');
-            } else {
-                repeatBtn.disabled = false;
-                repeatBtn.removeAttribute('aria-disabled');
-            }
-        }
+        const { shouldLock } = applyCartButtonStateFromOrder(order, { bypassLock });
 
         if (shouldLock && showPaidLockToast) {
             const msg = '⚠️ Активне замовлення вже оплачене — додавання страв недоступне';
