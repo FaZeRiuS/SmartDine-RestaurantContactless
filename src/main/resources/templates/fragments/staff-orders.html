@@ -82,7 +82,7 @@
                 </span>
                 <span class="waiter-called-badge" th:if="${order.needsWaiter}">Потрібен офіціант!</span>
             </div>
-            <div th:replace="~{fragments/status-badges :: render(status=${order.status}, paymentStatus=null)}"></div>
+            <div th:replace="~{fragments/status-badges :: render(status=${order.status}, paymentStatus=${order.paymentStatus})}"></div>
         </div>
         <div class="order-card-body">
             <div class="order-item-row" th:each="item : ${order.items}">
