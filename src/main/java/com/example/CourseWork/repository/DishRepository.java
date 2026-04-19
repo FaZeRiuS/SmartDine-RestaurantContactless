@@ -26,6 +26,19 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
             JOIN dish_tags dt ON rd.dish_id = dt.dish_id
             GROUP BY dt.tag
         ),
+        UserMenus AS (
+            SELECT md.menu_id, COUNT(*) as menu_weight
+            FROM RecentDishes rd
+            JOIN dish_menus md ON rd.dish_id = md.dish_id
+            GROUP BY md.menu_id
+        ),
+        MenuAffinity AS (
+            SELECT d.id as dish_id, COALESCE(SUM(um.menu_weight), 0) as affinity
+            FROM dish d
+            JOIN dish_menus dm ON d.id = dm.dish_id
+            JOIN UserMenus um ON dm.menu_id = um.menu_id
+            GROUP BY d.id
+        ),
         DishPopularity AS (
             SELECT dish_id, count(id) as order_count
             FROM order_item
@@ -33,10 +46,13 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
         ),
         ScoredDishes AS (
             SELECT d.id as dish_id,
-                (COALESCE(SUM(ut.freq) * 2, 0) + COALESCE((dp.order_count * 5.0 / mp.max_orders), 0)) as match_score
+                (COALESCE(SUM(ut.freq) * 2, 0)
+                    + COALESCE(MAX(ma.affinity), 0) * 1.5
+                    + COALESCE((dp.order_count * 5.0 / mp.max_orders), 0)) as match_score
             FROM dish d
             LEFT JOIN dish_tags dt ON d.id = dt.dish_id
             LEFT JOIN UserTags ut ON dt.tag = ut.tag_name
+            LEFT JOIN MenuAffinity ma ON d.id = ma.dish_id
             LEFT JOIN DishPopularity dp ON d.id = dp.dish_id
             CROSS JOIN (SELECT COALESCE(max(order_count), 1) as max_orders FROM DishPopularity) mp
             WHERE d.is_available = true

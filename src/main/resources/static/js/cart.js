@@ -118,13 +118,16 @@ function syncHomeLayoutAfterActiveOrderSwap() {
         if (heroSection) heroSection.style.display = 'none';
     } else {
         if (window.isAuthenticated) {
-            checkLastOrder();
+            checkLastOrder().finally(() => {
+                syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: false });
+            });
         } else {
             const lastOrdCont = document.getElementById('lastOrderContainer');
             const heroSection = document.getElementById('heroSection');
             if (heroSection && (!lastOrdCont || lastOrdCont.classList.contains('hidden'))) {
                 heroSection.style.display = '';
             }
+            syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: false });
         }
     }
 }
@@ -137,8 +140,9 @@ document.body?.addEventListener('htmx:afterSwap', (evt) => {
     } else {
         t.classList.add('hidden');
     }
-    syncHomeLayoutAfterActiveOrderSwap();
+    // Unlock / relabel first; then load last-order widget (async). A second sync runs in checkLastOrder().finally.
     syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: true });
+    syncHomeLayoutAfterActiveOrderSwap();
 
     // Cart page UX: if there is an active (unpaid) order, hide cart content block to avoid
     // showing an empty cart alongside the active order card (items are added to order directly).
@@ -169,6 +173,16 @@ document.body?.addEventListener('htmx:afterRequest', (evt) => {
     if (!elt || !elt.closest?.('form[hx-post="/htmx/cart/items"]')) return;
     syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: true });
     refreshActiveOrderPanel();
+});
+
+// Home / cart: after active-order fragment loads (incl. SSE refresh), resync buttons even if afterSwap order differs.
+document.body?.addEventListener('htmx:afterRequest', (evt) => {
+    if (!evt.detail?.successful) return;
+    const xhr = evt.detail?.xhr;
+    if (!xhr || typeof xhr.responseURL !== 'string' || !xhr.responseURL.includes('/htmx/orders/active-panel')) {
+        return;
+    }
+    syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: false });
 });
 
 function checkActiveOrder() {
