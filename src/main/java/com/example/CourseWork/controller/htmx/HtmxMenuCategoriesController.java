@@ -1,7 +1,11 @@
 package com.example.CourseWork.controller.htmx;
 
 import com.example.CourseWork.dto.menu.MenuWithDishesDto;
+import com.example.CourseWork.dto.order.OrderResponseDto;
+import com.example.CourseWork.model.PaymentStatus;
 import com.example.CourseWork.service.menu.MenuService;
+import com.example.CourseWork.service.order.OrderService;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -14,6 +18,7 @@ import java.time.Clock;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -25,6 +30,8 @@ import java.util.stream.Collectors;
 public class HtmxMenuCategoriesController {
 
     private final MenuService menuService;
+    private final OrderService orderService;
+    private final CurrentUserIdentity currentUserIdentity;
     private final Clock appClock;
 
     @GetMapping("/categories-body")
@@ -52,6 +59,12 @@ public class HtmxMenuCategoriesController {
 
         model.addAttribute("menus", menus);
         model.addAttribute("menuView", view);
+
+        Optional<OrderResponseDto> activeOrderOpt = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
+        boolean hasActivePaidOrder = activeOrderOpt.isPresent()
+                && PaymentStatus.SUCCESS.equals(activeOrderOpt.get().getPaymentStatus());
+        model.addAttribute("hasActivePaidOrder", hasActivePaidOrder);
+
         return "fragments/public-menu-categories :: categoryBodies";
     }
 

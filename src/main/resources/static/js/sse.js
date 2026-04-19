@@ -156,9 +156,9 @@ function refreshOrderDrivenUiFromSse() {
             // ignore
         }
     }
-    if (typeof window.enforcePaidActiveOrderLock === 'function') {
+    if (typeof window.syncAddToCartButtonsWithActiveOrder === 'function') {
         try {
-            window.enforcePaidActiveOrderLock();
+            window.syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: false });
         } catch {
             // ignore
         }

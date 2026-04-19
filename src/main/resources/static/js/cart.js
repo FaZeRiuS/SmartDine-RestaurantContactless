@@ -138,8 +138,7 @@ document.body?.addEventListener('htmx:afterSwap', (evt) => {
         t.classList.add('hidden');
     }
     syncHomeLayoutAfterActiveOrderSwap();
-    updateAddToCartButtonLabels();
-    enforcePaidActiveOrderLock();
+    syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: true });
 
     // Cart page UX: if there is an active (unpaid) order, hide cart content block to avoid
     // showing an empty cart alongside the active order card (items are added to order directly).
@@ -168,9 +167,8 @@ document.body?.addEventListener('htmx:afterRequest', (evt) => {
     if (!evt.detail?.successful) return;
     const elt = evt.detail?.elt;
     if (!elt || !elt.closest?.('form[hx-post="/htmx/cart/items"]')) return;
-    updateAddToCartButtonLabels();
+    syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: true });
     refreshActiveOrderPanel();
-    enforcePaidActiveOrderLock();
 });
 
 function checkActiveOrder() {
@@ -180,6 +178,13 @@ function checkActiveOrder() {
 const ADD_TO_CART_LABEL = '\u{1F6D2} \u0423 \u043a\u043e\u0448\u0438\u043a';
 const ADD_TO_ORDER_LABEL = '\u{1F6CE}\uFE0F \u0414\u043e\u0434\u0430\u0442\u0438 \u043d\u0430 \u0437\u0430\u043c\u043e\u0432\u043b\u0435\u043d\u043d\u044f';
 
+/** Avoid stale "active order" after status changes (browser cache of GET /api/orders/my-active). */
+const MY_ACTIVE_FETCH = {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+};
+
 function dishNameForAddButton(btn) {
     const card = btn.closest('.dish-card');
     const n = card?.querySelector('.dish-name')?.textContent?.trim();
@@ -187,30 +192,28 @@ function dishNameForAddButton(btn) {
 }
 
 /**
- * When customer has an active unpaid order (NEW/PREPARING/READY), show "Додати на замовлення" on menu cards.
+ * Single source of truth: labels + paid-lock for add-to-cart / repeat-last-order.
+ * @param {{ showPaidLockToast?: boolean }} opts
  */
-async function updateAddToCartButtonLabels() {
+async function syncAddToCartButtonsWithActiveOrder(opts) {
+    const showPaidLockToast = opts && opts.showPaidLockToast === true;
     try {
-        const res = await fetch('/api/orders/my-active', { credentials: 'same-origin' });
-        if (res.status === 204) {
-            document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
-                btn.textContent = ADD_TO_CART_LABEL;
-                const name = dishNameForAddButton(btn);
-                btn.setAttribute('aria-label', name ? `Додати ${name} у кошик` : 'Додати у кошик');
-            });
-            return;
-        }
+        const res = await fetch('/api/orders/my-active?_=' + Date.now(), MY_ACTIVE_FETCH);
         if (!res.ok) return;
-        const order = await res.json();
-        if (!order) return;
+
+        let order = null;
+        if (res.status !== 204) {
+            order = await res.json();
+            if (!order) return;
+        }
 
         const activeStatuses = ['NEW', 'PREPARING', 'READY'];
-        const isActive = order.status && activeStatuses.includes(order.status);
-        const unpaid = order.paymentStatus !== 'SUCCESS';
+        const isActive = order && order.status && activeStatuses.includes(order.status);
+        const unpaid = order && order.paymentStatus !== 'SUCCESS';
 
         document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
             const name = dishNameForAddButton(btn);
-            if (isActive && unpaid) {
+            if (order && isActive && unpaid) {
                 btn.textContent = ADD_TO_ORDER_LABEL;
                 btn.setAttribute('aria-label', name ? `Додати ${name} на замовлення` : 'Додати на замовлення');
             } else {
@@ -218,26 +221,10 @@ async function updateAddToCartButtonLabels() {
                 btn.setAttribute('aria-label', name ? `Додати ${name} у кошик` : 'Додати у кошик');
             }
         });
-    } catch (e) {
-        /* ignore */
-    }
-}
 
-window.updateAddToCartButtonLabels = updateAddToCartButtonLabels;
+        const shouldLock = !!(order && order.paymentStatus === 'SUCCESS');
 
-async function enforcePaidActiveOrderLock() {
-    try {
-        const res = await fetch('/api/orders/my-active', { credentials: 'same-origin' });
-        if (!res.ok) return;
-
-        let shouldLock = false;
-        if (res.status !== 204) {
-            const order = await res.json();
-            shouldLock = !!(order && order.paymentStatus === 'SUCCESS');
-        }
-
-        const addBtns = document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]');
-        addBtns.forEach(btn => {
+        document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]').forEach(btn => {
             try {
                 if (shouldLock) {
                     btn.disabled = true;
@@ -260,16 +247,30 @@ async function enforcePaidActiveOrderLock() {
             }
         }
 
-        if (shouldLock) {
+        if (shouldLock && showPaidLockToast) {
             const msg = '⚠️ Активне замовлення вже оплачене — додавання страв недоступне';
             if (typeof showToast === 'function') showToast(msg, 'info');
         }
     } catch (e) {
-        // ignore UI errors
+        /* ignore */
     }
 }
 
+/**
+ * When customer has an active unpaid order (NEW/PREPARING/READY), show "Додати на замовлення" on menu cards.
+ */
+async function updateAddToCartButtonLabels() {
+    await syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: false });
+}
+
+window.updateAddToCartButtonLabels = updateAddToCartButtonLabels;
+
+async function enforcePaidActiveOrderLock() {
+    await syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: true });
+}
+
 window.enforcePaidActiveOrderLock = enforcePaidActiveOrderLock;
+window.syncAddToCartButtonsWithActiveOrder = syncAddToCartButtonsWithActiveOrder;
 
 function openActiveOrderReviewModal() {
     if (window.isCustomer === false) return;
@@ -462,7 +463,6 @@ window.refreshCartUI = function () {
 
 // ── Auto-load ──
 document.addEventListener('DOMContentLoaded', () => {
-    updateAddToCartButtonLabels();
-    enforcePaidActiveOrderLock();
+    syncAddToCartButtonsWithActiveOrder({ showPaidLockToast: true });
 });
 

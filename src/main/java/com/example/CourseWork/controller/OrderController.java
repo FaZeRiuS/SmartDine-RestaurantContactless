@@ -17,6 +17,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -69,7 +70,9 @@ public class OrderController {
     @GetMapping("/my-active")
     public ResponseEntity<OrderResponseDto> getMyActiveOrder() {
         Optional<OrderResponseDto> order = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
-        return order.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+        CacheControl cc = CacheControl.noStore().mustRevalidate();
+        return order.map(o -> ResponseEntity.ok().cacheControl(cc).body(o))
+                .orElseGet(() -> ResponseEntity.noContent().cacheControl(cc).build());
     }
 
     @GetMapping("/history")
