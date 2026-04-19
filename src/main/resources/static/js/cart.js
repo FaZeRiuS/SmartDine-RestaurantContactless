@@ -228,34 +228,48 @@ window.updateAddToCartButtonLabels = updateAddToCartButtonLabels;
 async function enforcePaidActiveOrderLock() {
     try {
         const res = await fetch('/api/orders/my-active', { credentials: 'same-origin' });
-        if (res.status === 204) return; // no active order
         if (!res.ok) return;
 
-        const order = await res.json();
-        if (!order || order.paymentStatus !== 'SUCCESS') return;
+        let shouldLock = false;
+        if (res.status !== 204) {
+            const order = await res.json();
+            shouldLock = !!(order && order.paymentStatus === 'SUCCESS');
+        }
 
-        const msg = '⚠️ Активне замовлення вже оплачене — додавання страв недоступне';
-        if (typeof showToast === 'function') showToast(msg, 'info');
-
-        // Disable add-to-cart / add-to-order HTMX submit buttons (menu cards, toasts, etc.)
-        document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]')
-            .forEach(btn => {
-                try {
+        const addBtns = document.querySelectorAll('form[hx-post="/htmx/cart/items"] button[type="submit"]');
+        addBtns.forEach(btn => {
+            try {
+                if (shouldLock) {
                     btn.disabled = true;
                     btn.setAttribute('aria-disabled', 'true');
-                } catch { /* ignore */ }
-            });
+                } else {
+                    btn.disabled = false;
+                    btn.removeAttribute('aria-disabled');
+                }
+            } catch { /* ignore */ }
+        });
 
-        // Disable repeat last order button (home widget)
         const repeatBtn = document.getElementById('repeatOrderBtn');
         if (repeatBtn) {
-            repeatBtn.disabled = true;
-            repeatBtn.setAttribute('aria-disabled', 'true');
+            if (shouldLock) {
+                repeatBtn.disabled = true;
+                repeatBtn.setAttribute('aria-disabled', 'true');
+            } else {
+                repeatBtn.disabled = false;
+                repeatBtn.removeAttribute('aria-disabled');
+            }
+        }
+
+        if (shouldLock) {
+            const msg = '⚠️ Активне замовлення вже оплачене — додавання страв недоступне';
+            if (typeof showToast === 'function') showToast(msg, 'info');
         }
     } catch (e) {
         // ignore UI errors
     }
 }
+
+window.enforcePaidActiveOrderLock = enforcePaidActiveOrderLock;
 
 function openActiveOrderReviewModal() {
     if (window.isCustomer === false) return;
@@ -449,5 +463,6 @@ window.refreshCartUI = function () {
 // ── Auto-load ──
 document.addEventListener('DOMContentLoaded', () => {
     updateAddToCartButtonLabels();
+    enforcePaidActiveOrderLock();
 });
 

@@ -156,6 +156,13 @@ function refreshOrderDrivenUiFromSse() {
             // ignore
         }
     }
+    if (typeof window.enforcePaidActiveOrderLock === 'function') {
+        try {
+            window.enforcePaidActiveOrderLock();
+        } catch {
+            // ignore
+        }
+    }
 }
 
 /**
