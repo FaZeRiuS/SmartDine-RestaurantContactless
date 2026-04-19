@@ -280,9 +280,11 @@ window.applyAddToCartButtonsFromOrderSnapshot = applyAddToCartButtonsFromOrderSn
 
 /** Once per order per tab session — avoid spamming after every HTMX/SSE refresh when order is paid. */
 const PAID_LOCK_TOAST_STORAGE_KEY = (orderId) => `paidLockToastShown:order:${orderId}`;
+const PENDING_PAID_LOCK_TOASTS = new Set();
 
 function paidLockToastAlreadyShownForOrder(orderId) {
     if (orderId == null) return true;
+    if (PENDING_PAID_LOCK_TOASTS.has(String(orderId))) return true;
     try {
         return sessionStorage.getItem(PAID_LOCK_TOAST_STORAGE_KEY(orderId)) === '1';
     } catch {
@@ -292,6 +294,7 @@ function paidLockToastAlreadyShownForOrder(orderId) {
 
 function markPaidLockToastShownForOrder(orderId) {
     if (orderId == null) return;
+    PENDING_PAID_LOCK_TOASTS.add(String(orderId));
     try {
         sessionStorage.setItem(PAID_LOCK_TOAST_STORAGE_KEY(orderId), '1');
     } catch { /* ignore */ }
@@ -326,9 +329,10 @@ async function syncAddToCartButtonsWithActiveOrder(opts) {
         if (shouldLock && showPaidLockToast) {
             const oid = order && order.id != null ? order.id : null;
             if (oid != null && !paidLockToastAlreadyShownForOrder(oid)) {
+                // Mark immediately to avoid concurrent async calls showing it too.
+                markPaidLockToastShownForOrder(oid);
                 const msg = '⚠️ Активне замовлення вже оплачене — додавання страв недоступне';
                 if (typeof showToast === 'function') showToast(msg, 'info');
-                markPaidLockToastShownForOrder(oid);
             }
         }
     } catch (e) {
