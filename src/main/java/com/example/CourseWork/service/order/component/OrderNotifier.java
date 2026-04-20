@@ -33,6 +33,8 @@ public class OrderNotifier {
     public void notifyWaitersAboutNewOrder(Integer tableNumber, Integer orderId) {
         pushNotificationService.sendNotificationToRole(NotificationMessages.ROLE_WAITER,
                 NotificationMessages.pushWaiterNewOrder(tableNumber));
+        pushNotificationService.sendNotificationToRole(NotificationMessages.ROLE_CHEF,
+                NotificationMessages.pushChefNewOrder(tableNumber));
         sseService.sendStaffNotification(NotificationMessages.staffNewOrderCreated(orderId));
     }
 

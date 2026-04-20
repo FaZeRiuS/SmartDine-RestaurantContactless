@@ -42,6 +42,11 @@ public final class NotificationMessages {
     }
 
     public static final String ROLE_WAITER = "ROLE_WAITER";
+    public static final String ROLE_CHEF = "ROLE_CHEF";
+
+    public static String pushChefNewOrder(Integer tableNumber) {
+        return "{\"title\": \"Нове замовлення\", \"body\": \"Стіл №" + tableNumber + " — перевірте кухню\", \"url\": \"/staff/orders\"}";
+    }
 
     public static String pushWaiterNeeded(Integer tableNumber) {
         return "{\"title\": \"Потрібен офіціант!\", \"body\": \"Стіл №" + tableNumber + "\", \"url\": \"/staff/orders\"}";
