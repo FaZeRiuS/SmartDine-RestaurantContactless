@@ -45,15 +45,15 @@ public final class NotificationMessages {
     public static final String ROLE_CHEF = "ROLE_CHEF";
 
     public static String pushChefNewOrder(Integer tableNumber) {
-        return "{\"title\": \"Нове замовлення\", \"body\": \"Стіл №" + tableNumber + " — перевірте кухню\", \"url\": \"/staff/orders\"}";
+        return "{\"title\": \"Нове замовлення\", \"body\": \"Стіл №" + tableNumber + " — перевірте кухню\", \"url\": \"/staff/orders\", \"always\": true}";
     }
 
     public static String pushWaiterNeeded(Integer tableNumber) {
-        return "{\"title\": \"Потрібен офіціант!\", \"body\": \"Стіл №" + tableNumber + "\", \"url\": \"/staff/orders\"}";
+        return "{\"title\": \"Потрібен офіціант!\", \"body\": \"Стіл №" + tableNumber + "\", \"url\": \"/staff/orders\", \"always\": true}";
     }
 
     public static String pushWaiterOrderReady(Integer tableNumber) {
-        return "{\"title\": \"Замовлення готове!\", \"body\": \"Стіл №" + tableNumber + "\", \"url\": \"/staff/orders\"}";
+        return "{\"title\": \"Замовлення готове!\", \"body\": \"Стіл №" + tableNumber + "\", \"url\": \"/staff/orders\", \"always\": true}";
     }
 
     public static String pushUserOrderStatus(String statusText) {

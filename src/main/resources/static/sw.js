@@ -143,6 +143,7 @@ self.addEventListener('push', event => {
   const title = data.title || 'SmartDine';
   const origin = self.location.origin;
   const dataUrl = (data && typeof data.url === 'string') ? data.url : '/';
+  const alwaysShow = data && data.always === true;
   const options = {
     body: data.body || 'Оновлення у замовленні',
     icon: origin + '/icons/android-chrome-192x192.png',
@@ -154,6 +155,10 @@ self.addEventListener('push', event => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      if (alwaysShow) {
+        swLog('[Service Worker] Force: always-show push notification');
+        return self.registration.showNotification(title, options);
+      }
       // Requirement: show push only when user is NOT on the site.
       // Staff exception: suppress staff notifications only when a visible tab is exactly /staff/orders.
       const hasVisibleSiteTab = windowClients.some(client => {
