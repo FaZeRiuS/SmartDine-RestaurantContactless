@@ -42,7 +42,7 @@ class OrderReadServiceImplTest {
 
     @Test
     void getOrderById_whenNotFound_shouldThrowNotFound() {
-        when(orderRepository.findById(1)).thenReturn(Optional.empty());
+        when(orderRepository.findByIdWithItemsAndDishes(1)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.getOrderById(1))
                 .isInstanceOf(NotFoundException.class)
@@ -54,7 +54,7 @@ class OrderReadServiceImplTest {
         Order order = new Order();
         order.setId(1);
         order.setUserId("owner");
-        when(orderRepository.findById(1)).thenReturn(Optional.of(order));
+        when(orderRepository.findByIdWithItemsAndDishes(1)).thenReturn(Optional.of(order));
         when(currentUserIdentity.currentUserId()).thenReturn("other");
         when(orderAccessPolicy.isStaff()).thenReturn(false);
 
@@ -65,7 +65,7 @@ class OrderReadServiceImplTest {
 
     @Test
     void getNewOrders_whenEmpty_shouldReturnEmptyList() {
-        when(orderRepository.findAllByStatusOrderByCreatedAtDesc(any())).thenReturn(List.of());
+        when(orderRepository.findAllWithItemsAndDishesByStatusOrderByCreatedAtDesc(any())).thenReturn(List.of());
 
         List<OrderResponseDto> result = service.getNewOrders();
 

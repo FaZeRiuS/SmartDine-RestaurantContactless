@@ -40,7 +40,7 @@ class CartServiceTest {
     @Test
     void getCartByUserId_WhenCartDoesNotExist_ShouldCreateNew() {
         // Arrange
-        when(cartRepository.findByUserId(USER_ID)).thenReturn(Optional.empty());
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.empty());
         when(cartRepository.save(any(Cart.class))).thenAnswer(i -> i.getArguments()[0]);
         when(cartMapper.toResponseDto(any(Cart.class))).thenReturn(new CartResponseDto());
 
@@ -68,7 +68,7 @@ class CartServiceTest {
         dto.setQuantity(2);
         dto.setSpecialRequest("No spicy");
 
-        when(cartRepository.findByUserId(USER_ID)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.of(cart));
         when(dishRepository.findById(10)).thenReturn(Optional.of(dish));
         when(cartMapper.toResponseDto(any(Cart.class))).thenReturn(new CartResponseDto());
 
@@ -103,7 +103,7 @@ class CartServiceTest {
         dto.setQuantity(3);
         dto.setSpecialRequest("Extra salt");
 
-        when(cartRepository.findByUserId(USER_ID)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.of(cart));
         when(dishRepository.findById(10)).thenReturn(Optional.of(dish));
 
         // Act
@@ -126,7 +126,7 @@ class CartServiceTest {
         dto.setDishId(20);
         dto.setQuantity(1);
 
-        when(cartRepository.findByUserId(USER_ID)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.of(cart));
         when(dishRepository.findById(20)).thenReturn(Optional.of(dish));
 
         // Act & Assert
@@ -145,7 +145,7 @@ class CartServiceTest {
         item.setId(500);
         cart.getItems().add(item);
 
-        when(cartRepository.findByUserId(USER_ID)).thenReturn(Optional.of(cart));
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.of(cart));
 
         // Act
         cartService.updateCartItemQuantity(USER_ID, 500, 0);

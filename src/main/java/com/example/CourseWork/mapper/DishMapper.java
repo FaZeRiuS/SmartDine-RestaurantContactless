@@ -15,8 +15,6 @@ public class DishMapper {
         dto.setPrice(dish.getPrice());
         dto.setIsAvailable(dish.getIsAvailable());
         dto.setImageUrl(dish.getImageUrl());
-        dto.setMenuIds(dish.getMenus().stream().map(com.example.CourseWork.model.Menu::getId).collect(java.util.stream.Collectors.toList()));
-        dto.setTags(dish.getTags());
         return dto;
     }
 } 

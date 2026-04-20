@@ -36,7 +36,7 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public CartResponseDto getCartByUserId(String userId) {
-        Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
+        Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setUserId(userId);
             newCart.setItems(new ArrayList<>());
@@ -58,7 +58,7 @@ public class CartServiceImpl implements CartService {
 
         Integer dishId = itemDto.getDishId();
 
-        Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> {
+        Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId).orElseGet(() -> {
             Cart newCart = new Cart();
             newCart.setUserId(userId);
             newCart.setItems(new ArrayList<>());
@@ -98,7 +98,7 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public CartResponseDto updateCartItemQuantity(String userId, Integer itemId, Integer quantity) {
-        Cart cart = cartRepository.findByUserId(userId)
+        Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_NOT_FOUND));
 
         CartItem item = cart.getItems().stream()
@@ -119,7 +119,7 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public CartResponseDto updateCartItemSpecialRequest(String userId, Integer itemId, String specialRequest) {
-        Cart cart = cartRepository.findByUserId(userId)
+        Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_NOT_FOUND));
 
         CartItem item = cart.getItems().stream()
@@ -135,7 +135,7 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public CartResponseDto removeCartItem(String userId, Integer itemId) {
-        Cart cart = cartRepository.findByUserId(userId)
+        Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_NOT_FOUND));
 
         cart.getItems().removeIf(i -> i.getId().equals(itemId));

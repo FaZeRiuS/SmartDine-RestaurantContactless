@@ -7,6 +7,7 @@ import com.example.CourseWork.dto.menu.MenuWithDishesDto;
 import com.example.CourseWork.mapper.MenuMapper;
 import com.example.CourseWork.model.*;
 import com.example.CourseWork.repository.MenuRepository;
+import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.service.menu.impl.MenuServiceImpl;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
@@ -35,6 +36,9 @@ class MenuServiceTest {
     @Mock
     private DishRatingService dishRatingService;
 
+    @Mock
+    private DishRepository dishRepository;
+
     private MenuServiceImpl menuService;
     private Clock testClock;
 
@@ -44,6 +48,7 @@ class MenuServiceTest {
         testClock = Clock.fixed(Instant.parse("2026-04-15T10:00:00Z"), ZoneId.of("UTC"));
         menuService = new MenuServiceImpl(
                 menuRepository,
+                dishRepository,
                 menuMapper,
                 dishRatingService,
                 testClock
@@ -115,7 +120,7 @@ class MenuServiceTest {
         responseDto.setName("Lunch Menu");
         responseDto.setDishes(List.of(new DishResponseDto()));
 
-        when(menuRepository.findAll()).thenReturn(List.of(menu));
+        when(menuRepository.findAllWithDishes()).thenReturn(List.of(menu));
         when(menuMapper.toMenuWithDishesDto(any(Menu.class))).thenReturn(responseDto);
 
         List<MenuWithDishesDto> result = menuService.getAllMenusWithDishes();

@@ -53,7 +53,10 @@ public class DishServiceImpl implements DishService {
         dish.setMenus(menus);
         dish.setTags(dto.getTags() == null ? new ArrayList<>() : new ArrayList<>(dto.getTags()));
 
-        return dishMapper.toResponseDto(dishRepository.save(dish));
+        DishResponseDto out = dishMapper.toResponseDto(dishRepository.save(dish));
+        out.setMenuIds(menuIds);
+        out.setTags(dto.getTags() == null ? java.util.List.of() : dto.getTags());
+        return out;
     }
 
     @Override
@@ -76,7 +79,10 @@ public class DishServiceImpl implements DishService {
         dish.setMenus(menus);
         dish.setTags(dto.getTags() == null ? new ArrayList<>() : new ArrayList<>(dto.getTags()));
 
-        return dishMapper.toResponseDto(dishRepository.save(dish));
+        DishResponseDto out = dishMapper.toResponseDto(dishRepository.save(dish));
+        out.setMenuIds(menuIds);
+        out.setTags(dto.getTags() == null ? java.util.List.of() : dto.getTags());
+        return out;
     }
 
     @Override
@@ -87,10 +93,14 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public List<DishResponseDto> getAllAvailableDishes() {
-        List<DishResponseDto> dishes = dishRepository.findByIsAvailableTrue()
-                .stream()
-                .map(dishMapper::toResponseDto)
+        List<DishResponseDto> dishes = dishRepository.findAvailableWithTags().stream()
+                .map(d -> {
+                    DishResponseDto dto = dishMapper.toResponseDto(d);
+                    dto.setTags(d.getTags());
+                    return dto;
+                })
                 .collect(Collectors.toList());
+        attachMenuIds(dishes);
         dishRatingService.enrichWithRatings(dishes);
         return dishes;
     }
@@ -148,15 +158,18 @@ public class DishServiceImpl implements DishService {
             return List.of();
         }
 
-        Map<Integer, Dish> byId = dishRepository.findAllById(chosenIds).stream()
+        Map<Integer, Dish> byId = dishRepository.findAllByIdWithTags(chosenIds).stream()
                 .collect(Collectors.toMap(Dish::getId, d -> d));
         List<DishResponseDto> result = new ArrayList<>();
         for (int id : chosenIds) {
             Dish d = byId.get(id);
             if (d != null) {
-                result.add(dishMapper.toResponseDto(d));
+                DishResponseDto dto = dishMapper.toResponseDto(d);
+                dto.setTags(d.getTags());
+                result.add(dto);
             }
         }
+        attachMenuIds(result);
         dishRatingService.enrichWithRatings(result);
         return result;
     }
@@ -172,10 +185,14 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public List<DishResponseDto> getAllDishes() {
-        List<DishResponseDto> dishes = dishRepository.findAll()
-                .stream()
-                .map(dishMapper::toResponseDto)
+        List<DishResponseDto> dishes = dishRepository.findAllWithTags().stream()
+                .map(d -> {
+                    DishResponseDto dto = dishMapper.toResponseDto(d);
+                    dto.setTags(d.getTags());
+                    return dto;
+                })
                 .collect(Collectors.toList());
+        attachMenuIds(dishes);
         dishRatingService.enrichWithRatings(dishes);
         return dishes;
     }
@@ -183,9 +200,11 @@ public class DishServiceImpl implements DishService {
     @Override
     @SuppressWarnings("null")
     public DishResponseDto getDishById(Integer id) {
-        Dish dish = dishRepository.findById(id)
+        Dish dish = dishRepository.findByIdWithTags(id)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
         DishResponseDto dto = dishMapper.toResponseDto(dish);
+        dto.setTags(dish.getTags());
+        attachMenuIds(java.util.List.of(dto));
         dishRatingService.enrichWithRatings(java.util.List.of(dto));
         return dto;
     }
@@ -201,5 +220,25 @@ public class DishServiceImpl implements DishService {
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
         dish.setImageUrl(imageUrl);
         dishRepository.save(dish);
+    }
+
+    private void attachMenuIds(List<DishResponseDto> dishes) {
+        if (dishes == null || dishes.isEmpty()) return;
+        List<Integer> ids = dishes.stream()
+                .map(DishResponseDto::getId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (ids.isEmpty()) return;
+
+        List<Object[]> links = dishRepository.findDishMenuLinksForDishIds(ids);
+        Map<Integer, List<Integer>> menuIdsByDish = new HashMap<>();
+        for (Object[] link : links) {
+            if (link == null || link.length < 2 || link[0] == null || link[1] == null) continue;
+            int dishId = ((Number) link[0]).intValue();
+            int menuId = ((Number) link[1]).intValue();
+            menuIdsByDish.computeIfAbsent(dishId, k -> new ArrayList<>()).add(menuId);
+        }
+        dishes.forEach(d -> d.setMenuIds(menuIdsByDish.getOrDefault(d.getId(), List.of())));
     }
 }

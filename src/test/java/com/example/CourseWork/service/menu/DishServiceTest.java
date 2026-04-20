@@ -72,8 +72,9 @@ class DishServiceTest {
         responseDto.setIsAvailable(true);
         responseDto.setMenuIds(List.of(1));
 
-        Mockito.when(dishRepository.findById(1)).thenReturn(Optional.of(dish));
+        Mockito.when(dishRepository.findByIdWithTags(1)).thenReturn(Optional.of(dish));
         Mockito.when(dishMapper.toResponseDto(any(Dish.class))).thenReturn(responseDto);
+        Mockito.when(dishRepository.findDishMenuLinksForDishIds(any())).thenReturn(java.util.Collections.singletonList(new Object[]{1, 1}));
 
         DishResponseDto result = dishService.getDishById(1);
 
@@ -85,7 +86,7 @@ class DishServiceTest {
 
     @Test
     void testGetDishById_DishNotFound() {
-        Mockito.when(dishRepository.findById(1)).thenReturn(Optional.empty());
+        Mockito.when(dishRepository.findByIdWithTags(1)).thenReturn(Optional.empty());
 
         NotFoundException ex = assertThrows(NotFoundException.class, () -> dishService.getDishById(1));
         assertEquals(ErrorMessages.DISH_NOT_FOUND, ex.getMessage());
@@ -116,9 +117,10 @@ class DishServiceTest {
         responseDto2.setMenuIds(List.of(1));
         responseDto2.setIsAvailable(true);
 
-        Mockito.when(dishRepository.findByIsAvailableTrue()).thenReturn(dishes);
+        Mockito.when(dishRepository.findAvailableWithTags()).thenReturn(dishes);
         Mockito.when(dishMapper.toResponseDto(dish1)).thenReturn(responseDto1);
         Mockito.when(dishMapper.toResponseDto(dish2)).thenReturn(responseDto2);
+        Mockito.when(dishRepository.findDishMenuLinksForDishIds(any())).thenReturn(java.util.Arrays.asList(new Object[]{1, 1}, new Object[]{2, 1}));
 
         List<DishResponseDto> result = dishService.getAllAvailableDishes();
 
@@ -158,6 +160,7 @@ class DishServiceTest {
         Mockito.when(dishRepository.save(Mockito.any(Dish.class))).thenReturn(dishEntity);
         Mockito.when(menuRepository.findAllById(dishDto.getMenuIds())).thenReturn(List.of(menu));
         Mockito.when(dishMapper.toResponseDto(any(Dish.class))).thenReturn(responseDto);
+        Mockito.when(dishRepository.findDishMenuLinksForDishIds(any())).thenReturn(java.util.Collections.singletonList(new Object[]{1, 1}));
 
         DishResponseDto result = dishService.createDish(dishDto);
 
@@ -198,7 +201,7 @@ class DishServiceTest {
         d2.setId(2);
         d2.setName("B");
         d2.setIsAvailable(true);
-        when(dishRepository.findAllById(List.of(1, 2))).thenReturn(List.of(d1, d2));
+        when(dishRepository.findAllByIdWithTags(List.of(1, 2))).thenReturn(List.of(d1, d2));
         when(dishMapper.toResponseDto(any(Dish.class))).thenAnswer(invocation -> {
             Dish d = invocation.getArgument(0);
             DishResponseDto dto = new DishResponseDto();
@@ -211,7 +214,7 @@ class DishServiceTest {
         List<DishResponseDto> popular = dishService.getPopularDishesForHome(6, 2, Set.of());
 
         assertThat(popular).extracting(DishResponseDto::getId).containsExactly(1, 2);
-        verify(dishRepository).findAllById(List.of(1, 2));
+        verify(dishRepository).findAllByIdWithTags(List.of(1, 2));
     }
 
     @Test
@@ -224,7 +227,7 @@ class DishServiceTest {
         d2.setId(2);
         d2.setName("B");
         d2.setIsAvailable(true);
-        when(dishRepository.findAllById(List.of(2))).thenReturn(List.of(d2));
+        when(dishRepository.findAllByIdWithTags(List.of(2))).thenReturn(List.of(d2));
         when(dishMapper.toResponseDto(d2)).thenAnswer(invocation -> {
             DishResponseDto dto = new DishResponseDto();
             dto.setId(2);

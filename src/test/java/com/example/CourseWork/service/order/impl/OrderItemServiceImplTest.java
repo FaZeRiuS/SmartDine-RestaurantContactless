@@ -42,7 +42,7 @@ class OrderItemServiceImplTest {
 
     @Test
     void confirmOrderFromCart_whenCartMissing_shouldThrowNotFound() {
-        when(cartRepository.findByUserId("u1")).thenReturn(Optional.empty());
+        when(cartRepository.findByUserIdWithItemsAndDishes("u1")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.confirmOrderFromCart("u1", 1))
                 .isInstanceOf(NotFoundException.class)
@@ -54,7 +54,7 @@ class OrderItemServiceImplTest {
         Cart cart = new Cart();
         cart.setUserId("u1");
         cart.setItems(new ArrayList<>());
-        when(cartRepository.findByUserId("u1")).thenReturn(Optional.of(cart));
+        when(cartRepository.findByUserIdWithItemsAndDishes("u1")).thenReturn(Optional.of(cart));
 
         assertThatThrownBy(() -> service.confirmOrderFromCart("u1", 1))
                 .isInstanceOf(BadRequestException.class)
@@ -68,7 +68,7 @@ class OrderItemServiceImplTest {
         cart.setItems(new ArrayList<>());
         // add one dummy item
         cart.getItems().add(new com.example.CourseWork.model.CartItem());
-        when(cartRepository.findByUserId("u1")).thenReturn(Optional.of(cart));
+        when(cartRepository.findByUserIdWithItemsAndDishes("u1")).thenReturn(Optional.of(cart));
 
         when(orderTotalCalculator.calculateTotal(any())).thenReturn(BigDecimal.ZERO);
         when(orderMapper.toResponseDto(any())).thenReturn(new OrderResponseDto());

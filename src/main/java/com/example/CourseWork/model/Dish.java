@@ -51,7 +51,11 @@ public class Dish {
     @ToString.Include
     private Boolean isAvailable = true;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    /**
+     * Avoid EAGER here: loading dishes for the public menu would also load each dish's menus,
+     * dramatically increasing query count and payload under load.
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "dish_menus",
         joinColumns = @JoinColumn(name = "dish_id"),
@@ -59,7 +63,7 @@ public class Dish {
     )
     private List<Menu> menus = new ArrayList<>();
 
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "dish_tags", joinColumns = @JoinColumn(name = "dish_id"))
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();

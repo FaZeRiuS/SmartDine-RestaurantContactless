@@ -26,16 +26,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.id = :id")
     Optional<Order> findByIdWithItemsAndDishes(@Param("id") Integer id);
 
-    List<Order> findAllByOrderByCreatedAtDesc();
-    List<Order> findAllByStatusOrderByCreatedAtDesc(OrderStatus status);
-
     @EntityGraph(attributePaths = { "items", "items.dish" })
     List<Order> findByStatusInOrderByCreatedAtDesc(List<OrderStatus> statuses);
-
-    List<Order> findAllByUserIdOrderByCreatedAtDesc(String userId);
-
-    Page<Order> findAllByOrderByCreatedAtDesc(Pageable pageable);
-    Page<Order> findAllByUserIdOrderByCreatedAtDesc(String userId, Pageable pageable);
 
     /**
      * Eager-fetch order lines for customer history (OSIV is off — collections must be initialized in one query).
@@ -49,12 +41,43 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
             @Param("statuses") Collection<OrderStatus> statuses,
             Pageable pageable);
 
-    Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
+    @Query(
+            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish",
+            countQuery = "SELECT COUNT(o) FROM Order o")
+    Page<Order> findPageWithItemsAndDishesAllByOrderByCreatedAtDesc(Pageable pageable);
 
-    Page<Order> findByPaymentStatusOrderByCreatedAtDesc(PaymentStatus paymentStatus, Pageable pageable);
+    @Query(
+            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.status = :status",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.status = :status")
+    Page<Order> findPageWithItemsAndDishesByStatusOrderByCreatedAtDesc(
+            @Param("status") OrderStatus status, Pageable pageable);
 
-    Page<Order> findByStatusAndPaymentStatusOrderByCreatedAtDesc(
-            OrderStatus status, PaymentStatus paymentStatus, Pageable pageable);
+    @Query(
+            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.paymentStatus = :paymentStatus",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.paymentStatus = :paymentStatus")
+    Page<Order> findPageWithItemsAndDishesByPaymentStatusOrderByCreatedAtDesc(
+            @Param("paymentStatus") PaymentStatus paymentStatus, Pageable pageable);
+
+    @Query(
+            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish "
+                    + "WHERE o.status = :status AND o.paymentStatus = :paymentStatus",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.status = :status AND o.paymentStatus = :paymentStatus")
+    Page<Order> findPageWithItemsAndDishesByStatusAndPaymentStatusOrderByCreatedAtDesc(
+            @Param("status") OrderStatus status,
+            @Param("paymentStatus") PaymentStatus paymentStatus,
+            Pageable pageable);
+
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.status = :status")
+    List<Order> findAllWithItemsAndDishesByStatusOrderByCreatedAtDesc(@Param("status") OrderStatus status);
+
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.userId = :userId")
+    List<Order> findAllWithItemsAndDishesByUserIdOrderByCreatedAtDesc(@Param("userId") String userId);
+
+    @Query(
+            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.userId = :userId",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.userId = :userId")
+    Page<Order> findPageWithItemsAndDishesByUserIdOrderByCreatedAtDesc(
+            @Param("userId") String userId, Pageable pageable);
 
     interface TopDishView {
         String getName();

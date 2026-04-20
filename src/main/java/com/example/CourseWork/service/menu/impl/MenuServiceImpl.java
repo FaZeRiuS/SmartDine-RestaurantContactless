@@ -7,14 +7,19 @@ import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
 import com.example.CourseWork.mapper.MenuMapper;
 import com.example.CourseWork.model.Menu;
+import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.repository.MenuRepository;
+import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.service.menu.MenuService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.time.LocalTime;
 import java.time.Clock;
@@ -29,6 +34,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class MenuServiceImpl implements MenuService {
 
     private final MenuRepository menuRepository;
+    private final DishRepository dishRepository;
     private final MenuMapper menuMapper;
     private final DishRatingService dishRatingService;
     private final Clock appClock;
@@ -36,7 +42,7 @@ public class MenuServiceImpl implements MenuService {
     @Transactional
     @Override
     public List<MenuWithDishesDto> getAllMenusWithDishes() {
-        List<Menu> menus = menuRepository.findAll();
+        List<Menu> menus = menuRepository.findAllWithDishes();
         if (menus.isEmpty()) {
             return new ArrayList<>();
         }
@@ -62,6 +68,8 @@ public class MenuServiceImpl implements MenuService {
                 .map(menuMapper::toMenuWithDishesDto)
                 .collect(Collectors.toCollection(ArrayList::new));
 
+        attachDishTags(dtos);
+
         // Note: We intentionally do NOT inject synthetic recommendation menus into the
         // main menu list.
         // Recommendations/popular dishes are shown as dedicated sections on the home
@@ -75,6 +83,46 @@ public class MenuServiceImpl implements MenuService {
         dishRatingService.enrichWithRatings(allDishes);
 
         return dtos;
+    }
+
+    /**
+     * Load tags for all dishes in one query (avoids N+1 on dish_tags after tags became LAZY).
+     */
+    private void attachDishTags(List<MenuWithDishesDto> menus) {
+        if (menus == null || menus.isEmpty()) {
+            return;
+        }
+        List<Integer> dishIds = menus.stream()
+                .filter(m -> m.getDishes() != null)
+                .flatMap(m -> m.getDishes().stream())
+                .map(com.example.CourseWork.dto.menu.DishResponseDto::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (dishIds.isEmpty()) {
+            return;
+        }
+
+        Map<Integer, List<String>> tagsByDishId = new HashMap<>();
+        for (Dish d : dishRepository.findAllByIdWithTags(dishIds)) {
+            if (d == null || d.getId() == null) {
+                continue;
+            }
+            List<String> tags = d.getTags();
+            tagsByDishId.put(d.getId(), tags == null ? List.of() : new ArrayList<>(tags));
+        }
+
+        for (MenuWithDishesDto menu : menus) {
+            if (menu.getDishes() == null) {
+                continue;
+            }
+            for (com.example.CourseWork.dto.menu.DishResponseDto dishDto : menu.getDishes()) {
+                if (dishDto == null || dishDto.getId() == null) {
+                    continue;
+                }
+                dishDto.setTags(tagsByDishId.getOrDefault(dishDto.getId(), List.of()));
+            }
+        }
     }
 
     @Override

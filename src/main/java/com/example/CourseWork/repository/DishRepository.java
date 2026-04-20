@@ -7,9 +7,24 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface DishRepository extends JpaRepository<Dish, Integer> {
-    List<Dish> findByIsAvailableTrue();
+    /**
+     * Fetch dish tags eagerly for read endpoints without OpenSessionInView.
+     * Note: we intentionally do NOT fetch {@code menus} here to avoid multiple-bag fetch issues.
+     */
+    @Query("select distinct d from Dish d left join fetch d.tags where d.isAvailable = true")
+    List<Dish> findAvailableWithTags();
+
+    @Query("select distinct d from Dish d left join fetch d.tags")
+    List<Dish> findAllWithTags();
+
+    @Query("select distinct d from Dish d left join fetch d.tags where d.id = :id")
+    Optional<Dish> findByIdWithTags(@Param("id") Integer id);
+
+    @Query("select distinct d from Dish d left join fetch d.tags where d.id in (:ids)")
+    List<Dish> findAllByIdWithTags(@Param("ids") Collection<Integer> ids);
 
     @Query(value = """
         WITH RecentDishes AS (

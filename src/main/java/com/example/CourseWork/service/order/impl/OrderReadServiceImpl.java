@@ -60,7 +60,7 @@ public class OrderReadServiceImpl implements OrderReadService {
        @Transactional
     @Override
     public Page<OrderResponseDto> getAllOrders(Pageable pageable) {
-        Page<OrderResponseDto> page = orderRepository.findAllByOrderByCreatedAtDesc(pageable)
+        Page<OrderResponseDto> page = orderRepository.findPageWithItemsAndDishesAllByOrderByCreatedAtDesc(pageable)
                 .map(orderMapper::toResponseDto);
         enrichOrdersWithReviews(page.getContent());
         return page;
@@ -72,14 +72,14 @@ public class OrderReadServiceImpl implements OrderReadService {
             Pageable pageable, OrderStatus status, PaymentStatus paymentStatus) {
         Page<Order> raw;
         if (status != null && paymentStatus != null) {
-            raw = orderRepository.findByStatusAndPaymentStatusOrderByCreatedAtDesc(
+            raw = orderRepository.findPageWithItemsAndDishesByStatusAndPaymentStatusOrderByCreatedAtDesc(
                     status, paymentStatus, pageable);
         } else if (status != null) {
-            raw = orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
+            raw = orderRepository.findPageWithItemsAndDishesByStatusOrderByCreatedAtDesc(status, pageable);
         } else if (paymentStatus != null) {
-            raw = orderRepository.findByPaymentStatusOrderByCreatedAtDesc(paymentStatus, pageable);
+            raw = orderRepository.findPageWithItemsAndDishesByPaymentStatusOrderByCreatedAtDesc(paymentStatus, pageable);
         } else {
-            raw = orderRepository.findAllByOrderByCreatedAtDesc(pageable);
+            raw = orderRepository.findPageWithItemsAndDishesAllByOrderByCreatedAtDesc(pageable);
         }
         Page<OrderResponseDto> page = raw.map(orderMapper::toResponseDto);
         enrichOrdersWithReviews(page.getContent());
@@ -98,7 +98,7 @@ public class OrderReadServiceImpl implements OrderReadService {
     @Override
     public OrderResponseDto getOrderById(Integer id) {
         @SuppressWarnings("null")
-        Order order = orderRepository.findById(id)
+        Order order = orderRepository.findByIdWithItemsAndDishes(id)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
         boolean isOwner = order.getUserId().equals(currentUserIdentity.currentUserId());
@@ -115,7 +115,7 @@ public class OrderReadServiceImpl implements OrderReadService {
     @Transactional
     @Override
     public List<OrderResponseDto> getNewOrders() {
-        List<Order> newOrders = orderRepository.findAllByStatusOrderByCreatedAtDesc(OrderStatus.NEW);
+        List<Order> newOrders = orderRepository.findAllWithItemsAndDishesByStatusOrderByCreatedAtDesc(OrderStatus.NEW);
         return newOrders.stream().map(orderMapper::toResponseDto).toList();
     }
 
@@ -133,7 +133,7 @@ public class OrderReadServiceImpl implements OrderReadService {
     @Override
     public Optional<OrderResponseDto> getMyActiveOrder(String userId) {
         List<OrderStatus> activeStatuses = List.of(OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY);
-        Optional<OrderResponseDto> dto = orderRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
+        Optional<OrderResponseDto> dto = orderRepository.findAllWithItemsAndDishesByUserIdOrderByCreatedAtDesc(userId).stream()
                 .filter(o -> activeStatuses.contains(o.getStatus()))
                 .findFirst()
                 .map(orderMapper::toResponseDto)
@@ -145,7 +145,7 @@ public class OrderReadServiceImpl implements OrderReadService {
     @Transactional(readOnly = true)
     @Override
     public Page<OrderResponseDto> getOrderHistory(String userId, Pageable pageable) {
-        Page<OrderResponseDto> page = orderRepository.findAllByUserIdOrderByCreatedAtDesc(userId, pageable)
+        Page<OrderResponseDto> page = orderRepository.findPageWithItemsAndDishesByUserIdOrderByCreatedAtDesc(userId, pageable)
                 .map(orderMapper::toResponseDto);
         enrichOrdersWithReviews(page.getContent());
         return page;
@@ -170,7 +170,7 @@ public class OrderReadServiceImpl implements OrderReadService {
         }
 
         @SuppressWarnings("null")
-        Order order = orderRepository.findById(orderId)
+        Order order = orderRepository.findByIdWithItemsAndDishes(orderId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
         if (newStatus == OrderStatus.READY && order.getPaymentStatus() != null

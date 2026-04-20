@@ -67,7 +67,7 @@ public class OrderItemServiceImpl implements OrderItemService {
     @Transactional
     @Override
     public OrderResponseDto confirmOrderFromCart(String userId, Integer tableNumber) {
-        Cart cart = cartRepository.findByUserId(userId)
+        Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.CART_NOT_FOUND));
 
         if (cart.getItems().isEmpty()) {
