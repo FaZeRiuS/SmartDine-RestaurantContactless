@@ -933,15 +933,12 @@ function initMobileSiteTabSwipe() {
         // Decide axis with small deadzone to avoid jitter.
         if (!axis) {
             if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-            axis = Math.abs(dx) >= Math.abs(dy) * 1.1 ? 'x' : 'y';
+            axis = Math.abs(dx) >= Math.abs(dy) * 1.15 ? 'x' : 'y';
         }
 
-        // If user is scrolling vertically, stop tracking so we don't hijack the page.
+        // If user is scrolling vertically, do not prevent defaults.
+        // Keep tracking though: diagonal swipes can start vertical then become horizontal.
         if (axis === 'y') {
-            if (Math.abs(dy) > 14) {
-                tracking = false;
-                activePointerId = null;
-            }
             return;
         }
 
