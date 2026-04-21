@@ -151,6 +151,22 @@ public class HtmxCartController {
         return "fragments/cart :: content";
     }
 
+    @PutMapping("/items/{itemId}/special-request")
+    public String updateCartItemSpecialRequest(
+            @PathVariable Integer itemId,
+            @RequestParam(required = false, defaultValue = "") String specialRequest,
+            Model model) {
+        CartResponseDto cart = cartService.updateCartItemSpecialRequest(
+                currentUserIdentity.currentUserId(),
+                itemId,
+                specialRequest
+        );
+        model.addAttribute("cart", cart);
+        model.addAttribute("cartTotal", cartTotal(cart));
+        model.addAttribute("cartCount", cartCount(cart));
+        return "fragments/cart :: content";
+    }
+
     @GetMapping("/content")
     public String getCartContent(Model model) {
         CartResponseDto cart = cartService.getCartByUserId(currentUserIdentity.currentUserId());

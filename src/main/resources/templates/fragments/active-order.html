@@ -22,58 +22,61 @@
                 <div id="activeOrderItems" th:if="${activeOrder.items != null}">
                     <div class="cart-item" th:each="item : ${activeOrder.items}">
                         <div class="cart-item-info">
-                            <div class="cart-item-name" th:text="${item.dishName}">Dish</div>
-                            <th:block th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
-                                <input type="text"
-                                       class="form-input cart-item-special-input text-xs w-full mt-1"
-                                       name="specialRequest"
-                                       th:value="${item.specialRequest}"
-                                       placeholder="Особливі побажання..."
-                                       th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/special-request(oid=${activeOrder.id},iid=${item.id},home=${homeActiveOrderWidget})}"
-                                       hx-trigger="blur changed delay:200ms"
-                                       hx-include="this"
-                                       hx-target="#activeOrderContainer"
-                                       hx-swap="innerHTML"/>
-                            </th:block>
-                            <th:block th:unless="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
-                                <div class="cart-item-special"
-                                     th:if="${item.specialRequest != null && !#strings.isEmpty(item.specialRequest)}"
-                                     th:text="${'💬 ' + item.specialRequest}">special</div>
-                            </th:block>
+                            <div class="d-flex align-center justify-between w-full">
+                                <div class="cart-item-name" th:text="${item.dishName}">Dish</div>
+                                <div class="cart-item-price text-gold fw-700"
+                                     th:text="${item.price != null && item.quantity != null ? #numbers.formatDecimal(item.price * item.quantity, 1, 2) + ' грн' : '—'}">0 грн</div>
+                            </div>
                         </div>
-                            <div class="cart-item-actions-row d-flex align-center justify-between w-full mt-1 pt-1"
-                                 style="border-top: 1px solid rgba(255,255,255,0.03);">
-                                <div class="cart-item-controls d-flex align-center gap-2">
-                                    <div class="qty-control" th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
-                                        <button type="button"
-                                                class="qty-btn"
-                                                th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/quantity(oid=${activeOrder.id},iid=${item.id},quantity=${item.quantity - 1},home=${homeActiveOrderWidget})}"
-                                                hx-target="#activeOrderContainer"
-                                                hx-swap="innerHTML"
-                                                th:disabled="${item.quantity == null || item.quantity <= 1}">−</button>
-                                        <div class="qty-value" th:text="${item.quantity}">1</div>
-                                        <button type="button"
-                                                class="qty-btn"
-                                                th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/quantity(oid=${activeOrder.id},iid=${item.id},quantity=${item.quantity + 1},home=${homeActiveOrderWidget})}"
-                                                hx-target="#activeOrderContainer"
-                                                hx-swap="innerHTML">+</button>
-                                    </div>
-                                    <div th:unless="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}"
-                                         class="cart-item-qty text-sm fw-600">
-                                        × <span th:text="${item.quantity}">1</span>
-                                    </div>
+                        <div class="cart-item-actions-row d-flex align-center justify-between w-full mt-1 pt-1"
+                             style="border-top: 1px solid rgba(255,255,255,0.03);">
+                            <div class="cart-item-controls d-flex align-center gap-2">
+                                <div class="qty-control" th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
                                     <button type="button"
-                                            class="btn btn-sm"
-                                            style="color: var(--danger-color); background: transparent; border: 1px solid var(--danger-color);"
-                                            th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}"
-                                            th:attr="hx-delete=@{/htmx/orders/{oid}/items/{iid}(oid=${activeOrder.id},iid=${item.id},home=${homeActiveOrderWidget})}"
+                                            class="qty-btn"
+                                            th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/quantity(oid=${activeOrder.id},iid=${item.id},quantity=${item.quantity - 1},home=${homeActiveOrderWidget})}"
                                             hx-target="#activeOrderContainer"
                                             hx-swap="innerHTML"
-                                            hx-confirm="Видалити цю страву?">&#128465;&#65039;</button>
+                                            th:disabled="${item.quantity == null || item.quantity <= 1}">−</button>
+                                    <div class="qty-value" th:text="${item.quantity}">1</div>
+                                    <button type="button"
+                                            class="qty-btn"
+                                            th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/quantity(oid=${activeOrder.id},iid=${item.id},quantity=${item.quantity + 1},home=${homeActiveOrderWidget})}"
+                                            hx-target="#activeOrderContainer"
+                                            hx-swap="innerHTML">+</button>
                                 </div>
-                            <div class="cart-item-price text-gold fw-700"
-                                 th:text="${item.price != null && item.quantity != null ? #numbers.formatDecimal(item.price * item.quantity, 1, 2) + ' грн' : '—'}">0 грн</div>
+                                <div th:unless="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}"
+                                     class="cart-item-qty text-sm fw-600">
+                                    × <span th:text="${item.quantity}">1</span>
+                                </div>
+                                <button type="button"
+                                        class="btn btn-sm"
+                                        style="color: var(--danger-color); background: transparent; border: 1px solid var(--danger-color);"
+                                        th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}"
+                                        th:attr="hx-delete=@{/htmx/orders/{oid}/items/{iid}(oid=${activeOrder.id},iid=${item.id},home=${homeActiveOrderWidget})}"
+                                        hx-target="#activeOrderContainer"
+                                        hx-swap="innerHTML"
+                                        hx-confirm="Видалити цю страву?">&#128465;&#65039;</button>
+                            </div>
                         </div>
+
+                        <th:block th:if="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
+                            <input type="text"
+                                   class="form-input cart-item-special-input text-xs w-full mt-1"
+                                   name="specialRequest"
+                                   th:value="${item.specialRequest}"
+                                   placeholder="Особливі побажання..."
+                                   th:attr="hx-put=@{/htmx/orders/{oid}/items/{iid}/special-request(oid=${activeOrder.id},iid=${item.id},home=${homeActiveOrderWidget})}"
+                                   hx-trigger="blur changed delay:200ms"
+                                   hx-include="this"
+                                   hx-target="#activeOrderContainer"
+                                   hx-swap="innerHTML"/>
+                        </th:block>
+                        <th:block th:unless="${activeOrder.status.name() == 'NEW' and activeOrder.paymentStatus.name() != 'SUCCESS'}">
+                            <div class="cart-item-special"
+                                 th:if="${item.specialRequest != null && !#strings.isEmpty(item.specialRequest)}"
+                                 th:text="${'💬 ' + item.specialRequest}">special</div>
+                        </th:block>
                     </div>
                 </div>
             </div>

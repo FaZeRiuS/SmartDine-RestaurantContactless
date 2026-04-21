@@ -38,6 +38,26 @@
                          th:text="${item.specialRequest}">
                         Special request
                     </div>
+                    <div class="mt-1">
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                style="padding: 6px 10px;"
+                                th:text="${item.specialRequest != null && !#strings.isEmpty(item.specialRequest)} ? 'Редагувати побажання' : 'Додати побажання'"
+                                th:attr="onclick=|var el=document.getElementById('sr-input-${item.id}'); if(el){el.classList.toggle('hidden'); if(!el.classList.contains('hidden')){el.focus();}}|">
+                            Додати побажання
+                        </button>
+                        <input type="text"
+                               class="form-input text-xs w-full mt-1 hidden"
+                               th:id="${'sr-input-' + item.id}"
+                               name="specialRequest"
+                               th:value="${item.specialRequest}"
+                               placeholder="Особливі побажання..."
+                               th:attr="hx-put=@{'/htmx/cart/items/' + ${item.id} + '/special-request'}"
+                               hx-trigger="blur changed delay:200ms"
+                               hx-include="this"
+                               hx-target="#cartContent"
+                               hx-swap="innerHTML"/>
+                    </div>
                 </div>
 
                 <div class="cart-item-qty">
