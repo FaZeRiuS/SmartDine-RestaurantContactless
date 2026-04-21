@@ -27,11 +27,6 @@
         <div class="menu-tabs mb-4" th:if="${menus != null && !menus.isEmpty()}"
              data-swipe-target="#menuCategoriesRoot"
              aria-label="Категорії меню">
-            <button type="button" class="menu-tab" th:classappend="${selectedMenuId == null ? 'active' : ''}"
-                    th:attr="hx-get=@{/htmx/menu/categories-body(filter='all',view='menu')}"
-                    hx-target="#menuCategoriesRoot"
-                    hx-swap="innerHTML"
-                    hx-on:click="document.querySelectorAll('.menu-tabs .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">Усі категорії</button>
             <button type="button" class="menu-tab" th:each="menu : ${menus}"
                     th:classappend="${selectedMenuId != null && selectedMenuId == menu.id ? 'active' : ''}"
                     th:text="${menu.name}"
@@ -41,10 +36,17 @@
                     hx-on:click="document.querySelectorAll('.menu-tabs .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">
                 Категорія
             </button>
+            <button type="button" class="menu-tab"
+                    th:classappend="${selectedMenuId == null ? 'active' : ''}"
+                    th:attr="hx-get=@{/htmx/menu/categories-body(filter='all',view='menu')}"
+                    hx-target="#menuCategoriesRoot"
+                    hx-swap="innerHTML"
+                    hx-on:click="document.querySelectorAll('.menu-tabs .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">Усі категорії</button>
         </div>
 
         <div id="menuCategoriesRoot"
-             hx-get="/htmx/menu/categories-body?filter=all&view=menu"
+             th:if="${firstMenuId != null || selectedMenuId != null}"
+             th:attr="hx-get=@{/htmx/menu/categories-body(filter=${selectedMenuId != null ? selectedMenuId : firstMenuId},view='menu')}"
              hx-trigger="load"
              hx-swap="innerHTML">
             <div class="empty-state p-3">
@@ -56,6 +58,9 @@
             <div class="empty-state-icon">📋</div>
             <h3>Меню поки порожнє</h3>
             <p class="text-muted">Меню ресторану ще не налаштовано</p>
+        </div>
+        <div class="empty-state p-3" th:if="${menus != null && !menus.isEmpty() && selectedMenuId == null && firstMenuId == null}">
+            <p class="text-muted">Меню зараз недоступне за часом</p>
         </div>
     </div>
 </main>

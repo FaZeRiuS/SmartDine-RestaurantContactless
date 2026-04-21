@@ -178,6 +178,8 @@ public class PageController {
 
         model.addAttribute("menus", displayMenus);
         model.addAttribute("selectedMenuId", id);
+        Integer firstMenuId = displayMenus.isEmpty() ? null : displayMenus.get(0).getId();
+        model.addAttribute("firstMenuId", firstMenuId);
 
         Optional<OrderResponseDto> activeOrderOpt = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
         boolean hasActivePaidOrder = activeOrderOpt.isPresent() && 
