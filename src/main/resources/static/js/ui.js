@@ -852,6 +852,7 @@ function initMobileSiteTabSwipe() {
     let tracking = false;
     let startTime = 0;
     let activePointerId = null;
+    let axis = null; // 'x' | 'y' | null
 
     const normalizePath = (p) => {
         const s = String(p || '/');
@@ -895,7 +896,15 @@ function initMobileSiteTabSwipe() {
         if (t.closest && t.closest('.menu-tabs')) return true;
         // Don't hijack toast swipe-to-dismiss (toast lives in fixed overlay).
         if (t.closest && t.closest('.toast, .toast-container, #toastContainer')) return true;
-        if (t.closest && t.closest('a, button, input, textarea, select, label')) return true;
+        // Allow starting swipe on buttons/links (otherwise almost the whole UI blocks swipe),
+        // but keep text inputs/selects safe so users can scroll/select/caret-move normally.
+        if (t.closest && t.closest('input, textarea, select')) return true;
+        try {
+            if (t.isContentEditable) return true;
+            if (t.closest && t.closest('[contenteditable="true"]')) return true;
+        } catch (e) { /* ignore */ }
+        // Manual opt-out escape hatch for specific widgets.
+        if (t.closest && t.closest('[data-no-site-swipe="1"]')) return true;
         // If any ancestor is a horizontal scroller, ignore
         let el = t;
         for (let i = 0; i < 6 && el; i++) {
@@ -913,6 +922,34 @@ function initMobileSiteTabSwipe() {
         startTime = Date.now();
         tracking = true;
         activePointerId = pointerId;
+        axis = null;
+    };
+
+    const onMove = (x, y, evt = null) => {
+        if (!tracking) return;
+        const dx = x - startX;
+        const dy = y - startY;
+
+        // Decide axis with small deadzone to avoid jitter.
+        if (!axis) {
+            if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+            axis = Math.abs(dx) >= Math.abs(dy) * 1.1 ? 'x' : 'y';
+        }
+
+        // If user is scrolling vertically, stop tracking so we don't hijack the page.
+        if (axis === 'y') {
+            if (Math.abs(dy) > 14) {
+                tracking = false;
+                activePointerId = null;
+            }
+            return;
+        }
+
+        // Horizontal gesture: prevent text selection / native panning when possible.
+        // Important: only do this once we know it's a horizontal swipe.
+        try {
+            if (evt && evt.cancelable) evt.preventDefault();
+        } catch (e) { /* ignore */ }
     };
 
     const onEnd = (x, y) => {
@@ -959,6 +996,13 @@ function initMobileSiteTabSwipe() {
         onStart(e.clientX, e.clientY, e.target, e.pointerId, (typeof e.composedPath === 'function' ? e.composedPath() : null));
     }, { passive: true, capture: true });
 
+    document.addEventListener('pointermove', (e) => {
+        if (!e || e.pointerType !== 'touch') return;
+        if (!tracking) return;
+        if (activePointerId != null && e.pointerId !== activePointerId) return;
+        onMove(e.clientX, e.clientY, e);
+    }, { passive: false, capture: true });
+
     document.addEventListener('pointerup', (e) => {
         if (!e || e.pointerType !== 'touch') return;
         if (activePointerId != null && e.pointerId !== activePointerId) return;
@@ -976,6 +1020,12 @@ function initMobileSiteTabSwipe() {
         if (!t) return;
         onStart(t.clientX, t.clientY, e.target, null, (typeof e.composedPath === 'function' ? e.composedPath() : null));
     }, { passive: true, capture: true });
+
+    document.addEventListener('touchmove', (e) => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        onMove(t.clientX, t.clientY, e);
+    }, { passive: false, capture: true });
 
     document.addEventListener('touchend', (e) => {
         const t = e.changedTouches && e.changedTouches[0];
