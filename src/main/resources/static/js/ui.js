@@ -41,14 +41,10 @@ function initSharedUI() {
             mutations.forEach((mutation) => {
                 mutation.addedNodes.forEach((node) => {
                     if (node.nodeType === 1 && node.classList.contains('toast')) {
+                        // Swipe-to-dismiss for HTMX OOB inserted toasts too.
+                        try { attachToastSwipeToDismiss(node); } catch (e) { /* ignore */ }
                         // Auto-remove after 6 seconds if not already being handled
-                        setTimeout(() => {
-                            if (node.parentElement) {
-                                node.style.opacity = '0';
-                                node.style.transform = 'translateY(10px)';
-                                setTimeout(() => node.remove(), 400);
-                            }
-                        }, 6000);
+                        scheduleToastAutoDismiss(node, 6000);
                     }
                 });
             });
@@ -182,6 +178,213 @@ function escapeHtml(str) {
         .replaceAll("'", '&#39;');
 }
 
+// ── Toast helpers (shared for JS + HTMX OOB) ──────────────────────────────────
+
+function scheduleToastAutoDismiss(toastEl, ms) {
+    try {
+        if (!toastEl) return;
+        const existing = toastEl.__toastAutoTimer;
+        if (existing) clearTimeout(existing);
+        toastEl.__toastAutoTimer = setTimeout(() => {
+            if (!toastEl || !toastEl.parentElement) return;
+            dismissToast(toastEl, { reason: 'timeout', direction: 'down' });
+        }, ms);
+    } catch (e) { /* ignore */ }
+}
+
+function dismissToast(toastEl, { reason = 'manual', direction = 'right' } = {}) {
+    try {
+        if (!toastEl || toastEl.__toastDismissing) return;
+        toastEl.__toastDismissing = true;
+        if (toastEl.__toastAutoTimer) {
+            clearTimeout(toastEl.__toastAutoTimer);
+            toastEl.__toastAutoTimer = null;
+        }
+
+        // Respect current X translation if mid-drag; default to 0.
+        const dx = typeof toastEl.__toastDx === 'number' ? toastEl.__toastDx : 0;
+        const w = Math.max(1, toastEl.getBoundingClientRect().width || 1);
+        const sign = dx !== 0 ? Math.sign(dx) : (direction === 'left' ? -1 : 1);
+
+        let endTransform = '';
+        if (direction === 'down') {
+            endTransform = 'translateY(10px)';
+        } else {
+            endTransform = `translateX(${sign * (w + 40)}px)`;
+        }
+
+        toastEl.classList.remove('toast--dragging');
+        toastEl.style.transition = 'transform 240ms ease, opacity 240ms ease';
+        toastEl.style.opacity = '0';
+        toastEl.style.transform = endTransform;
+
+        setTimeout(() => {
+            try { toastEl.remove(); } catch (e) { /* ignore */ }
+        }, 260);
+    } catch (e) {
+        try { toastEl.remove(); } catch (err) { /* ignore */ }
+    }
+}
+
+function attachToastSwipeToDismiss(toastEl) {
+    if (!toastEl || toastEl.dataset.toastSwipeInit === '1') return;
+    toastEl.dataset.toastSwipeInit = '1';
+
+    // Avoid fighting with action button clicks.
+    const shouldIgnoreTarget = (t) => {
+        try {
+            if (!t || !t.closest) return false;
+            return !!t.closest('button, a, input, textarea, select, label');
+        } catch (e) {
+            return false;
+        }
+    };
+
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    let pointerId = null;
+    let startTime = 0;
+    let axis = null; // 'x' | 'y' | null
+
+    const threshold = () => {
+        const w = toastEl.getBoundingClientRect().width || 320;
+        return Math.max(70, Math.min(140, w * 0.35));
+    };
+
+    const thresholdY = () => {
+        // A bit smaller than horizontal threshold to feel natural.
+        return 80;
+    };
+
+    const onStart = (x, y, pid) => {
+        startX = x;
+        startY = y;
+        startTime = Date.now();
+        tracking = true;
+        pointerId = pid;
+        toastEl.__toastDx = 0;
+        toastEl.__toastDy = 0;
+        axis = null;
+        toastEl.classList.add('toast--dragging');
+        toastEl.style.transition = 'none';
+    };
+
+    const onMove = (x, y) => {
+        if (!tracking) return;
+        const dx = x - startX;
+        const dy = y - startY;
+        // Decide axis after a small deadzone to avoid jitter.
+        if (!axis) {
+            if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+            if (Math.abs(dx) >= Math.abs(dy) * 1.1) axis = 'x';
+            else if (Math.abs(dy) >= Math.abs(dx) * 1.1) axis = 'y';
+            else axis = 'x'; // default to horizontal if ambiguous
+        }
+
+        if (axis === 'x') {
+            toastEl.__toastDx = dx;
+            toastEl.__toastDy = 0;
+            // Slightly dampen long drags; keep it feeling elastic.
+            const damp = Math.max(0.55, 1 - Math.min(0.45, Math.abs(dx) / 800));
+            const ddx = dx * damp;
+            const w = Math.max(1, toastEl.getBoundingClientRect().width || 1);
+            const opacity = Math.max(0.35, 1 - Math.min(0.65, Math.abs(ddx) / (w * 0.9)));
+            toastEl.style.transform = `translateX(${ddx}px)`;
+            toastEl.style.opacity = String(opacity);
+            return;
+        }
+
+        // Vertical: only support swipe DOWN to dismiss; upward drags snap back.
+        toastEl.__toastDy = dy;
+        toastEl.__toastDx = 0;
+        const ddy = Math.max(0, dy); // clamp upward
+        const dampY = Math.max(0.65, 1 - Math.min(0.35, ddy / 800));
+        const dddy = ddy * dampY;
+        const h = Math.max(1, toastEl.getBoundingClientRect().height || 1);
+        const opacityY = Math.max(0.35, 1 - Math.min(0.65, dddy / (h * 2.2)));
+        toastEl.style.transform = `translateY(${dddy}px)`;
+        toastEl.style.opacity = String(opacityY);
+    };
+
+    const onEnd = () => {
+        if (!tracking) return;
+        tracking = false;
+
+        const dx = toastEl.__toastDx || 0;
+        const dy = toastEl.__toastDy || 0;
+        const dt = Math.max(1, Date.now() - startTime);
+        const vx = dx / dt; // px/ms
+        const vy = dy / dt; // px/ms
+
+        const passDistanceX = Math.abs(dx) >= threshold();
+        const passVelocityX = Math.abs(vx) >= 0.65;
+
+        const passDistanceY = dy >= thresholdY();
+        const passVelocityY = vy >= 0.9; // only downward; "flick down"
+
+        if (axis === 'y' && (passDistanceY || passVelocityY)) {
+            dismissToast(toastEl, { reason: 'swipe', direction: 'down' });
+            return;
+        }
+
+        if (axis !== 'y' && (passDistanceX || passVelocityX)) {
+            dismissToast(toastEl, { reason: 'swipe', direction: dx < 0 ? 'left' : 'right' });
+            return;
+        }
+
+        // Snap back.
+        toastEl.classList.remove('toast--dragging');
+        toastEl.style.transition = 'transform 180ms ease, opacity 180ms ease';
+        toastEl.style.transform = '';
+        toastEl.style.opacity = '';
+        setTimeout(() => {
+            if (!toastEl || !toastEl.parentElement || toastEl.__toastDismissing) return;
+            toastEl.style.transition = '';
+        }, 200);
+    };
+
+    // Pointer Events (mouse + touch)
+    toastEl.addEventListener('pointerdown', (e) => {
+        try {
+            if (!e || (e.button != null && e.button !== 0)) return;
+            if (shouldIgnoreTarget(e.target)) return;
+            pointerId = e.pointerId;
+            toastEl.setPointerCapture(pointerId);
+            onStart(e.clientX, e.clientY, pointerId);
+        } catch (err) { /* ignore */ }
+    });
+
+    toastEl.addEventListener('pointermove', (e) => {
+        if (!tracking) return;
+        if (pointerId != null && e.pointerId !== pointerId) return;
+        onMove(e.clientX, e.clientY);
+    });
+
+    const endLike = () => {
+        try { onEnd(); } catch (e) { /* ignore */ }
+        pointerId = null;
+    };
+
+    toastEl.addEventListener('pointerup', (e) => {
+        if (pointerId != null && e.pointerId !== pointerId) return;
+        endLike();
+    });
+    toastEl.addEventListener('pointercancel', (e) => {
+        if (pointerId != null && e.pointerId !== pointerId) return;
+        endLike();
+    });
+
+    // Also allow tap-to-dismiss (nice for desktop); don't steal button taps.
+    toastEl.addEventListener('click', (e) => {
+        if (toastEl.__toastDismissing) return;
+        if (shouldIgnoreTarget(e.target)) return;
+        // If it was a drag, click might fire after pointerup — ignore when dragged.
+        if (Math.abs(toastEl.__toastDx || 0) > 8) return;
+        dismissToast(toastEl, { reason: 'tap', direction: 'right' });
+    });
+}
+
 /**
  * Advanced Toast Notification System
  * @param {string} message - Text to display
@@ -217,19 +420,14 @@ function showToast(message, type = 'info', action = null) {
     }
     
     container.appendChild(toast);
+    try { attachToastSwipeToDismiss(toast); } catch (e) { /* ignore */ }
 
     if (window.twemoji && typeof window.twemoji.parse === 'function') {
         window.twemoji.parse(toast, { folder: 'svg', ext: '.svg', className: 'twemoji' });
     }
     
     const duration = action ? 8000 : 4000;
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(10px)';
-            setTimeout(() => toast.remove(), 300);
-        }
-    }, duration);
+    scheduleToastAutoDismiss(toast, duration);
 }
 
 window.showToast = showToast;

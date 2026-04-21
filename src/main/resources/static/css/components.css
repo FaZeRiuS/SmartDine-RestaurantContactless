@@ -483,6 +483,14 @@
     border: 1px solid rgba(255, 255, 255, 0.14);
     color: var(--text-primary);
     transition: all var(--transition);
+    /* Allow vertical scroll gestures to pass, but keep horizontal swipes for dismiss. */
+    touch-action: pan-y;
+    will-change: transform, opacity;
+}
+
+.toast.toast--dragging {
+    /* While dragging we manage transform/opacity in JS, so disable the “all” transition to avoid lag. */
+    transition: none !important;
 }
 
 .ui-ready .toast {
