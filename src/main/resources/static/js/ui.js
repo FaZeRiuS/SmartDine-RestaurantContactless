@@ -208,7 +208,8 @@ function dismissToast(toastEl, { reason = 'manual', direction = 'right' } = {}) 
 
         let endTransform = '';
         if (direction === 'down') {
-            endTransform = 'translateY(10px)';
+            const h = Math.max(1, toastEl.getBoundingClientRect().height || 1);
+            endTransform = `translateY(${h + 60}px)`;
         } else {
             endTransform = `translateX(${sign * (w + 40)}px)`;
         }
@@ -252,10 +253,7 @@ function attachToastSwipeToDismiss(toastEl) {
         return Math.max(70, Math.min(140, w * 0.35));
     };
 
-    const thresholdY = () => {
-        // A bit smaller than horizontal threshold to feel natural.
-        return 80;
-    };
+    const thresholdY = () => 56;
 
     const onStart = (x, y, pid) => {
         startX = x;
@@ -277,9 +275,9 @@ function attachToastSwipeToDismiss(toastEl) {
         // Decide axis after a small deadzone to avoid jitter.
         if (!axis) {
             if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-            if (Math.abs(dx) >= Math.abs(dy) * 1.1) axis = 'x';
-            else if (Math.abs(dy) >= Math.abs(dx) * 1.1) axis = 'y';
-            else axis = 'x'; // default to horizontal if ambiguous
+            // Slight preference to vertical when the gesture is clearly down/up.
+            if (Math.abs(dy) > Math.abs(dx) * 1.05) axis = 'y';
+            else axis = 'x';
         }
 
         if (axis === 'x') {
@@ -321,7 +319,7 @@ function attachToastSwipeToDismiss(toastEl) {
         const passVelocityX = Math.abs(vx) >= 0.65;
 
         const passDistanceY = dy >= thresholdY();
-        const passVelocityY = vy >= 0.9; // only downward; "flick down"
+        const passVelocityY = vy >= 0.6; // only downward; "flick down"
 
         if (axis === 'y' && (passDistanceY || passVelocityY)) {
             dismissToast(toastEl, { reason: 'swipe', direction: 'down' });
@@ -877,6 +875,8 @@ function initMobileSiteTabSwipe() {
         if (!target) return false;
         // Don't hijack swipes meant for tablists / horizontal scrollers / interactive controls
         if (target.closest && target.closest('.menu-tabs')) return true;
+        // Don't hijack toast swipe-to-dismiss (toast lives in fixed overlay).
+        if (target.closest && target.closest('.toast, .toast-container, #toastContainer')) return true;
         if (target.closest && target.closest('a, button, input, textarea, select, label')) return true;
         // If any ancestor is a horizontal scroller, ignore
         let el = target;
