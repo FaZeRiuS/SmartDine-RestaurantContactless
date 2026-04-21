@@ -71,6 +71,7 @@ body {
     font-weight: 400;
     overflow-x: hidden;
     text-rendering: optimizeSpeed;
+    touch-action: pan-y;
 }
 
 img {
