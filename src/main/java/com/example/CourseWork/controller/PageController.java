@@ -184,17 +184,6 @@ public class PageController {
                 com.example.CourseWork.model.PaymentStatus.SUCCESS.equals(activeOrderOpt.get().getPaymentStatus());
         model.addAttribute("hasActivePaidOrder", hasActivePaidOrder);
 
-        List<MenuWithDishesDto> menusForBody;
-        if (id != null) {
-            menusForBody = displayMenus.stream()
-                    .filter(m -> id.equals(m.getId()))
-                    .collect(Collectors.toList());
-        } else {
-            menusForBody = displayMenus;
-        }
-        model.addAttribute("menusForBody", menusForBody);
-        model.addAttribute("menuView", "menu");
-
         return "menu";
     }
 

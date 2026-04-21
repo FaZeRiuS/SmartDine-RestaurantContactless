@@ -43,8 +43,13 @@
             </button>
         </div>
 
-        <div id="menuCategoriesRoot" hx-swap="innerHTML">
-            <th:block th:with="menus=${menusForBody}" th:replace="~{fragments/public-menu-categories :: categoryBodies}"/>
+        <div id="menuCategoriesRoot"
+             hx-get="/htmx/menu/categories-body?filter=all&view=menu"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="empty-state p-3">
+                <p class="text-muted">Завантаження меню…</p>
+            </div>
         </div>
 
         <div class="empty-state" th:if="${menus == null || menus.isEmpty()}">
