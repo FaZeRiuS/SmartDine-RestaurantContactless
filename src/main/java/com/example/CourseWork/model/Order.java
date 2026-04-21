@@ -73,6 +73,11 @@ public class Order {
     @ToString.Include
     private BigDecimal tipAmount = BigDecimal.ZERO;
 
+    @NotNull
+    @Column(name = "tip_opt_out", nullable = false)
+    @ToString.Include
+    private boolean tipOptOut = false;
+
     @Positive
     @Column(name = "table_number")
     @ToString.Include

@@ -86,66 +86,12 @@
                           th:text="${amt != null ? #numbers.formatDecimal(amt, 1, 2) + ' грн' : '0.00 грн'}">0.00 грн</span>
                 </div>
 
-                <details id="loyaltyAccordion" class="accordion"
-                         sec:authorize="hasRole('CUSTOMER')"
-                         th:if="${activeOrder.paymentStatus.name() != 'SUCCESS'}">
-                    <summary class="accordion-summary">Бали лояльності</summary>
-                    <div id="loyaltySection" class="cart-summary mt-1 p-1">
-                        <div class="d-flex flex-column gap-1">
-                            <div>
-                                <div class="text-muted text-sm">
-                                    Доступно:
-                                    <span id="loyaltyBalance"
-                                          th:text="${loyaltyBalance != null ? #numbers.formatDecimal(loyaltyBalance, 1, 2) : '—'}">—</span> грн • макс. 50%
-                                </div>
-                                <div class="text-muted text-xs">
-                                    Застосовано:
-                                    <span id="loyaltyApplied"
-                                          th:text="${activeOrder.loyaltyDiscount != null ? #numbers.formatDecimal(activeOrder.loyaltyDiscount, 1, 2) : '0.00'}">0.00</span> грн
-                                </div>
-                            </div>
-                            <form class="d-flex flex-column gap-1"
-                                  th:attr="hx-post=@{/htmx/orders/{id}/loyalty/apply(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
-                                  hx-target="#activeOrderContainer"
-                                  hx-swap="innerHTML">
-                                <input id="loyaltyAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
-                                       name="amount"
-                                       placeholder="Сума грн"
-                                       th:value="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0 ? #numbers.formatDecimal(activeOrder.loyaltyDiscount, 1, 2) : ''}"/>
-                                <div class="d-flex gap-1">
-                                    <button class="btn btn-primary btn-sm flex-1" type="submit"
-                                            data-toast-pending="Застосовуємо бали лояльності..."
-                                            data-toast-success="Бали лояльності застосовано"
-                                            data-toast-success-type="success">Застосувати</button>
-                                </div>
-                            </form>
-                            <form th:attr="hx-post=@{/htmx/orders/{id}/loyalty/apply(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
-                                  hx-target="#activeOrderContainer"
-                                  hx-swap="innerHTML">
-                                <input type="hidden" name="amount" value="0"/>
-                                <button class="btn btn-secondary btn-sm w-full" type="submit"
-                                        data-toast-pending="Скасовуємо бали лояльності..."
-                                        data-toast-success="Бали лояльності скасовано"
-                                        data-toast-success-type="success">Скасувати бали</button>
-                            </form>
-                            <div id="loyaltyHint" class="text-muted text-xs">
-                                <th:block th:if="${cashbackRate != null}">
-                                    Ваш кешбек зараз: <span th:text="${#numbers.formatInteger(cashbackRate * 100, 1)}">1</span>%.
-                                </th:block>
-                                <th:block th:if="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0}">
-                                    Знижка балами застосована.
-                                </th:block>
-                                <th:block th:unless="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0}">
-                                    Вкажіть суму балів, щоб покрити частину замовлення (до 50%).
-                                </th:block>
-                            </div>
-                        </div>
-                    </div>
-                </details>
-
                 <details id="tipsAccordion" class="accordion"
                          th:if="${activeOrder.paymentStatus.name() != 'SUCCESS'}">
-                    <summary class="accordion-summary">Чайові</summary>
+                    <summary class="accordion-summary"
+                             th:text="${activeOrder.tipAmount != null && activeOrder.tipAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0
+                                      ? 'Чайові (застосовано ' + #numbers.formatDecimal(activeOrder.tipAmount, 1, 2) + ' грн)'
+                                      : 'Чайові'}">Чайові</summary>
                     <div id="tipsSection" class="cart-summary mt-1 p-1">
                         <div class="d-flex flex-column gap-1">
                             <div class="text-muted text-sm">Оберіть варіант чайових або введіть суму:</div>
@@ -202,6 +148,63 @@
                                       th:text="${activeOrder.tipAmount != null ? #numbers.formatDecimal(activeOrder.tipAmount, 1, 2) : '0.00'}">0.00</span> грн
                             </div>
                             <div id="tipHint" class="text-muted text-xs">Вкажіть суму чайових або оберіть готовий варіант.</div>
+                        </div>
+                    </div>
+                </details>
+
+                <details id="loyaltyAccordion" class="accordion"
+                         sec:authorize="hasRole('CUSTOMER')"
+                         th:if="${activeOrder.paymentStatus.name() != 'SUCCESS'}">
+                    <summary class="accordion-summary">Бали лояльності</summary>
+                    <div id="loyaltySection" class="cart-summary mt-1 p-1">
+                        <div class="d-flex flex-column gap-1">
+                            <div>
+                                <div class="text-muted text-sm">
+                                    Доступно:
+                                    <span id="loyaltyBalance"
+                                          th:text="${loyaltyBalance != null ? #numbers.formatDecimal(loyaltyBalance, 1, 2) : '—'}">—</span> грн • макс. 50%
+                                </div>
+                                <div class="text-muted text-xs">
+                                    Застосовано:
+                                    <span id="loyaltyApplied"
+                                          th:text="${activeOrder.loyaltyDiscount != null ? #numbers.formatDecimal(activeOrder.loyaltyDiscount, 1, 2) : '0.00'}">0.00</span> грн
+                                </div>
+                            </div>
+                            <form class="d-flex flex-column gap-1"
+                                  th:attr="hx-post=@{/htmx/orders/{id}/loyalty/apply(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                  hx-target="#activeOrderContainer"
+                                  hx-swap="innerHTML">
+                                <input id="loyaltyAmountInput" class="form-input w-full" type="number" min="0" step="0.01"
+                                       name="amount"
+                                       placeholder="Сума грн"
+                                       th:value="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0 ? #numbers.formatDecimal(activeOrder.loyaltyDiscount, 1, 2) : ''}"/>
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-primary btn-sm flex-1" type="submit"
+                                            data-toast-pending="Застосовуємо бали лояльності..."
+                                            data-toast-success="Бали лояльності застосовано"
+                                            data-toast-success-type="success">Застосувати</button>
+                                </div>
+                            </form>
+                            <form th:attr="hx-post=@{/htmx/orders/{id}/loyalty/apply(id=${activeOrder.id},home=${homeActiveOrderWidget})}"
+                                  hx-target="#activeOrderContainer"
+                                  hx-swap="innerHTML">
+                                <input type="hidden" name="amount" value="0"/>
+                                <button class="btn btn-secondary btn-sm w-full" type="submit"
+                                        data-toast-pending="Скасовуємо бали лояльності..."
+                                        data-toast-success="Бали лояльності скасовано"
+                                        data-toast-success-type="success">Скасувати бали</button>
+                            </form>
+                            <div id="loyaltyHint" class="text-muted text-xs">
+                                <th:block th:if="${cashbackRate != null}">
+                                    Ваш кешбек зараз: <span th:text="${#numbers.formatInteger(cashbackRate * 100, 1)}">1</span>%.
+                                </th:block>
+                                <th:block th:if="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0}">
+                                    Знижка балами застосована.
+                                </th:block>
+                                <th:block th:unless="${activeOrder.loyaltyDiscount != null && activeOrder.loyaltyDiscount > 0}">
+                                    Вкажіть суму балів, щоб покрити частину замовлення (до 50%).
+                                </th:block>
+                            </div>
                         </div>
                     </div>
                 </details>

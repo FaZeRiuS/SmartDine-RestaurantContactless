@@ -24,6 +24,7 @@ import com.example.CourseWork.i18n.NotificationMessages;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,6 +81,8 @@ public class OrderItemServiceImpl implements OrderItemService {
         order.setStatus(OrderStatus.NEW);
         order.setPaymentStatus(PaymentStatus.PENDING);
         order.setCreatedAt(OffsetDateTime.now());
+        order.setTipAmount(new BigDecimal("20.00"));
+        order.setTipOptOut(false);
 
         List<OrderItem> orderItems = cart.getItems().stream()
                 .map(cartItem -> {

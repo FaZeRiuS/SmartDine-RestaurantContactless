@@ -48,6 +48,7 @@ public class OrderTipServiceImpl implements OrderTipService {
             tip = TIP_MAX;
 
         order.setTipAmount(tip);
+        order.setTipOptOut(tip.compareTo(BigDecimal.ZERO) == 0);
         Order saved = orderRepository.save(order);
         return orderMapper.toResponseDto(saved);
     }
