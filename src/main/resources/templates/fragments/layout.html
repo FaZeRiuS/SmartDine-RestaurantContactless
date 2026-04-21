@@ -24,38 +24,38 @@
         <link rel="preload" as="image" th:href="${lcpImageUrl}" fetchpriority="high"
               th:attr="crossorigin=${lcpImageCrossorigin} ? 'anonymous' : null">
     </th:block>
-    <link rel="preload" th:href="@{/css/base.css(v=1.4)}" as="style">
-    <link rel="preload" th:href="@{/css/layout.css(v=1.4)}" as="style">
-    <link rel="preload" th:href="@{/css/pages.css(v=1.4)}" as="style">
+    <link rel="preload" th:href="@{/css/base.css(v=1.5)}" as="style">
+    <link rel="preload" th:href="@{/css/layout.css(v=1.5)}" as="style">
+    <link rel="preload" th:href="@{/css/pages.css(v=1.5)}" as="style">
     
     <link rel="apple-touch-icon" th:href="@{/icons/apple-touch-icon.png}">
     <link rel="icon" type="image/png" sizes="32x32" th:href="@{/icons/favicon-32x32.png}">
     <link rel="icon" type="image/png" sizes="16x16" th:href="@{/icons/favicon-16x16.png}">
     <link rel="shortcut icon" type="image/x-icon" th:href="@{/favicon.ico}">
-    <link rel="manifest" th:href="@{/manifest.json(v=1.3)}">
+    <link rel="manifest" th:href="@{/manifest.json(v=1.4)}">
     
     <!-- Critical CSS (sync, already preloaded) -->
-    <link rel="stylesheet" th:href="@{/css/base.css(v=1.4)}">
-    <link rel="stylesheet" th:href="@{/css/layout.css(v=1.4)}">
-    <link rel="stylesheet" th:href="@{/css/pages.css(v=1.4)}">
+    <link rel="stylesheet" th:href="@{/css/base.css(v=1.5)}">
+    <link rel="stylesheet" th:href="@{/css/layout.css(v=1.5)}">
+    <link rel="stylesheet" th:href="@{/css/pages.css(v=1.5)}">
 
     <!-- Non-critical CSS (async, non-blocking) -->
-    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/components.css(v=1.4)}">
-    <noscript><link rel="stylesheet" th:href="@{/css/components.css(v=1.4)}"></noscript>
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/components.css(v=1.5)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/components.css(v=1.5)}"></noscript>
 
-    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/responsive.css(v=1.4)}">
-    <noscript><link rel="stylesheet" th:href="@{/css/responsive.css(v=1.4)}"></noscript>
+    <link rel="stylesheet" media="print" onload="this.media='all'" th:href="@{/css/responsive.css(v=1.5)}">
+    <noscript><link rel="stylesheet" th:href="@{/css/responsive.css(v=1.5)}"></noscript>
 
     <link rel="stylesheet" media="print" onload="this.media='all'"
-          th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+          th:href="@{/css/admin.css(v=1.5)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
     <noscript>
-        <link rel="stylesheet" th:href="@{/css/admin.css(v=1.4)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
+        <link rel="stylesheet" th:href="@{/css/admin.css(v=1.5)}" sec:authorize="hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
     </noscript>
 
     <link rel="stylesheet" media="print" onload="this.media='all'"
-          th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
+          th:href="@{/css/dashboard.css(v=1.5)}" sec:authorize="hasRole('ADMINISTRATOR')">
     <noscript>
-        <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.4)}" sec:authorize="hasRole('ADMINISTRATOR')">
+        <link rel="stylesheet" th:href="@{/css/dashboard.css(v=1.5)}" sec:authorize="hasRole('ADMINISTRATOR')">
     </noscript>
 </head>
 <body>
@@ -219,11 +219,11 @@
     <!-- Premium emoji rendering (SVG, consistent across platforms) -->
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" defer></script>
     
-    <script th:src="@{/js/csrf.js}" defer></script>
-    <script th:src="@{/js/ui.js}" defer></script>
-    <script th:src="@{/js/htmx-bridge.js}" defer></script>
-    <script th:src="@{/js/cart.js}" defer></script>
-    <script th:src="@{/js/sse.js}" defer></script>
+    <script th:src="@{/js/csrf.js(v=1.5)}" defer></script>
+    <script th:src="@{/js/ui.js(v=1.5)}" defer></script>
+    <script th:src="@{/js/htmx-bridge.js(v=1.5)}" defer></script>
+    <script th:src="@{/js/cart.js(v=1.5)}" defer></script>
+    <script th:src="@{/js/sse.js(v=1.5)}" defer></script>
 
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', async function() {
