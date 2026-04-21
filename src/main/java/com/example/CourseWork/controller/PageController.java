@@ -82,6 +82,8 @@ public class PageController {
                 .collect(Collectors.toList());
 
         model.addAttribute("menus", activeMenus);
+        Integer firstMenuId = activeMenus.isEmpty() ? null : activeMenus.get(0).getId();
+        model.addAttribute("firstMenuId", firstMenuId);
 
         Optional<OrderResponseDto> activeOrderOpt = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
         boolean hasActivePaidOrder = activeOrderOpt.isPresent() && 
@@ -177,9 +179,10 @@ public class PageController {
                 .collect(Collectors.toList());
 
         model.addAttribute("menus", displayMenus);
-        model.addAttribute("selectedMenuId", id);
         Integer firstMenuId = displayMenus.isEmpty() ? null : displayMenus.get(0).getId();
         model.addAttribute("firstMenuId", firstMenuId);
+        Integer selectedMenuId = (id != null ? id : firstMenuId);
+        model.addAttribute("selectedMenuId", selectedMenuId);
 
         Optional<OrderResponseDto> activeOrderOpt = orderService.getMyActiveOrder(currentUserIdentity.currentUserId());
         boolean hasActivePaidOrder = activeOrderOpt.isPresent() && 

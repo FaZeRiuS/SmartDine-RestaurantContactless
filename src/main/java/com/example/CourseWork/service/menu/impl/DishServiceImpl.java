@@ -13,6 +13,7 @@ import com.example.CourseWork.service.menu.DishRatingService;
 import com.example.CourseWork.service.menu.DishService;
 import com.example.CourseWork.service.recommendation.RecommendationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class DishServiceImpl implements DishService {
     private final RecommendationService recommendationService;
 
     @Override
+    @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
     public DishResponseDto createDish(DishDto dto) {
         List<Integer> menuIds = dto.getMenuIds() == null ? Collections.emptyList() : dto.getMenuIds();
         List<Menu> menus = menuIds.isEmpty() ? Collections.emptyList() : menuRepository.findAllById(menuIds);
@@ -60,6 +62,7 @@ public class DishServiceImpl implements DishService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
     public DishResponseDto updateDish(Integer id, DishDto dto) {
         @SuppressWarnings("null")
         Dish dish = dishRepository.findById(id)
@@ -86,6 +89,7 @@ public class DishServiceImpl implements DishService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
     @SuppressWarnings("null")
     public void deleteDish(Integer id) {
         dishRepository.deleteById(id);
@@ -214,6 +218,7 @@ public class DishServiceImpl implements DishService {
         return recommendationService.getCrossSellRecommendation(dishId, existingIds);
     }
     @Override
+    @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
     public void updateDishImage(Integer id, String imageUrl) {
         @SuppressWarnings("null")
         Dish dish = dishRepository.findById(id)

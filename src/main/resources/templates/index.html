@@ -215,12 +215,8 @@
         </div>
 
         <div class="menu-tabs" data-swipe-target="#menuCategoriesRoot" aria-label="Категорії меню">
-            <button type="button" class="menu-tab active"
-                    th:attr="hx-get=@{/htmx/menu/categories-body(filter='all',view='index')}"
-                    hx-target="#menuCategoriesRoot"
-                    hx-swap="innerHTML"
-                    hx-on:click="document.querySelectorAll('#menus-overview .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">Усе</button>
             <button type="button" class="menu-tab" th:each="menu : ${menus}"
+                    th:classappend="${firstMenuId != null && firstMenuId == menu.id ? 'active' : ''}"
                     th:text="${menu.name}"
                     th:attr="hx-get=@{/htmx/menu/categories-body(filter=${menu.id},view='index')}"
                     hx-target="#menuCategoriesRoot"
@@ -228,10 +224,21 @@
                     hx-on:click="document.querySelectorAll('#menus-overview .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">
                 Категорія
             </button>
+            <button type="button" class="menu-tab"
+                    th:attr="hx-get=@{/htmx/menu/categories-body(filter='all',view='index')}"
+                    hx-target="#menuCategoriesRoot"
+                    hx-swap="innerHTML"
+                    hx-on:click="document.querySelectorAll('#menus-overview .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">Усе</button>
         </div>
 
-        <div id="menuCategoriesRoot" hx-swap="innerHTML">
-            <th:block th:with="menuView='index'" th:replace="~{fragments/public-menu-categories :: categoryBodies}"/>
+        <div id="menuCategoriesRoot"
+             th:if="${firstMenuId != null}"
+             th:attr="hx-get=@{/htmx/menu/categories-body(filter=${firstMenuId},view='index')}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="empty-state p-3">
+                <p class="text-muted">Завантаження меню…</p>
+            </div>
         </div>
     </div>
 </section>

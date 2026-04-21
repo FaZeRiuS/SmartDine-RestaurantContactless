@@ -13,6 +13,8 @@ import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.service.menu.MenuService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,6 +43,7 @@ public class MenuServiceImpl implements MenuService {
 
     @Transactional
     @Override
+    @Cacheable(cacheNames = "menusWithDishes")
     public List<MenuWithDishesDto> getAllMenusWithDishes() {
         List<Menu> menus = menuRepository.findAllWithDishes();
         if (menus.isEmpty()) {
@@ -126,6 +129,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
     public MenuResponseDto createMenu(MenuDto dto) {
         Menu menu = new Menu();
         menu.setName(dto.getName());
@@ -135,6 +139,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
     public MenuResponseDto updateMenu(Integer id, MenuDto dto) {
         @SuppressWarnings("null")
         Menu menu = menuRepository.findById(id)
@@ -147,6 +152,7 @@ public class MenuServiceImpl implements MenuService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
     @SuppressWarnings("null")
     public void deleteMenu(Integer id) {
         @SuppressWarnings("null")
