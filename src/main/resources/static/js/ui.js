@@ -871,15 +871,33 @@ function initMobileSiteTabSwipe() {
         }
     };
 
-    const shouldIgnoreStart = (target) => {
-        if (!target) return false;
+    const shouldIgnoreStart = (target, path = null) => {
+        if (!target && !path) return false;
+        // Normalize: touch events can target text nodes.
+        let t = target;
+        try {
+            if (t && t.nodeType && t.nodeType !== 1) t = t.parentElement;
+        } catch (e) { /* ignore */ }
+
+        // If we have a composedPath, it's the most reliable way to detect overlays.
+        try {
+            if (Array.isArray(path) && path.length) {
+                for (const el of path) {
+                    if (!el || !el.classList) continue;
+                    if (el.classList.contains('toast') || el.classList.contains('toast-container')) return true;
+                    if (el.id === 'toastContainer') return true;
+                }
+            }
+        } catch (e) { /* ignore */ }
+
+        if (!t) return false;
         // Don't hijack swipes meant for tablists / horizontal scrollers / interactive controls
-        if (target.closest && target.closest('.menu-tabs')) return true;
+        if (t.closest && t.closest('.menu-tabs')) return true;
         // Don't hijack toast swipe-to-dismiss (toast lives in fixed overlay).
-        if (target.closest && target.closest('.toast, .toast-container, #toastContainer')) return true;
-        if (target.closest && target.closest('a, button, input, textarea, select, label')) return true;
+        if (t.closest && t.closest('.toast, .toast-container, #toastContainer')) return true;
+        if (t.closest && t.closest('a, button, input, textarea, select, label')) return true;
         // If any ancestor is a horizontal scroller, ignore
-        let el = target;
+        let el = t;
         for (let i = 0; i < 6 && el; i++) {
             if (hasHorizontalScroll(el)) return true;
             el = el.parentElement;
@@ -887,9 +905,9 @@ function initMobileSiteTabSwipe() {
         return false;
     };
 
-    const onStart = (x, y, target, pointerId = null) => {
+    const onStart = (x, y, target, pointerId = null, path = null) => {
         if (!isTouchLike() || !isMobileWidth()) return;
-        if (shouldIgnoreStart(target)) return;
+        if (shouldIgnoreStart(target, path)) return;
         startX = x;
         startY = y;
         startTime = Date.now();
@@ -938,7 +956,7 @@ function initMobileSiteTabSwipe() {
     // Prefer Pointer Events for modern Chromium (GrapheneOS/Android), fallback to Touch Events.
     document.addEventListener('pointerdown', (e) => {
         if (!e || e.pointerType !== 'touch') return;
-        onStart(e.clientX, e.clientY, e.target, e.pointerId);
+        onStart(e.clientX, e.clientY, e.target, e.pointerId, (typeof e.composedPath === 'function' ? e.composedPath() : null));
     }, { passive: true, capture: true });
 
     document.addEventListener('pointerup', (e) => {
@@ -956,7 +974,7 @@ function initMobileSiteTabSwipe() {
     document.addEventListener('touchstart', (e) => {
         const t = e.touches && e.touches[0];
         if (!t) return;
-        onStart(t.clientX, t.clientY, e.target, null);
+        onStart(t.clientX, t.clientY, e.target, null, (typeof e.composedPath === 'function' ? e.composedPath() : null));
     }, { passive: true, capture: true });
 
     document.addEventListener('touchend', (e) => {
