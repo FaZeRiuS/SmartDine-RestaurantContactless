@@ -10,6 +10,8 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Hard cap so a stuck Playwright step cannot hang the Maven run indefinitely. */
 @Timeout(value = 8, unit = TimeUnit.MINUTES)
@@ -88,6 +90,21 @@ public abstract class BaseE2ETest {
     }
 
     /**
+     * Minimal JSON extraction for /api/menus to avoid extra deps in test classpath.
+     * Expected shape: [{\"id\":1,\"name\":\"Main Menu\",...}, ...]
+     */
+    protected int getMenuIdByName(Page page, String menuName) {
+        String body = page.request().get(getBaseUrl() + "/api/menus").text();
+        Pattern p = Pattern.compile("\\{[^}]*\"id\"\\s*:\\s*(\\d+)[^}]*\"name\"\\s*:\\s*\""
+                + Pattern.quote(menuName) + "\"", Pattern.DOTALL);
+        Matcher m = p.matcher(body);
+        if (m.find()) {
+            return Integer.parseInt(m.group(1));
+        }
+        throw new AssertionError("Menu not found by name: " + menuName + ". /api/menus response: " + body);
+    }
+
+    /**
      * Waits for the SSE connection to be established and in OPEN state.
      * Uses window.sseConnected from sse.js (EventSource).
      */
@@ -95,6 +112,17 @@ public abstract class BaseE2ETest {
         // Wait for our custom flag which is set only after the 'connected' event is received
         page.waitForFunction("() => window.sseConnected === true", 
             null, new Page.WaitForFunctionOptions().setTimeout(15000));
+    }
+
+    /**
+     * Menu page renders dishes via HTMX into #menuCategoriesRoot.
+     * In full-suite runs, relying on LoadState.LOAD alone is flaky.
+     */
+    protected void waitForMenuDishes(Page page) {
+        page.waitForSelector(
+                "#menuCategoriesRoot .dish-card",
+                new Page.WaitForSelectorOptions().setTimeout(15000)
+        );
     }
 
     /**

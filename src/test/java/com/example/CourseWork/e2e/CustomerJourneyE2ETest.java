@@ -28,8 +28,10 @@ class CustomerJourneyE2ETest extends BaseE2ETest {
 
         // 1. Guest Logins and navigates to Menu
         loginAsGuest(page);
-        page.navigate(baseUrl + "/menu");
+        int mainMenuId = getMenuIdByName(page, "Main Menu");
+        page.navigate(baseUrl + "/menu?id=" + mainMenuId);
         page.waitForLoadState(LoadState.LOAD);
+        waitForMenuDishes(page);
 
         // Verify we are on the menu page
         assertThat(page).hasTitle(org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> java.util.regex.Pattern.compile(".*Меню.*", java.util.regex.Pattern.CASE_INSENSITIVE)));

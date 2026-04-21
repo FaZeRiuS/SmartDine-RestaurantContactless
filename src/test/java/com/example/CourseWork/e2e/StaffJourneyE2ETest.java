@@ -29,8 +29,10 @@ class StaffJourneyE2ETest extends BaseE2ETest {
 
         // 1. Guest Logins and adds "Beef Steak" to cart
         loginAsGuest(guestPage);
-        guestPage.navigate(baseUrl + "/menu");
+        int mainMenuId = getMenuIdByName(guestPage, "Main Menu");
+        guestPage.navigate(baseUrl + "/menu?id=" + mainMenuId);
         guestPage.waitForLoadState(LoadState.LOAD);
+        waitForMenuDishes(guestPage);
         
         // --- SSE Sync: Ensure Guest is connected before Staff triggers updates ---
         waitForSseConnection(guestPage);

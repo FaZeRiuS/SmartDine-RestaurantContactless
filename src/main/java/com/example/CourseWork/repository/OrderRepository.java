@@ -34,7 +34,8 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
      */
     @Query(
             value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish "
-                    + "WHERE o.userId = :userId AND o.status IN :statuses",
+                    + "WHERE o.userId = :userId AND o.status IN :statuses "
+                    + "ORDER BY o.createdAt DESC, o.id DESC",
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.userId = :userId AND o.status IN :statuses")
     Page<Order> findPageWithItemsAndDishesForUserAndStatuses(
             @Param("userId") String userId,
@@ -73,8 +74,36 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.userId = :userId")
     List<Order> findAllWithItemsAndDishesByUserIdOrderByCreatedAtDesc(@Param("userId") String userId);
 
+    // --- Safer paging strategy (no fetch-join collection in Page query) ---
+
     @Query(
-            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.userId = :userId",
+            value = "SELECT o.id FROM Order o WHERE o.userId = :userId ORDER BY o.createdAt DESC, o.id DESC",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.userId = :userId")
+    Page<Integer> findOrderIdsPageByUserIdOrderByCreatedAtDesc(
+            @Param("userId") String userId,
+            Pageable pageable);
+
+    @Query(
+            value = "SELECT o.id FROM Order o WHERE o.userId = :userId AND o.status IN :statuses ORDER BY o.createdAt DESC, o.id DESC",
+            countQuery = "SELECT COUNT(o) FROM Order o WHERE o.userId = :userId AND o.status IN :statuses")
+    Page<Integer> findOrderIdsPageByUserIdAndStatusesOrderByCreatedAtDesc(
+            @Param("userId") String userId,
+            @Param("statuses") Collection<OrderStatus> statuses,
+            Pageable pageable);
+
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.id IN :ids")
+    List<Order> findAllWithItemsAndDishesByIdIn(@Param("ids") Collection<Integer> ids);
+
+    @Query(
+            value = "SELECT o.id FROM Order o WHERE o.userId = :userId AND o.status IN :statuses ORDER BY o.createdAt DESC, o.id DESC")
+    List<Integer> findTopOrderIdsByUserIdAndStatusesOrderByCreatedAtDesc(
+            @Param("userId") String userId,
+            @Param("statuses") Collection<OrderStatus> statuses,
+            Pageable pageable);
+
+    @Query(
+            value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items i LEFT JOIN FETCH i.dish WHERE o.userId = :userId "
+                    + "ORDER BY o.createdAt DESC, o.id DESC",
             countQuery = "SELECT COUNT(o) FROM Order o WHERE o.userId = :userId")
     Page<Order> findPageWithItemsAndDishesByUserIdOrderByCreatedAtDesc(
             @Param("userId") String userId, Pageable pageable);

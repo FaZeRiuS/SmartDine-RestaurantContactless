@@ -15,6 +15,7 @@ import com.example.CourseWork.service.order.OrderReadService;
 import com.example.CourseWork.service.order.component.OrderAccessPolicy;
 import com.example.CourseWork.service.order.component.OrderNotifier;
 import com.example.CourseWork.security.CurrentUserIdentity;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -133,11 +134,24 @@ public class OrderReadServiceImpl implements OrderReadService {
     @Override
     public Optional<OrderResponseDto> getMyActiveOrder(String userId) {
         List<OrderStatus> activeStatuses = List.of(OrderStatus.NEW, OrderStatus.PREPARING, OrderStatus.READY);
-        Optional<OrderResponseDto> dto = orderRepository.findAllWithItemsAndDishesByUserIdOrderByCreatedAtDesc(userId).stream()
-                .filter(o -> activeStatuses.contains(o.getStatus()))
+        Optional<OrderResponseDto> dto = orderRepository
+                .findTopOrderIdsByUserIdAndStatusesOrderByCreatedAtDesc(
+                        userId,
+                        activeStatuses,
+                        org.springframework.data.domain.PageRequest.of(
+                                0,
+                                1,
+                                org.springframework.data.domain.Sort.by(
+                                        org.springframework.data.domain.Sort.Direction.DESC,
+                                        "createdAt",
+                                        "id"
+                                )
+                        )
+                )
+                .stream()
                 .findFirst()
-                .map(orderMapper::toResponseDto)
-                ;
+                .flatMap(id -> orderRepository.findByIdWithItemsAndDishes(id))
+                .map(orderMapper::toResponseDto);
         dto.ifPresent(d -> enrichOrdersWithReviews(List.of(d)));
         return dto;
     }
@@ -145,21 +159,57 @@ public class OrderReadServiceImpl implements OrderReadService {
     @Transactional(readOnly = true)
     @Override
     public Page<OrderResponseDto> getOrderHistory(String userId, Pageable pageable) {
-        Page<OrderResponseDto> page = orderRepository.findPageWithItemsAndDishesByUserIdOrderByCreatedAtDesc(userId, pageable)
-                .map(orderMapper::toResponseDto);
-        enrichOrdersWithReviews(page.getContent());
-        return page;
+        Pageable effectivePageable = pageable != null ? pageable : Pageable.unpaged();
+        Page<Integer> idsPage = orderRepository.findOrderIdsPageByUserIdOrderByCreatedAtDesc(userId, effectivePageable);
+        if (idsPage.isEmpty()) {
+            @SuppressWarnings("null")
+            Page<OrderResponseDto> empty = new PageImpl<>(List.of(), effectivePageable, idsPage.getTotalElements());
+            return empty;
+        }
+
+        List<Order> orders = orderRepository.findAllWithItemsAndDishesByIdIn(idsPage.getContent());
+        Map<Integer, Order> byId = new HashMap<>();
+        orders.forEach(o -> byId.put(o.getId(), o));
+
+        List<OrderResponseDto> content = idsPage.getContent().stream()
+                .map(byId::get)
+                .filter(o -> o != null)
+                .map(orderMapper::toResponseDto)
+                .toList();
+
+        enrichOrdersWithReviews(content);
+        @SuppressWarnings("null")
+        Page<OrderResponseDto> result = new PageImpl<>(content, effectivePageable, idsPage.getTotalElements());
+        return result;
     }
 
     @Transactional(readOnly = true)
     @Override
     public Page<OrderResponseDto> getOrderHistoryForStatuses(
             String userId, Collection<OrderStatus> statuses, Pageable pageable) {
-        Page<OrderResponseDto> page = orderRepository
-                .findPageWithItemsAndDishesForUserAndStatuses(userId, statuses, pageable)
-                .map(orderMapper::toResponseDto);
-        enrichOrdersWithReviews(page.getContent());
-        return page;
+        Pageable effectivePageable = pageable != null ? pageable : Pageable.unpaged();
+        Page<Integer> idsPage = orderRepository
+                .findOrderIdsPageByUserIdAndStatusesOrderByCreatedAtDesc(userId, statuses, effectivePageable);
+        if (idsPage.isEmpty()) {
+            @SuppressWarnings("null")
+            Page<OrderResponseDto> empty = new PageImpl<>(List.of(), effectivePageable, idsPage.getTotalElements());
+            return empty;
+        }
+
+        List<Order> orders = orderRepository.findAllWithItemsAndDishesByIdIn(idsPage.getContent());
+        Map<Integer, Order> byId = new HashMap<>();
+        orders.forEach(o -> byId.put(o.getId(), o));
+
+        List<OrderResponseDto> content = idsPage.getContent().stream()
+                .map(byId::get)
+                .filter(o -> o != null)
+                .map(orderMapper::toResponseDto)
+                .toList();
+
+        enrichOrdersWithReviews(content);
+        @SuppressWarnings("null")
+        Page<OrderResponseDto> result = new PageImpl<>(content, effectivePageable, idsPage.getTotalElements());
+        return result;
     }
 
     @Transactional
