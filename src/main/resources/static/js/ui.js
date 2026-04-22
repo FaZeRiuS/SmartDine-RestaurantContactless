@@ -263,6 +263,7 @@ function attachToastSwipeToDismiss(toastEl) {
         pointerId = pid;
         toastEl.__toastDx = 0;
         toastEl.__toastDy = 0;
+        toastEl.__toastDidDrag = false;
         axis = null;
         toastEl.classList.add('toast--dragging');
         toastEl.style.transition = 'none';
@@ -278,6 +279,10 @@ function attachToastSwipeToDismiss(toastEl) {
             // Slight preference to vertical when the gesture is clearly down/up.
             if (Math.abs(dy) > Math.abs(dx) * 1.05) axis = 'y';
             else axis = 'x';
+        }
+
+        if (!toastEl.__toastDidDrag && (Math.abs(dx) > 12 || Math.abs(dy) > 12)) {
+            toastEl.__toastDidDrag = true;
         }
 
         if (axis === 'x') {
@@ -379,6 +384,7 @@ function attachToastSwipeToDismiss(toastEl) {
         if (shouldIgnoreTarget(e.target)) return;
         // If it was a drag, click might fire after pointerup — ignore when dragged.
         if (Math.abs(toastEl.__toastDx || 0) > 8) return;
+        if (toastEl.__toastDidDrag) return;
         dismissToast(toastEl, { reason: 'tap', direction: 'right' });
     });
 }
@@ -540,7 +546,9 @@ async function initPushNotifications() {
 
 async function subscribeUserToPush() {
     try {
-        console.time('>>> PWA: Push Check');
+        if (window.__CLIENT_DEBUG) {
+            console.time('>>> PWA: Push Check');
+        }
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
             return;
         }
@@ -555,7 +563,7 @@ async function subscribeUserToPush() {
         const subscription = await registration.pushManager.getSubscription();
 
         if (subscription) {
-            sendSubscriptionToServer(subscription);
+            void sendSubscriptionToServer(subscription);
             return;
         }
 
@@ -570,7 +578,7 @@ async function subscribeUserToPush() {
             applicationServerKey: applicationServerKey
         });
 
-        sendSubscriptionToServer(newSubscription);
+        void sendSubscriptionToServer(newSubscription);
     } catch (err) {
         logErrorToServer('PWA: Failed to subscribe user: ' + err.message);
     }
@@ -590,19 +598,35 @@ async function sendSubscriptionToServer(subscription) {
         auth: authSecret
     };
 
-    try {
-        // Omit X-XSRF-TOKEN: if getCsrfToken() is '' before /api/csrf completes, setting it prevents csrf.js fetch
-        // patch from adding the real token, so subscribe 403s until a full reload — push appears "delayed".
-        await fetch('/api/notifications/subscribe', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin',
-            body: JSON.stringify(payload)
-        });
-    } catch (err) {
-        logErrorToServer('PWA: Error syncing subscription with server: ' + err.message);
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const backoff = [300, 800, 1500];
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            // Omit X-XSRF-TOKEN: if getCsrfToken() is '' before /api/csrf completes, setting it prevents csrf.js fetch
+            // patch from adding the real token, so subscribe 403s until a full reload — push appears "delayed".
+            const res = await fetch('/api/notifications/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) return;
+
+            // 403 can happen if CSRF cookie/token isn't ready yet right after reload. Retry a couple times.
+            if (res.status !== 403) return;
+        } catch (err) {
+            if (attempt >= 2) {
+                logErrorToServer('PWA: Error syncing subscription with server: ' + (err && err.message ? err.message : String(err)));
+                return;
+            }
+            // Network/transient errors: retry.
+        }
+
+        await sleep(backoff[attempt] || 1500);
     }
 }
 
@@ -844,6 +868,7 @@ function initMobileSiteTabSwipe() {
     if (document.documentElement.dataset.mobileSiteSwipeInit === '1') return;
     document.documentElement.dataset.mobileSiteSwipeInit = '1';
 
+    const supportsPointer = () => typeof window.PointerEvent !== 'undefined';
     const isTouchLike = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     const isMobileWidth = () => window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
 
@@ -987,48 +1012,50 @@ function initMobileSiteTabSwipe() {
         window.location.href = next.href;
     };
 
-    // Prefer Pointer Events for modern Chromium (GrapheneOS/Android), fallback to Touch Events.
-    document.addEventListener('pointerdown', (e) => {
-        if (!e || e.pointerType !== 'touch') return;
-        onStart(e.clientX, e.clientY, e.target, e.pointerId, (typeof e.composedPath === 'function' ? e.composedPath() : null));
-    }, { passive: true, capture: true });
+    // Prefer Pointer Events; use Touch Events only as a fallback to avoid double-triggering.
+    if (supportsPointer()) {
+        document.addEventListener('pointerdown', (e) => {
+            if (!e || e.pointerType !== 'touch') return;
+            onStart(e.clientX, e.clientY, e.target, e.pointerId, (typeof e.composedPath === 'function' ? e.composedPath() : null));
+        }, { passive: true, capture: true });
 
-    document.addEventListener('pointermove', (e) => {
-        if (!e || e.pointerType !== 'touch') return;
-        if (!tracking) return;
-        if (activePointerId != null && e.pointerId !== activePointerId) return;
-        onMove(e.clientX, e.clientY, e);
-    }, { passive: false, capture: true });
+        document.addEventListener('pointermove', (e) => {
+            if (!e || e.pointerType !== 'touch') return;
+            if (!tracking) return;
+            if (activePointerId != null && e.pointerId !== activePointerId) return;
+            onMove(e.clientX, e.clientY, e);
+        }, { passive: false, capture: true });
 
-    document.addEventListener('pointerup', (e) => {
-        if (!e || e.pointerType !== 'touch') return;
-        if (activePointerId != null && e.pointerId !== activePointerId) return;
-        onEnd(e.clientX, e.clientY);
-    }, { passive: true, capture: true });
+        document.addEventListener('pointerup', (e) => {
+            if (!e || e.pointerType !== 'touch') return;
+            if (activePointerId != null && e.pointerId !== activePointerId) return;
+            onEnd(e.clientX, e.clientY);
+        }, { passive: true, capture: true });
 
-    document.addEventListener('pointercancel', (e) => {
-        if (!e || e.pointerType !== 'touch') return;
-        tracking = false;
-        activePointerId = null;
-    }, { passive: true, capture: true });
+        document.addEventListener('pointercancel', (e) => {
+            if (!e || e.pointerType !== 'touch') return;
+            tracking = false;
+            activePointerId = null;
+        }, { passive: true, capture: true });
+    } else {
+        document.addEventListener('touchstart', (e) => {
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            onStart(t.clientX, t.clientY, e.target, null, (typeof e.composedPath === 'function' ? e.composedPath() : null));
+        }, { passive: true, capture: true });
 
-    document.addEventListener('touchstart', (e) => {
-        const t = e.touches && e.touches[0];
-        if (!t) return;
-        onStart(t.clientX, t.clientY, e.target, null, (typeof e.composedPath === 'function' ? e.composedPath() : null));
-    }, { passive: true, capture: true });
+        document.addEventListener('touchmove', (e) => {
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            onMove(t.clientX, t.clientY, e);
+        }, { passive: false, capture: true });
 
-    document.addEventListener('touchmove', (e) => {
-        const t = e.touches && e.touches[0];
-        if (!t) return;
-        onMove(t.clientX, t.clientY, e);
-    }, { passive: false, capture: true });
-
-    document.addEventListener('touchend', (e) => {
-        const t = e.changedTouches && e.changedTouches[0];
-        if (!t) return;
-        onEnd(t.clientX, t.clientY);
-    }, { passive: true, capture: true });
+        document.addEventListener('touchend', (e) => {
+            const t = e.changedTouches && e.changedTouches[0];
+            if (!t) return;
+            onEnd(t.clientX, t.clientY);
+        }, { passive: true, capture: true });
+    }
 }
 
 // ── Arrow navigation (desktop): next/prev focusable in document (page) order ─
@@ -1083,13 +1110,24 @@ function collectSpatialFocusables(root) {
     return out;
 }
 
+let __spatialFocusCache = { root: null, at: 0, list: [] };
+function collectSpatialFocusablesCached(root) {
+    const now = Date.now();
+    if (__spatialFocusCache.root === root && (now - __spatialFocusCache.at) < 300) {
+        return __spatialFocusCache.list;
+    }
+    const list = collectSpatialFocusables(root);
+    __spatialFocusCache = { root, at: now, list };
+    return list;
+}
+
 /**
  * Next/previous focusable in tree order over the whole nav root (typically document.body).
  * ArrowDown/ArrowRight → next; ArrowUp/ArrowLeft → previous (no wrap).
  */
 function spatialNeighbor(fromEl, key) {
     const root = getSpatialNavRoot(fromEl);
-    const list = collectSpatialFocusables(root);
+    const list = collectSpatialFocusablesCached(root);
     let idx = list.indexOf(fromEl);
     if (idx < 0 && fromEl && fromEl.closest) {
         const host = fromEl.closest('button, a[href], input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]');
