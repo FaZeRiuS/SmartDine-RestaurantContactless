@@ -16,6 +16,12 @@
     white-space: nowrap;
 }
 
+.btn svg {
+    width: 1em;
+    height: 1em;
+    flex: 0 0 1em;
+}
+
 .btn-primary {
     background: linear-gradient(135deg, var(--gold), var(--gold-dark));
     color: var(--bg-primary);
