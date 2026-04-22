@@ -3,7 +3,8 @@
 <body>
 <th:block th:fragment="categoryBodies">
     <th:block th:each="menu, stat : ${menus}">
-        <div class="menu-category fade-in-up"
+        <div class="menu-category"
+             th:classappend="${stat.index == 0 ? 'lcp-no-anim' : 'fade-in-up'}"
              th:data-menu-id="${menu.id}"
              th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
 
@@ -24,7 +25,7 @@
             </h2>
 
             <div class="dishes-grid" th:if="${menu.dishes != null && !menu.dishes.isEmpty()}">
-                <div class="dish-card" th:each="dish : ${menu.dishes}"
+                <div class="dish-card" th:each="dish, dishStat : ${menu.dishes}"
                      th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
 
                     <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
@@ -37,7 +38,8 @@
                              th:alt="${dish.name}"
                              width="800"
                              height="600"
-                             loading="lazy"
+                             th:loading="${stat.index == 0 && dishStat.index < 3 ? 'eager' : 'lazy'}"
+                             th:attr="fetchpriority=${stat.index == 0 && dishStat.index < 3 ? 'high' : 'auto'}"
                              decoding="async"
                              sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px"
                              class="dish-image">

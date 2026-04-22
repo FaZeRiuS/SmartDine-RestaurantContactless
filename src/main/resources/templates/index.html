@@ -69,9 +69,9 @@
         </div>
 
         <div class="dishes-grid">
-            <div class="dish-card fade-in-up" th:each="dish, stat : ${personalizedRecommendations}"
-                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'"
-                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+            <div class="dish-card" th:each="dish, stat : ${personalizedRecommendations}"
+                 th:classappend="${(dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable ' : '') + (stat.index < 3 ? 'lcp-no-anim' : 'fade-in-up')}"
+                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
 
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 
@@ -140,9 +140,9 @@
         </div>
 
         <div class="dishes-grid" th:if="${popularDishes != null && !popularDishes.isEmpty()}">
-            <div class="dish-card fade-in-up" th:each="dish, stat : ${popularDishes}"
-                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'"
-                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable' : ''}">
+            <div class="dish-card" th:each="dish, stat : ${popularDishes}"
+                 th:classappend="${(dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable ' : '') + (stat.index < 3 ? 'lcp-no-anim' : 'fade-in-up')}"
+                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
 
                 <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
                 
