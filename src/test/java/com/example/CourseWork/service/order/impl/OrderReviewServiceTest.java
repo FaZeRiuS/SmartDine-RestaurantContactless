@@ -53,7 +53,7 @@ class OrderReviewServiceTest {
     @NonNull
     private Integer orderId = 1;
     @NonNull
-    private UUID userId = UUID.randomUUID();
+    private String userId = "GUEST_test-session";
     @NonNull
     private Order order;
 
@@ -61,7 +61,7 @@ class OrderReviewServiceTest {
     void setUp() {
         order = new Order();
         order.setId(orderId);
-        order.setUserId(userId.toString());
+        order.setUserId(userId);
         order.setPaymentStatus(PaymentStatus.SUCCESS);
         order.setStatus(OrderStatus.COMPLETED);
     }
@@ -89,6 +89,39 @@ class OrderReviewServiceTest {
 
         // Act
         orderReviewService.submitReview(orderId, userId, dto);
+
+        // Assert
+        verify(orderServiceReviewRepository).save(any());
+        verify(orderDishReviewRepository).deleteAllByOrderId(orderId);
+        verify(orderDishReviewRepository).save(any());
+    }
+
+    @Test
+    void submitReview_ShouldSucceed_WhenUserIdLooksLikeUuid() {
+        // Arrange
+        String uuidUserId = UUID.randomUUID().toString();
+        order.setUserId(uuidUserId);
+
+        Dish dish = new Dish();
+        dish.setId(10);
+        OrderItem item = new OrderItem();
+        item.setDish(dish);
+        order.setItems(List.of(item));
+
+        when(orderRepository.findByIdWithItemsAndDishes(orderId)).thenReturn(Optional.of(order));
+        when(orderServiceReviewRepository.findByOrderId(orderId)).thenReturn(Optional.empty());
+        when(dishRepository.findById(10)).thenReturn(Optional.of(dish));
+
+        OrderReviewRequestDto dto = new OrderReviewRequestDto();
+        dto.setServiceRating(5);
+        dto.setComment("Great service!");
+        var dr = new OrderReviewRequestDto.DishRatingDto();
+        dr.setDishId(10);
+        dr.setRating(4);
+        dto.setDishRatings(List.of(dr));
+
+        // Act
+        orderReviewService.submitReview(orderId, uuidUserId, dto);
 
         // Assert
         verify(orderServiceReviewRepository).save(any());
@@ -127,10 +160,10 @@ class OrderReviewServiceTest {
     @Test
     void submitReview_ShouldThrowException_WhenUserUnauthorized() {
         // Arrange
-        order.setUserId(UUID.randomUUID().toString());
+        order.setUserId("GUEST_other-session");
         when(orderRepository.findByIdWithItemsAndDishes(orderId)).thenReturn(Optional.of(order));
         doThrow(new ForbiddenException(ErrorMessages.ACCESS_DENIED))
-                .when(orderPaymentPolicy).assertOwner(order, userId.toString());
+                .when(orderPaymentPolicy).assertOwner(order, userId);
         OrderReviewRequestDto dto = new OrderReviewRequestDto();
 
         // Act & Assert

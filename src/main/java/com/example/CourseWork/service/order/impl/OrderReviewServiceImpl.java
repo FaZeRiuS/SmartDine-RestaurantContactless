@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +35,7 @@ public class OrderReviewServiceImpl implements OrderReviewService {
 
     @Override
     @Transactional
-    public void submitReview(Integer orderId, UUID userId, OrderReviewRequestDto dto) {
+    public void submitReview(Integer orderId, String userId, OrderReviewRequestDto dto) {
         if (orderId == null) throw new BadRequestException(ErrorMessages.ORDER_ID_REQUIRED);
         if (userId == null) throw new BadRequestException(ErrorMessages.USER_ID_REQUIRED);
         if (dto == null) throw new BadRequestException(ErrorMessages.REVIEW_BODY_REQUIRED);
@@ -44,7 +43,7 @@ public class OrderReviewServiceImpl implements OrderReviewService {
         Order order = orderRepository.findByIdWithItemsAndDishes(orderId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
-        orderPaymentPolicy.assertOwner(order, userId.toString());
+        orderPaymentPolicy.assertOwner(order, userId);
         orderPaymentPolicy.assertReviewable(order);
 
         Integer serviceRating = dto.getServiceRating();

@@ -145,12 +145,11 @@ public class OrderController {
     }
 
     @PostMapping("/{id}/reviews")
-    @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<Void> submitReview(
             @PathVariable Integer id,
             @Valid @RequestBody OrderReviewRequestDto dto
     ) {
-        UUID userId = currentUserIdentity.requireCustomerUuid("Customer account is required for this operation");
+        String userId = currentUserIdentity.currentUserId();
         orderReviewService.submitReview(id, userId, dto);
         return ResponseEntity.ok().build();
     }

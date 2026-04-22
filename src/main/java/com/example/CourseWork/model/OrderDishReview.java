@@ -10,7 +10,6 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -41,7 +40,7 @@ public class OrderDishReview {
     @NotNull
     @Column(name = "user_id", nullable = false)
     @ToString.Include
-    private UUID userId;
+    private String userId;
 
     @NotNull
     @Min(1)

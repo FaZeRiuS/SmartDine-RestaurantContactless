@@ -256,7 +256,6 @@
                 </p>
 
                 <div id="orderReviewSection"
-                     sec:authorize="hasRole('CUSTOMER')"
                      th:if="${activeOrder.paymentStatus.name() == 'SUCCESS' and (activeOrder.status.name() == 'READY' or activeOrder.status.name() == 'COMPLETED')}">
                     <th:block th:if="${activeOrder.serviceRating != null}">
                         <div class="cart-summary mt-1 p-1">
@@ -296,7 +295,7 @@
         <script th:inline="javascript">
             window.__lastActiveOrderForReview = /*[[${activeOrder}]]*/ null;
             try {
-                if (window.__lastActiveOrderForReview && window.isCustomer !== false && typeof maybeAutoOpenReviewModal === 'function') {
+                if (window.__lastActiveOrderForReview && typeof maybeAutoOpenReviewModal === 'function') {
                     maybeAutoOpenReviewModal(window.__lastActiveOrderForReview);
                 }
             } catch (e) { /* ignore */ }
