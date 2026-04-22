@@ -28,6 +28,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.example.CourseWork.security.SecurityTimingFilter;
 
 import java.util.List;
 import java.util.Map;
@@ -43,11 +44,14 @@ public class SecurityConfig {
 
     private final SecurityProperties securityProperties;
     private final String keycloakJwkSetUri;
+    private final SecurityTimingFilter securityTimingFilter;
 
     public SecurityConfig(
             SecurityProperties securityProperties,
+            SecurityTimingFilter securityTimingFilter,
             @Value("${spring.security.oauth2.client.provider.keycloak.jwk-set-uri:http://localhost:8080/realms/restaurant-realm/protocol/openid-connect/certs}") String keycloakJwkSetUri) {
         this.securityProperties = securityProperties;
+        this.securityTimingFilter = securityTimingFilter;
         this.keycloakJwkSetUri = keycloakJwkSetUri;
     }
 
@@ -62,6 +66,7 @@ public class SecurityConfig {
         oidcLogoutSuccessHandler.setPostLogoutRedirectUri("{baseUrl}/");
 
         http
+                .addFilterBefore(securityTimingFilter, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
