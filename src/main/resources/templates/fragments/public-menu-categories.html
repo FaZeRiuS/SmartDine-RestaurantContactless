@@ -3,8 +3,7 @@
 <body>
 <th:block th:fragment="categoryBodies">
     <th:block th:each="menu, stat : ${menus}">
-        <div class="menu-category"
-             th:classappend="${stat.index == 0 ? 'lcp-no-anim' : 'fade-in-up'}"
+        <div class="menu-category fade-in-up"
              th:data-menu-id="${menu.id}"
              th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
 
