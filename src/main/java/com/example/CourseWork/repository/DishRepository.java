@@ -90,7 +90,7 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
             JOIN RankedDishes rd ON d.id = rd.dish_id
             WHERE rd.rn <= 2
         )
-        SELECT fs.id, fs.name, fs.description, fs.price, fs.image_url, fs.is_available
+        SELECT fs.id, fs.name, fs.description, fs.price, fs.image_url, fs.is_available, fs.preparation_time
         FROM FinalScored fs
         WHERE fs.dish_rn = 1
         ORDER BY fs.match_score DESC

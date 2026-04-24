@@ -51,6 +51,11 @@ public class Dish {
     @ToString.Include
     private Boolean isAvailable = true;
 
+    @NotNull
+    @Column(name = "preparation_time", nullable = false)
+    @ToString.Include
+    private Integer preparationTime = 15;
+
     /**
      * Avoid EAGER here: loading dishes for the public menu would also load each dish's menus,
      * dramatically increasing query count and payload under load.

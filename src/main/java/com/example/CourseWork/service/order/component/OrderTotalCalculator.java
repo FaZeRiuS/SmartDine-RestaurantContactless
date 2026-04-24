@@ -31,5 +31,15 @@ public class OrderTotalCalculator {
     public void recalculateAndSetTotal(Order order) {
         order.setTotalPrice(calculateTotal(order.getItems()));
     }
+
+    public int calculateTotalPreparationTimeMinutes(List<OrderItem> items) {
+        if (items == null || items.isEmpty()) {
+            return 0;
+        }
+        return items.stream()
+                .filter(item -> item.getDish() != null && item.getDish().getPreparationTime() != null)
+                .mapToInt(item -> item.getDish().getPreparationTime() * item.getQuantity())
+                .sum();
+    }
 }
 

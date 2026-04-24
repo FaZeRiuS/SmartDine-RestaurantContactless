@@ -50,6 +50,10 @@ public class Order {
     @ToString.Include
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
+    @Column(name = "estimated_ready_time")
+    @ToString.Include
+    private OffsetDateTime estimatedReadyTime;
+
     @PositiveOrZero
     @Column(name = "total_price", nullable = false, precision = 19, scale = 2)
     @ToString.Include

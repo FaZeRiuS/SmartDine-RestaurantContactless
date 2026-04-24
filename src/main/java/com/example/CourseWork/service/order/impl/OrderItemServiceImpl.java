@@ -152,6 +152,11 @@ public class OrderItemServiceImpl implements OrderItemService {
 
         orderTotalCalculator.recalculateAndSetTotal(order);
 
+        if (order.getStatus() == OrderStatus.PREPARING) {
+            int prepTime = orderTotalCalculator.calculateTotalPreparationTimeMinutes(order.getItems());
+            order.setEstimatedReadyTime(OffsetDateTime.now().plusMinutes(prepTime));
+        }
+
         Order savedOrder = orderRepository.save(order);
         OrderResponseDto response = orderMapper.toResponseDto(savedOrder);
         orderNotifier.notifyUserOfUpdate(order.getUserId(), response);
@@ -182,6 +187,11 @@ public class OrderItemServiceImpl implements OrderItemService {
         }
 
         orderTotalCalculator.recalculateAndSetTotal(order);
+
+        if (order.getStatus() == OrderStatus.PREPARING) {
+            int prepTime = orderTotalCalculator.calculateTotalPreparationTimeMinutes(order.getItems());
+            order.setEstimatedReadyTime(OffsetDateTime.now().plusMinutes(prepTime));
+        }
 
         if (order.getItems().isEmpty()) {
             order.setStatus(OrderStatus.CANCELLED);
@@ -227,6 +237,11 @@ public class OrderItemServiceImpl implements OrderItemService {
         order.getItems().removeIf(i -> i.getId().equals(itemId));
 
         orderTotalCalculator.recalculateAndSetTotal(order);
+
+        if (order.getStatus() == OrderStatus.PREPARING) {
+            int prepTime = orderTotalCalculator.calculateTotalPreparationTimeMinutes(order.getItems());
+            order.setEstimatedReadyTime(OffsetDateTime.now().plusMinutes(prepTime));
+        }
 
         if (order.getItems().isEmpty()) {
             order.setStatus(OrderStatus.CANCELLED);

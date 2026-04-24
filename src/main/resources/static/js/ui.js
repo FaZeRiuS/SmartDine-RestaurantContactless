@@ -12,6 +12,7 @@ function initSharedUI() {
     initKeyboardNavigationIn(document);
     initMobileSiteTabSwipe();
     initSpatialArrowNavigation();
+    initOrderTimer();
 
     // Re-init after HTMX swaps (tabs/content can be injected)
     if (!document.documentElement.dataset.a11yTabsHtmxBound) {
@@ -25,6 +26,7 @@ function initSharedUI() {
             const t = evt && evt.detail ? evt.detail.target : null;
             initAccessibleTabsIn(t || document);
             initKeyboardNavigationIn(t || document);
+            initOrderTimer();
             // Ensure HTMX behaviors are attached for OOB-inserted nodes (e.g., toast forms).
             try {
                 if (window.htmx && typeof window.htmx.process === 'function' && t) {
@@ -59,6 +61,46 @@ window.renderStars = renderStars;
 window.initStarPickersIn = initStarPickersIn;
 window.initAccessibleTabsIn = initAccessibleTabsIn;
 window.initKeyboardNavigationIn = initKeyboardNavigationIn;
+
+function initOrderTimer() {
+    const timerEl = document.getElementById('orderCountdownTimer');
+    if (!timerEl) {
+        if (window.orderTimerInterval) {
+            clearInterval(window.orderTimerInterval);
+            window.orderTimerInterval = null;
+        }
+        return;
+    }
+    
+    const readyTimeStr = timerEl.getAttribute('data-ready-time');
+    if (!readyTimeStr) return;
+    
+    const targetDate = new Date(readyTimeStr).getTime();
+    
+    if (window.orderTimerInterval) {
+        clearInterval(window.orderTimerInterval);
+    }
+    
+    const updateTimer = () => {
+        const now = new Date().getTime();
+        const distance = targetDate - now;
+        
+        if (distance < 0) {
+            timerEl.innerHTML = "Майже готово!";
+            clearInterval(window.orderTimerInterval);
+            return;
+        }
+        
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        timerEl.innerHTML = `${minutes} хв ${seconds < 10 ? '0' : ''}${seconds} сек`;
+    };
+    
+    updateTimer();
+    window.orderTimerInterval = setInterval(updateTimer, 1000);
+}
+window.initOrderTimer = initOrderTimer;
 
 /**
  * Optional telemetry to /api/notifications/log — only when {@code localStorage.debug === '1'} (see layout {@code __CLIENT_DEBUG}).

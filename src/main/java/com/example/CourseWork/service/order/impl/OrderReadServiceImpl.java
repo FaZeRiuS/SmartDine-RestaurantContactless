@@ -39,6 +39,7 @@ public class OrderReadServiceImpl implements OrderReadService {
     private final OrderServiceReviewRepository orderServiceReviewRepository;
     private final OrderDishReviewRepository orderDishReviewRepository;
     private final CurrentUserIdentity currentUserIdentity;
+    private final com.example.CourseWork.service.order.component.OrderTotalCalculator orderTotalCalculator;
 
     public OrderReadServiceImpl(
             OrderRepository orderRepository,
@@ -47,7 +48,8 @@ public class OrderReadServiceImpl implements OrderReadService {
             OrderNotifier orderNotifier,
             OrderServiceReviewRepository orderServiceReviewRepository,
             OrderDishReviewRepository orderDishReviewRepository,
-            CurrentUserIdentity currentUserIdentity
+            CurrentUserIdentity currentUserIdentity,
+            com.example.CourseWork.service.order.component.OrderTotalCalculator orderTotalCalculator
     ) {
         this.orderRepository = orderRepository;
         this.orderMapper = orderMapper;
@@ -56,6 +58,7 @@ public class OrderReadServiceImpl implements OrderReadService {
         this.orderServiceReviewRepository = orderServiceReviewRepository;
         this.orderDishReviewRepository = orderDishReviewRepository;
         this.currentUserIdentity = currentUserIdentity;
+        this.orderTotalCalculator = orderTotalCalculator;
     }
 
        @Transactional
@@ -227,6 +230,10 @@ public class OrderReadServiceImpl implements OrderReadService {
                 && order.getPaymentStatus().name().equalsIgnoreCase("SUCCESS")) {
             order.setStatus(OrderStatus.COMPLETED);
         } else {
+            if (newStatus == OrderStatus.PREPARING && order.getStatus() != OrderStatus.PREPARING) {
+                int prepTime = orderTotalCalculator.calculateTotalPreparationTimeMinutes(order.getItems());
+                order.setEstimatedReadyTime(java.time.OffsetDateTime.now().plusMinutes(prepTime));
+            }
             order.setStatus(newStatus);
         }
 

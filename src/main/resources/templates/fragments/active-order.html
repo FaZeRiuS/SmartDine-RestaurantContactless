@@ -18,6 +18,14 @@
                 <div id="activeOrderStatus" th:insert="~{fragments/status-badges :: render(status=${activeOrder.status}, paymentStatus=${activeOrder.paymentStatus})}"></div>
             </div>
 
+            <div id="orderTimerContainer" 
+                 th:if="${activeOrder.status.name() == 'PREPARING' and activeOrder.estimatedReadyTime != null}"
+                 class="order-timer mt-1 p-1" style="background: rgba(212, 175, 55, 0.1); border-radius: 8px; text-align: center;">
+                <span class="timer-label text-muted text-sm">Час до готовності: </span>
+                <span id="orderCountdownTimer" class="timer-value fw-700 text-gold text-lg"
+                      th:attr="data-ready-time=${activeOrder.estimatedReadyTime}">Обчислення...</span>
+            </div>
+
             <div th:classappend="${homeActiveOrderWidget} ? ' active-order-minimal-info' : ''">
                 <div id="activeOrderItems" th:if="${activeOrder.items != null}">
                     <div class="cart-item" th:each="item : ${activeOrder.items}">

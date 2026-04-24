@@ -15,6 +15,7 @@ public class OrderResponseDto {
     private OrderStatus status;
     private PaymentStatus paymentStatus;
     private OffsetDateTime createdAt;
+    private OffsetDateTime estimatedReadyTime;
     private BigDecimal totalPrice;
     private BigDecimal loyaltyDiscount;
     private BigDecimal amountToPay;
