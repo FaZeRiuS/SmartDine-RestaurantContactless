@@ -98,14 +98,19 @@
                         <span class="dish-name" th:text="${dish.name}">Страва</span>
                         <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
                     </div>
-                    <div class="dish-rating text-sm mt-1"
-                         th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
-                        ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
-                        <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
-                    </div>
-                    <div class="dish-rating text-sm mt-1"
-                         th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
-                        ★ Немає оцінок
+                    <div class="dish-meta d-flex align-center justify-between text-sm mb-1">
+                        <div>
+                            <span class="dish-rating" th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
+                                ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
+                                <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
+                            </span>
+                            <span class="dish-rating" th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
+                                ★ Немає оцінок
+                            </span>
+                        </div>
+                        <div class="dish-time text-muted" th:if="${dish.preparationTime != null}" title="Орієнтовний час приготування">
+                            ⏱️ <span th:text="${dish.preparationTime} + ' хв'">15 хв</span>
+                        </div>
                     </div>
                     <p class="dish-description" th:text="${dish.description}">Опис</p>
                     <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
@@ -169,14 +174,19 @@
                         <span class="dish-name" th:text="${dish.name}">Страва</span>
                         <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
                     </div>
-                    <div class="dish-rating text-sm mt-1"
-                         th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
-                        ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
-                        <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
-                    </div>
-                    <div class="dish-rating text-sm mt-1"
-                         th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
-                        ★ Немає оцінок
+                    <div class="dish-meta d-flex align-center justify-between text-sm mb-1">
+                        <div>
+                            <span class="dish-rating" th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
+                                ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
+                                <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
+                            </span>
+                            <span class="dish-rating" th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
+                                ★ Немає оцінок
+                            </span>
+                        </div>
+                        <div class="dish-time text-muted" th:if="${dish.preparationTime != null}" title="Орієнтовний час приготування">
+                            ⏱️ <span th:text="${dish.preparationTime} + ' хв'">15 хв</span>
+                        </div>
                     </div>
                     <p class="dish-description" th:text="${dish.description}">Опис</p>
                     <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
