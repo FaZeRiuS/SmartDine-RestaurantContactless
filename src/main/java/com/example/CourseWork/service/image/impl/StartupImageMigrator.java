@@ -116,7 +116,7 @@ public class StartupImageMigrator implements CommandLineRunner {
                         .size(w, w)
                         .keepAspectRatio(true)
                         .outputFormat("webp")
-                        .outputQuality(w <= 480 ? 0.74 : 0.80)
+                        .outputQuality(w <= 480 ? 0.70 : 0.74)
                         .toFile(sized.toFile());
                 anyCreated = true;
             }
@@ -161,7 +161,7 @@ public class StartupImageMigrator implements CommandLineRunner {
                         .size(w, w)
                         .keepAspectRatio(true)
                         .outputFormat("webp")
-                        .outputQuality(w <= 480 ? 0.74 : 0.80)
+                        .outputQuality(w <= 480 ? 0.70 : 0.74)
                         .toFile(sized.toFile());
             }
 

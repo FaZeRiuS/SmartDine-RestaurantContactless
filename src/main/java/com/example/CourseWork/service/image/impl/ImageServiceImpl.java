@@ -96,7 +96,7 @@ public class ImageServiceImpl implements ImageService {
                     .size(w, w)
                     .keepAspectRatio(true)
                     .outputFormat("webp")
-                    .outputQuality(w <= 480 ? 0.78 : 0.80)
+                    .outputQuality(w <= 480 ? 0.70 : 0.74)
                     .toFile(targetPath.toFile());
         }
     }
