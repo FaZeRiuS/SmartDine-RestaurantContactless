@@ -62,6 +62,9 @@ public class RecommendationServiceImpl implements RecommendationService {
                         || dto.getAllergens().stream().noneMatch(excluded::contains))
                 .collect(Collectors.toList());
 
+        if (dishes.size() > 6) {
+            dishes = dishes.subList(0, 6);
+        }
         dishRatingService.enrichWithRatings(dishes);
         return dishes;
     }

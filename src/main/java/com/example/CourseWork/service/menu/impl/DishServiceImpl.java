@@ -151,9 +151,24 @@ public class DishServiceImpl implements DishService {
         Map<Integer, Integer> selectedCountByMenu = new HashMap<>();
         List<Integer> chosenIds = new ArrayList<>();
 
+        Map<Integer, List<String>> allergensByDish = new HashMap<>();
+        if (!excludeAllergenSet.isEmpty()) {
+            for (Dish d : dishRepository.findAllByIdWithAllergens(candidateIds)) {
+                if (d != null && d.getId() != null) {
+                    allergensByDish.put(d.getId(), d.getAllergens() == null ? List.of() : d.getAllergens());
+                }
+            }
+        }
+
         for (int dishId : candidateIds) {
             if (exclude.contains(dishId)) {
                 continue;
+            }
+            if (!excludeAllergenSet.isEmpty()) {
+                List<String> allergens = allergensByDish.getOrDefault(dishId, List.of());
+                if (allergens.stream().anyMatch(excludeAllergenSet::contains)) {
+                    continue;
+                }
             }
             List<Integer> menus = menusByDish.getOrDefault(dishId, List.of());
             if (!canTakeDishForPopular(menus, selectedCountByMenu, maxPerMenu)) {
@@ -183,9 +198,6 @@ public class DishServiceImpl implements DishService {
             Dish dAll = byIdWithAllergens.get(id);
             if (dTags != null) {
                 List<String> allergens = dAll != null ? dAll.getAllergens() : List.of();
-                if (!excludeAllergenSet.isEmpty() && allergens != null && allergens.stream().anyMatch(excludeAllergenSet::contains)) {
-                    continue;
-                }
                 DishResponseDto dto = dishMapper.toResponseDto(dTags);
                 dto.setTags(dTags.getTags());
                 dto.setAllergens(allergens == null ? List.of() : allergens);

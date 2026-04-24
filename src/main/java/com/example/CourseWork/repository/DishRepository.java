@@ -103,7 +103,7 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
         FROM FinalScored fs
         WHERE fs.dish_rn = 1
         ORDER BY fs.match_score DESC
-        LIMIT 6
+        LIMIT 30
         """, nativeQuery = true)
     List<Dish> findRecommendedDishes(@Param("userId") String userId);
 
