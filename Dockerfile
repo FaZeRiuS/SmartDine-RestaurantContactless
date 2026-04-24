@@ -1,6 +1,8 @@
-FROM maven:3.9.9-eclipse-temurin-25 AS build
+FROM eclipse-temurin:25-jdk-jammy AS build
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # 1. Copy only the files needed for dependency resolution
 COPY pom.xml .
