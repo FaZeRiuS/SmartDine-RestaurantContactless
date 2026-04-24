@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,14 +56,16 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
             return;
         }
 
-        repository.saveAll(normalized.stream().map(a -> {
+        List<UserAllergenExclusion> rows = new ArrayList<>(normalized.size());
+        for (String a : normalized) {
             UserAllergenExclusionId id = new UserAllergenExclusionId();
             id.setUserId(userId);
             id.setAllergen(a);
             UserAllergenExclusion e = new UserAllergenExclusion();
             e.setId(id);
-            return e;
-        }).toList());
+            rows.add(e);
+        }
+        repository.saveAll(rows);
     }
 }
 
