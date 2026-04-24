@@ -70,7 +70,7 @@
 
         <div id="personalizedDishesRoot"
              hx-get="/htmx/home/recommendations"
-             hx-trigger="load delay:350ms, refresh"
+             hx-trigger="refresh"
              hx-swap="innerHTML">
             <div th:replace="~{fragments/home-dishes :: recommendationsGrid}"></div>
         </div>
@@ -91,7 +91,7 @@
 
         <div id="popularDishesRoot"
              hx-get="/htmx/home/popular"
-             hx-trigger="load, refresh"
+             hx-trigger="refresh"
              hx-swap="innerHTML">
             <div th:replace="~{fragments/home-dishes :: popularGrid}"></div>
         </div>
