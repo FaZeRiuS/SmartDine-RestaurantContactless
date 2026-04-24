@@ -139,13 +139,11 @@
                     </li>
 
                     <li sec:authorize="hasRole('CUSTOMER') and !hasAnyRole('WAITER','CHEF','ADMINISTRATOR')">
-                        <button type="button"
-                                class="logout-btn"
-                                style="width:100%; text-align:left;"
-                                onclick="openModal('allergenPrefsModal'); document.body.dispatchEvent(new Event('allergenPrefsModalOpened'));"
-                                aria-label="Налаштувати алергени">
+                        <a href="#"
+                           onclick="openModal('allergenPrefsModal'); document.body.dispatchEvent(new Event('allergenPrefsModalOpened')); return false;"
+                           aria-label="Налаштувати алергени">
                             Мої алергени
-                        </button>
+                        </a>
                     </li>
 
                     <li class="nav-divider"></li>
@@ -161,25 +159,25 @@
     </div>
         </div>
     </div>
-</nav>
 
-<div class="modal-overlay" id="allergenPrefsModal" sec:authorize="hasRole('CUSTOMER')">
-    <div class="modal">
-        <div class="modal-header">
-            <h3 class="modal-title">Мої алергени</h3>
-            <button type="button" class="modal-close" onclick="closeModal('allergenPrefsModal')">&#10005;</button>
-        </div>
-        <div class="modal-body" id="allergenPrefsModalBody"
-             hx-get="/htmx/user/allergens/modal"
-             hx-trigger="allergenPrefsModalOpened from:body"
-             hx-swap="innerHTML">
-            <div class="loading-overlay">
-                <div class="loading-spinner"></div>
-                <span>Завантаження…</span>
+    <div class="modal-overlay" id="allergenPrefsModal" sec:authorize="hasRole('CUSTOMER')">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Мої алергени</h3>
+                <button type="button" class="modal-close" onclick="closeModal('allergenPrefsModal')">&#10005;</button>
+            </div>
+            <div class="modal-body" id="allergenPrefsModalBody"
+                 hx-get="/htmx/user/allergens/modal"
+                 hx-trigger="allergenPrefsModalOpened from:body"
+                 hx-swap="innerHTML">
+                <div class="loading-overlay">
+                    <div class="loading-spinner"></div>
+                    <span>Завантаження…</span>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</nav>
 
 <!-- ═══ MOBILE NAVIGATION FRAGMENT ═══ -->
 <div class="mobile-nav" th:fragment="mobile-nav">

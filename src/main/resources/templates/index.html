@@ -233,6 +233,16 @@
         <details class="accordion mb-4" th:if="${(availableTags != null && !availableTags.isEmpty()) || (availableAllergens != null && !availableAllergens.isEmpty())}">
             <summary class="accordion-summary">Фільтри (теги / алергени)</summary>
             <form id="indexMenuFilters" class="filters-bar" onsubmit="return false;">
+                <div th:if="${availableAllergens != null && !availableAllergens.isEmpty()}">
+                    <div class="form-label">Виключити алергени</div>
+                    <div class="d-flex" style="gap:10px; flex-wrap:wrap;">
+                        <label class="form-check" th:each="a : ${availableAllergens}">
+                            <input type="checkbox" name="excludeAllergens" th:value="${a}">
+                            <span th:text="${a}">allergen</span>
+                        </label>
+                    </div>
+                </div>
+
                 <div th:if="${availableTags != null && !availableTags.isEmpty()}">
                     <div class="form-label">Показати теги (OR)</div>
                     <div class="d-flex" style="gap:10px; flex-wrap:wrap;">
@@ -249,16 +259,6 @@
                         <label class="form-check" th:each="t : ${availableTags}">
                             <input type="checkbox" name="excludeTags" th:value="${t}">
                             <span th:text="${t}">tag</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div th:if="${availableAllergens != null && !availableAllergens.isEmpty()}">
-                    <div class="form-label">Виключити алергени</div>
-                    <div class="d-flex" style="gap:10px; flex-wrap:wrap;">
-                        <label class="form-check" th:each="a : ${availableAllergens}">
-                            <input type="checkbox" name="excludeAllergens" th:value="${a}">
-                            <span th:text="${a}">allergen</span>
                         </label>
                     </div>
                 </div>
