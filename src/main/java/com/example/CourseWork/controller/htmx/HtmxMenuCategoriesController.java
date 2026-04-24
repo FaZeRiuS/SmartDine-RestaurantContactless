@@ -14,12 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.Clock;
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Public HTMX fragments for menu category bodies (index + full menu page).
@@ -32,7 +28,6 @@ public class HtmxMenuCategoriesController {
     private final MenuService menuService;
     private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
-    private final Clock appClock;
 
     @GetMapping("/categories-body")
     public String categoriesBody(
@@ -43,19 +38,7 @@ public class HtmxMenuCategoriesController {
         Integer tableNumber = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", tableNumber);
 
-        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
-        List<MenuWithDishesDto> allActive = menuService.getAllMenusWithDishes().stream()
-                .filter(m -> isMenuAvailableNow(m, now))
-                .collect(Collectors.toList());
-
-        List<MenuWithDishesDto> menus;
-        if (filter == null || filter.isBlank() || "all".equalsIgnoreCase(filter)) {
-            menus = allActive;
-        } else {
-            menus = allActive.stream()
-                    .filter(m -> m.getId() != null && m.getId().toString().equals(filter))
-                    .collect(Collectors.toList());
-        }
+        List<MenuWithDishesDto> menus = menuService.getActiveMenusWithDishes(filter);
 
         model.addAttribute("menus", menus);
         model.addAttribute("menuView", view);
@@ -66,16 +49,5 @@ public class HtmxMenuCategoriesController {
         model.addAttribute("hasActivePaidOrder", hasActivePaidOrder);
 
         return "fragments/public-menu-categories :: categoryBodies";
-    }
-
-    private boolean isMenuAvailableNow(MenuWithDishesDto menu, LocalTime now) {
-        if (menu.getStartTime() == null || menu.getEndTime() == null) {
-            return true;
-        }
-        // Support menus that cross midnight (e.g., 18:00 — 02:00)
-        if (menu.getStartTime().isBefore(menu.getEndTime())) {
-            return !now.isBefore(menu.getStartTime()) && !now.isAfter(menu.getEndTime());
-        }
-        return !now.isBefore(menu.getStartTime()) || !now.isAfter(menu.getEndTime());
     }
 }

@@ -1,7 +1,6 @@
 package com.example.CourseWork.controller;
 
 import com.example.CourseWork.dto.menu.DishResponseDto;
-import com.example.CourseWork.dto.menu.MenuWithDishesDto;
 import com.example.CourseWork.dto.cart.CartResponseDto;
 import com.example.CourseWork.dto.cart.CartItemDetailDto;
 import com.example.CourseWork.service.cart.CartService;
@@ -25,8 +24,6 @@ import jakarta.servlet.http.HttpSession;
 import java.net.URI;
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,6 +38,7 @@ public class PageController {
     private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
     private final String keycloakPublicUrl;
+    @SuppressWarnings("unused")
     private final Clock appClock;
 
     public PageController(
@@ -73,14 +71,7 @@ public class PageController {
         Integer sessionTable = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", sessionTable);
 
-        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
-        List<MenuWithDishesDto> allMenus = menuService.getAllMenusWithDishes();
-
-        // Filter menus by time
-        List<MenuWithDishesDto> activeMenus = allMenus.stream()
-                .filter(m -> isMenuAvailableNow(m, now))
-                .collect(Collectors.toList());
-
+        List<com.example.CourseWork.dto.menu.MenuSummaryDto> activeMenus = menuService.getActiveMenusSummary();
         model.addAttribute("menus", activeMenus);
         Integer firstMenuId = activeMenus.isEmpty() ? null : activeMenus.get(0).getId();
         model.addAttribute("firstMenuId", firstMenuId);
@@ -164,20 +155,13 @@ public class PageController {
     }
 
     @GetMapping("/menu")
-    public String menu(@RequestParam(required = false) Integer id, 
-                       HttpSession session, 
+    public String menu(@RequestParam(required = false) Integer id,
+                       HttpSession session,
                        Model model) {
         Integer sessionTable = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", sessionTable);
 
-        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
-        List<MenuWithDishesDto> allMenus = menuService.getAllMenusWithDishes();
-
-        // Always show filtered menu on public page
-        List<MenuWithDishesDto> displayMenus = allMenus.stream()
-                .filter(m -> isMenuAvailableNow(m, now))
-                .collect(Collectors.toList());
-
+        List<com.example.CourseWork.dto.menu.MenuSummaryDto> displayMenus = menuService.getActiveMenusSummary();
         model.addAttribute("menus", displayMenus);
         Integer firstMenuId = displayMenus.isEmpty() ? null : displayMenus.get(0).getId();
         model.addAttribute("firstMenuId", firstMenuId);
@@ -190,17 +174,6 @@ public class PageController {
         model.addAttribute("hasActivePaidOrder", hasActivePaidOrder);
 
         return "menu";
-    }
-
-    private boolean isMenuAvailableNow(MenuWithDishesDto menu, LocalTime now) {
-        if (menu.getStartTime() == null || menu.getEndTime() == null) {
-            return true;
-        }
-        // Support menus that cross midnight (e.g., 18:00 — 02:00)
-        if (menu.getStartTime().isBefore(menu.getEndTime())) {
-            return !now.isBefore(menu.getStartTime()) && !now.isAfter(menu.getEndTime());
-        }
-        return !now.isBefore(menu.getStartTime()) || !now.isAfter(menu.getEndTime());
     }
 
     @GetMapping("/cart")

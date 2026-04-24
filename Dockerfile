@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-24 AS build
+FROM maven:3.9.9-eclipse-temurin-25 AS build
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ COPY src ./src
 RUN ./mvnw clean package -DskipTests -B
 
 # Final stage: Run the application
-FROM eclipse-temurin:24-jdk
+FROM eclipse-temurin:25-jdk
 
 WORKDIR /app
 

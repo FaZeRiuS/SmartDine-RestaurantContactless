@@ -2,6 +2,7 @@ package com.example.CourseWork.service.menu.impl;
 
 import com.example.CourseWork.dto.menu.MenuDto;
 import com.example.CourseWork.dto.menu.MenuResponseDto;
+import com.example.CourseWork.dto.menu.MenuSummaryDto;
 import com.example.CourseWork.dto.menu.MenuWithDishesDto;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
@@ -86,6 +87,91 @@ public class MenuServiceImpl implements MenuService {
         dishRatingService.enrichWithRatings(allDishes);
 
         return dtos;
+    }
+
+    @Transactional
+    @Override
+    public List<MenuSummaryDto> getActiveMenusSummary() {
+        List<Menu> menus = menuRepository.findAll();
+        if (menus.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isStaff = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CHEF") || a.getAuthority().equals("ROLE_ADMINISTRATOR"));
+
+        return menus.stream()
+                .sorted((m1, m2) -> {
+                    boolean m1HasTime = m1.getStartTime() != null || m1.getEndTime() != null;
+                    boolean m2HasTime = m2.getStartTime() != null || m2.getEndTime() != null;
+                    if (m1HasTime && !m2HasTime) return -1;
+                    if (!m1HasTime && m2HasTime) return 1;
+                    return m1.getId().compareTo(m2.getId());
+                })
+                .filter(m -> isStaff || isMenuActiveNow(m, now))
+                .map(this::toMenuSummaryDto)
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    @Transactional
+    @Override
+    public List<MenuWithDishesDto> getActiveMenusWithDishes(String filter) {
+        List<Menu> menus = menuRepository.findAllWithDishes();
+        if (menus.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        LocalTime now = LocalTime.now(appClock).truncatedTo(ChronoUnit.MINUTES);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isStaff = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_CHEF") || a.getAuthority().equals("ROLE_ADMINISTRATOR"));
+
+        List<Menu> active = menus.stream()
+                .sorted((m1, m2) -> {
+                    boolean m1HasTime = m1.getStartTime() != null || m1.getEndTime() != null;
+                    boolean m2HasTime = m2.getStartTime() != null || m2.getEndTime() != null;
+                    if (m1HasTime && !m2HasTime) return -1;
+                    if (!m1HasTime && m2HasTime) return 1;
+                    return m1.getId().compareTo(m2.getId());
+                })
+                .filter(m -> isStaff || isMenuActiveNow(m, now))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        List<Menu> filtered;
+        if (filter == null || filter.isBlank() || "all".equalsIgnoreCase(filter)) {
+            filtered = active;
+        } else {
+            filtered = active.stream()
+                    .filter(m -> m.getId() != null && m.getId().toString().equals(filter))
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+
+        List<MenuWithDishesDto> dtos = filtered.stream()
+                .map(menuMapper::toMenuWithDishesDto)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        attachDishTags(dtos);
+
+        java.util.List<com.example.CourseWork.dto.menu.DishResponseDto> allDishes = dtos.stream()
+                .filter(m -> m.getDishes() != null)
+                .flatMap(m -> m.getDishes().stream())
+                .collect(java.util.stream.Collectors.toList());
+        dishRatingService.enrichWithRatings(allDishes);
+
+        return dtos;
+    }
+
+    private MenuSummaryDto toMenuSummaryDto(Menu menu) {
+        MenuSummaryDto dto = new MenuSummaryDto();
+        dto.setId(menu.getId());
+        dto.setName(menu.getName());
+        dto.setStartTime(menu.getStartTime());
+        dto.setEndTime(menu.getEndTime());
+        return dto;
     }
 
     /**

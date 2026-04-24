@@ -1,7 +1,7 @@
 package com.example.CourseWork.controller;
 
 import com.example.CourseWork.dto.cart.CartResponseDto;
-import com.example.CourseWork.dto.menu.MenuWithDishesDto;
+import com.example.CourseWork.dto.menu.MenuSummaryDto;
 import com.example.CourseWork.service.cart.CartService;
 import com.example.CourseWork.service.menu.DishService;
 import com.example.CourseWork.service.menu.MenuService;
@@ -71,13 +71,11 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
     @Test
     void menuPage_ShouldRenderAvailableMenus() throws Exception {
         // Arrange
-        MenuWithDishesDto menu = new MenuWithDishesDto();
+        MenuSummaryDto menu = new MenuSummaryDto();
         menu.setId(1);
         menu.setName("Lunch Special");
-        menu.setStartTime(null); // Available always
-        menu.setEndTime(null);
 
-        when(menuService.getAllMenusWithDishes()).thenReturn(List.of(menu));
+        when(menuService.getActiveMenusSummary()).thenReturn(List.of(menu));
 
         // Act
         HtmlPage page = webClient.getPage("http://localhost/menu");
