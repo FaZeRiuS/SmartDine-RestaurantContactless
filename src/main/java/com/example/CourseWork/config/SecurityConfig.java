@@ -104,6 +104,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/cart/**").permitAll()
                         .requestMatchers("/htmx/cart/**", "/htmx/orders/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/htmx/menu/**").permitAll()
+                        // Home page: popular dishes are visible to guests as well (avoid 401 + toast spam)
+                        .requestMatchers(HttpMethod.GET, "/htmx/home/popular").permitAll()
                         .requestMatchers("/api/user/me").permitAll()
                         // Order API: allow guests (CurrentUserIdentity creates GUEST_<sessionId>)
                         .requestMatchers(HttpMethod.POST, "/api/orders").permitAll()
