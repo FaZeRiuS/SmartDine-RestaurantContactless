@@ -7,6 +7,7 @@ import com.example.CourseWork.service.menu.DishService;
 import com.example.CourseWork.service.menu.MenuService;
 import com.example.CourseWork.service.order.OrderService;
 import com.example.CourseWork.service.recommendation.RecommendationService;
+import com.example.CourseWork.service.user.UserPreferenceService;
 import org.htmlunit.WebClient;
 import org.htmlunit.html.HtmlPage;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,9 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
     private OrderService orderService;
 
     @MockitoBean
+    private UserPreferenceService userPreferenceService;
+
+    @MockitoBean
     private Clock appClock;
 
     private WebClient webClient;
@@ -66,6 +70,10 @@ class MenuFrontendIntegrationTest extends BaseControllerTest {
         when(cartService.getCartByUserId(any())).thenReturn(emptyCart);
 
         when(orderService.getMyActiveOrder(any())).thenReturn(Optional.empty());
+
+        when(dishService.getDistinctTags()).thenReturn(List.of());
+        when(dishService.getDistinctAllergens()).thenReturn(List.of());
+        when(userPreferenceService.getExcludedAllergens(any())).thenReturn(java.util.Set.of());
     }
 
     @Test

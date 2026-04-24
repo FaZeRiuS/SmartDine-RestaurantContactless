@@ -11,6 +11,7 @@ import com.example.CourseWork.security.CurrentUserIdentity;
 import org.springframework.beans.factory.annotation.Value;
 import com.example.CourseWork.service.order.OrderService;
 import com.example.CourseWork.dto.order.OrderResponseDto;
+import com.example.CourseWork.service.user.UserPreferenceService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,6 +38,7 @@ public class PageController {
     private final CartService cartService;
     private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
+    private final UserPreferenceService userPreferenceService;
     private final String keycloakPublicUrl;
     @SuppressWarnings("unused")
     private final Clock appClock;
@@ -48,6 +50,7 @@ public class PageController {
             CartService cartService,
             OrderService orderService,
             CurrentUserIdentity currentUserIdentity,
+            UserPreferenceService userPreferenceService,
             Clock appClock,
             @Value("${keycloak.public-url:http://localhost:8080}") String keycloakPublicUrl
     ) {
@@ -57,6 +60,7 @@ public class PageController {
         this.cartService = cartService;
         this.orderService = orderService;
         this.currentUserIdentity = currentUserIdentity;
+        this.userPreferenceService = userPreferenceService;
         this.appClock = appClock;
         this.keycloakPublicUrl = keycloakPublicUrl;
     }
@@ -99,7 +103,8 @@ public class PageController {
         }
 
         // 2. Popular dishes: highest total ordered quantity, max 2 per menu, up to 6
-        List<DishResponseDto> popularDishes = dishService.getPopularDishesForHome(6, 2, excludeFromPopular);
+        java.util.Set<String> excludedAllergens = userPreferenceService.getExcludedAllergens(currentUserIdentity.currentUserId());
+        List<DishResponseDto> popularDishes = dishService.getPopularDishesForHome(6, 2, excludeFromPopular, excludedAllergens);
 
         model.addAttribute("personalizedRecommendations", personalized);
         model.addAttribute("popularDishes", popularDishes);

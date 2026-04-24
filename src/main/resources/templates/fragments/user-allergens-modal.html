@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="modalBody">
+    <form id="userAllergensForm"
+          hx-post="/htmx/user/allergens"
+          hx-target="#allergenPrefsModalBody"
+          hx-swap="innerHTML"
+          hx-on::afterRequest="if (event.detail.xhr && event.detail.xhr.status >= 200 && event.detail.xhr.status < 300) { closeModal('allergenPrefsModal'); document.body.dispatchEvent(new Event('userAllergensUpdated')); }"
+          onsubmit="return false;">
+
+        <div class="form-group">
+            <label class="form-label">Виключити алергени</label>
+            <div class="d-flex" style="gap:10px; flex-wrap:wrap;">
+                <label class="form-check" th:each="a : ${availableAllergens}">
+                    <input type="checkbox"
+                           name="excludeAllergens"
+                           th:value="${a}"
+                           th:checked="${selectedAllergens != null && selectedAllergens.contains(a)}">
+                    <span th:text="${a}">allergen</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="document.querySelectorAll('#userAllergensForm input[type=checkbox]').forEach(cb => cb.checked = false);">
+                Очистити
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm">
+                Зберегти
+            </button>
+        </div>
+    </form>
+</th:block>
+</body>
+</html>
+

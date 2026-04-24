@@ -6,6 +6,7 @@ import com.example.CourseWork.model.PaymentStatus;
 import com.example.CourseWork.service.menu.MenuService;
 import com.example.CourseWork.service.order.OrderService;
 import com.example.CourseWork.security.CurrentUserIdentity;
+import com.example.CourseWork.service.user.UserPreferenceService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -28,6 +29,7 @@ public class HtmxMenuCategoriesController {
     private final MenuService menuService;
     private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
+    private final UserPreferenceService userPreferenceService;
 
     @GetMapping("/categories-body")
     public String categoriesBody(
@@ -41,11 +43,22 @@ public class HtmxMenuCategoriesController {
         Integer tableNumber = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", tableNumber);
 
+        String userId = currentUserIdentity.currentUserId();
+        java.util.Set<String> userExcluded = userPreferenceService.getExcludedAllergens(userId);
+        java.util.Set<String> effectiveExcludeAllergens = new java.util.HashSet<>(userExcluded);
+        if (excludeAllergens != null) {
+            for (String a : excludeAllergens) {
+                if (a != null && !a.isBlank()) {
+                    effectiveExcludeAllergens.add(a.trim());
+                }
+            }
+        }
+
         List<MenuWithDishesDto> menus = menuService.getActiveMenusWithDishes(
                 filter,
                 includeTags == null ? List.of() : includeTags,
                 excludeTags == null ? List.of() : excludeTags,
-                excludeAllergens == null ? List.of() : excludeAllergens
+                new java.util.ArrayList<>(effectiveExcludeAllergens)
         );
 
         model.addAttribute("menus", menus);

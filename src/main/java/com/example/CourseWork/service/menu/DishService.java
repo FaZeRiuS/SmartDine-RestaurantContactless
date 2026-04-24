@@ -18,6 +18,7 @@ public interface DishService {
      * counted per menu (a dish in several menus consumes one slot in each). Skips {@code excludeDishIds}.
      */
     List<DishResponseDto> getPopularDishesForHome(int maxDishes, int maxPerMenu, Set<Integer> excludeDishIds);
+    List<DishResponseDto> getPopularDishesForHome(int maxDishes, int maxPerMenu, Set<Integer> excludeDishIds, Set<String> excludeAllergens);
 
     List<DishResponseDto> getAllDishes();
     DishResponseDto getDishById(Integer id);

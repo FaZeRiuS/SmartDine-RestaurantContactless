@@ -115,7 +115,13 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public List<DishResponseDto> getPopularDishesForHome(int maxDishes, int maxPerMenu, Set<Integer> excludeDishIds) {
+        return getPopularDishesForHome(maxDishes, maxPerMenu, excludeDishIds, Set.of());
+    }
+
+    @Override
+    public List<DishResponseDto> getPopularDishesForHome(int maxDishes, int maxPerMenu, Set<Integer> excludeDishIds, Set<String> excludeAllergens) {
         Set<Integer> exclude = excludeDishIds == null ? Set.of() : excludeDishIds;
+        Set<String> excludeAllergenSet = excludeAllergens == null ? Set.of() : excludeAllergens;
         List<Object[]> popularityRows = dishRepository.findAvailableDishesOrderedByOrderVolume(POPULAR_HOME_CANDIDATE_POOL);
         if (popularityRows.isEmpty()) {
             return List.of();
@@ -166,14 +172,23 @@ public class DishServiceImpl implements DishService {
             return List.of();
         }
 
-        Map<Integer, Dish> byId = dishRepository.findAllByIdWithTags(chosenIds).stream()
+        Map<Integer, Dish> byIdWithTags = dishRepository.findAllByIdWithTags(chosenIds).stream()
                 .collect(Collectors.toMap(Dish::getId, d -> d));
+        Map<Integer, Dish> byIdWithAllergens = dishRepository.findAllByIdWithAllergens(chosenIds).stream()
+                .collect(Collectors.toMap(Dish::getId, d -> d));
+
         List<DishResponseDto> result = new ArrayList<>();
         for (int id : chosenIds) {
-            Dish d = byId.get(id);
-            if (d != null) {
-                DishResponseDto dto = dishMapper.toResponseDto(d);
-                dto.setTags(d.getTags());
+            Dish dTags = byIdWithTags.get(id);
+            Dish dAll = byIdWithAllergens.get(id);
+            if (dTags != null) {
+                List<String> allergens = dAll != null ? dAll.getAllergens() : List.of();
+                if (!excludeAllergenSet.isEmpty() && allergens != null && allergens.stream().anyMatch(excludeAllergenSet::contains)) {
+                    continue;
+                }
+                DishResponseDto dto = dishMapper.toResponseDto(dTags);
+                dto.setTags(dTags.getTags());
+                dto.setAllergens(allergens == null ? List.of() : allergens);
                 result.add(dto);
             }
         }
