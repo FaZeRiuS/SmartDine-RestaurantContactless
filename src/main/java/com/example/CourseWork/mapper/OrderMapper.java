@@ -49,6 +49,7 @@ public class OrderMapper {
         dto.setTipAmount(tip);
         dto.setTableNumber(order.getTableNumber());
         dto.setNeedsWaiter(order.isNeedsWaiter());
+        dto.setEstimatedReadyTime(order.getEstimatedReadyTime());
 
         List<OrderItemResponseDto> items = (order.getItems() == null ? Collections.<OrderItem>emptyList() : order.getItems())
                 .stream().map(item -> {
