@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<th:block th:fragment="dishCard(dish, stat, hasActivePaidOrder, headerMb, cardExtraClass, inlineStyle, imgLoading, imgFetchPriority, placeholderIcons, buttonAriaLabel)">
+<th:block th:fragment="dishCard(dish, stat, hasActivePaidOrder, headerMb, cardExtraClass, inlineStyle, imgLoading, imgFetchPriority, placeholderIcons, buttonAriaLabel, isLcp)">
     <div class="dish-card"
          th:classappend="${((cardExtraClass != null && !cardExtraClass.isEmpty()) ? (' ' + cardExtraClass) : '') + ((dish.isAvailable != null && !dish.isAvailable) ? ' dish-unavailable' : '')}"
          th:style="${inlineStyle != null ? inlineStyle : ''}">
@@ -16,8 +16,8 @@
                  th:alt="${dish.name}"
                  width="800"
                  height="600"
-                 th:loading="${imgLoading}"
-                 th:attr="fetchpriority=${imgFetchPriority}"
+                 th:loading="${isLcp != null && isLcp ? 'eager' : imgLoading}"
+                 th:attr="fetchpriority=${isLcp != null && isLcp ? 'high' : imgFetchPriority}"
                  decoding="async"
                  sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px"
                  class="dish-image">

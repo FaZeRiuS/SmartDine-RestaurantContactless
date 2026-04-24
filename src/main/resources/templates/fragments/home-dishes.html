@@ -7,7 +7,8 @@
         <th:block th:each="dish, stat : ${personalizedRecommendations}">
             <th:block th:with="delayStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
                                imgLoading=${stat.index == 0 ? 'eager' : 'lazy'},
-                               imgFetchPriority=${stat.index == 0 ? 'high' : 'auto'}"
+                               imgFetchPriority=${stat.index == 0 ? 'high' : 'auto'},
+                               isLcp=${lcpImageUrl != null && dish.imageUrl != null && dish.imageUrl == lcpImageUrl}"
                       th:replace="~{fragments/dish-card :: dishCard(
                             dish=${dish},
                             stat=${stat},
@@ -18,7 +19,8 @@
                             imgLoading=${imgLoading},
                             imgFetchPriority=${imgFetchPriority},
                             placeholderIcons=${false},
-                            buttonAriaLabel=${null}
+                            buttonAriaLabel=${null},
+                            isLcp=${isLcp}
                       )}">
             </th:block>
         </th:block>
@@ -33,7 +35,8 @@
         <th:block th:each="dish, stat : ${popularDishes}">
             <th:block th:with="delayStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
                                imgLoading=${stat.index == 0 ? 'eager' : 'lazy'},
-                               imgFetchPriority=${stat.index == 0 ? 'high' : 'auto'}"
+                               imgFetchPriority=${stat.index == 0 ? 'high' : 'auto'},
+                               isLcp=${lcpImageUrl != null && dish.imageUrl != null && dish.imageUrl == lcpImageUrl}"
                       th:replace="~{fragments/dish-card :: dishCard(
                             dish=${dish},
                             stat=${stat},
@@ -44,7 +47,8 @@
                             imgLoading=${imgLoading},
                             imgFetchPriority=${imgFetchPriority},
                             placeholderIcons=${false},
-                            buttonAriaLabel=${null}
+                            buttonAriaLabel=${null},
+                            isLcp=${isLcp}
                       )}">
             </th:block>
         </th:block>
