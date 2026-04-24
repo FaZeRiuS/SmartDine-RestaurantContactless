@@ -11,6 +11,7 @@ public interface MenuService {
     List<MenuWithDishesDto> getAllMenusWithDishes();
     List<MenuSummaryDto> getActiveMenusSummary();
     List<MenuWithDishesDto> getActiveMenusWithDishes(String filter);
+    List<MenuWithDishesDto> getActiveMenusWithDishes(String filter, List<String> includeTags, List<String> excludeTags, List<String> excludeAllergens);
     MenuResponseDto createMenu(MenuDto dto);
     MenuResponseDto updateMenu(Integer id, MenuDto dto);
     void deleteMenu(Integer id);

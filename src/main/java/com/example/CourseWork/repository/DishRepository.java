@@ -26,6 +26,15 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
     @Query("select distinct d from Dish d left join fetch d.tags where d.id in (:ids)")
     List<Dish> findAllByIdWithTags(@Param("ids") Collection<Integer> ids);
 
+    @Query("select distinct d from Dish d left join fetch d.allergens where d.id in (:ids)")
+    List<Dish> findAllByIdWithAllergens(@Param("ids") Collection<Integer> ids);
+
+    @Query(value = "select distinct tag from dish_tags order by tag", nativeQuery = true)
+    List<String> findDistinctTags();
+
+    @Query(value = "select distinct allergen from dish_allergens order by allergen", nativeQuery = true)
+    List<String> findDistinctAllergens();
+
     @Query(value = """
         WITH RecentDishes AS (
             SELECT oi.dish_id

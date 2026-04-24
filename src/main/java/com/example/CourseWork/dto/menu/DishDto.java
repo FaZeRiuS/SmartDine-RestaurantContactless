@@ -13,5 +13,6 @@ public class DishDto {
     private Boolean isAvailable;
     private List<Integer> menuIds;
     private List<String> tags;
+    private List<String> allergens;
     private Integer preparationTime;
 }

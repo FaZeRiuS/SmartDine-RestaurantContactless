@@ -79,6 +79,10 @@
                             <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
                         </div>
 
+                        <div class="dish-allergens" th:if="${dish.allergens != null && !dish.allergens.isEmpty()}">
+                            <span class="dish-allergen" th:each="a : ${dish.allergens}" th:text="${a}">allergen</span>
+                        </div>
+
                         <div class="dish-actions">
                             <form hx-post="/htmx/cart/items" hx-swap="none">
                                 <input type="hidden" name="dishId" th:value="${dish.id}">

@@ -224,6 +224,41 @@
             <a th:href="@{/menu(table=${tableNumber})}" class="btn btn-secondary">Переглянути все →</a>
         </div>
 
+        <details class="accordion mb-4" th:if="${(availableTags != null && !availableTags.isEmpty()) || (availableAllergens != null && !availableAllergens.isEmpty())}">
+            <summary class="accordion-summary">Фільтри (теги / алергени)</summary>
+            <form id="indexMenuFilters" class="filters-bar" onsubmit="return false;">
+                <div th:if="${availableTags != null && !availableTags.isEmpty()}">
+                    <div class="form-label">Показати теги (OR)</div>
+                    <div class="d-flex" style="gap:10px; flex-wrap:wrap;">
+                        <label class="form-check" th:each="t : ${availableTags}">
+                            <input type="checkbox" name="includeTags" th:value="${t}">
+                            <span th:text="${t}">tag</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div th:if="${availableTags != null && !availableTags.isEmpty()}">
+                    <div class="form-label">Приховати теги</div>
+                    <div class="d-flex" style="gap:10px; flex-wrap:wrap;">
+                        <label class="form-check" th:each="t : ${availableTags}">
+                            <input type="checkbox" name="excludeTags" th:value="${t}">
+                            <span th:text="${t}">tag</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div th:if="${availableAllergens != null && !availableAllergens.isEmpty()}">
+                    <div class="form-label">Виключити алергени</div>
+                    <div class="d-flex" style="gap:10px; flex-wrap:wrap;">
+                        <label class="form-check" th:each="a : ${availableAllergens}">
+                            <input type="checkbox" name="excludeAllergens" th:value="${a}">
+                            <span th:text="${a}">allergen</span>
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </details>
+
         <div class="menu-tabs" data-swipe-target="#menuCategoriesRoot" aria-label="Категорії меню">
             <button type="button" class="menu-tab" th:each="menu : ${menus}"
                     th:classappend="${firstMenuId != null && firstMenuId == menu.id ? 'active' : ''}"
@@ -231,6 +266,7 @@
                     th:attr="hx-get=@{/htmx/menu/categories-body(filter=${menu.id},view='index')}"
                     hx-target="#menuCategoriesRoot"
                     hx-swap="innerHTML"
+                    hx-include="#indexMenuFilters"
                     hx-on:click="document.querySelectorAll('#menus-overview .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">
                 Категорія
             </button>
@@ -238,6 +274,7 @@
                     th:attr="hx-get=@{/htmx/menu/categories-body(filter='all',view='index')}"
                     hx-target="#menuCategoriesRoot"
                     hx-swap="innerHTML"
+                    hx-include="#indexMenuFilters"
                     hx-on:click="document.querySelectorAll('#menus-overview .menu-tab').forEach(function(t){ t.classList.remove('active'); }); this.classList.add('active');">Усе</button>
         </div>
 
@@ -245,7 +282,8 @@
              th:if="${firstMenuId != null}"
              th:attr="hx-get=@{/htmx/menu/categories-body(filter=${firstMenuId},view='index')}"
              hx-trigger="load"
-             hx-swap="innerHTML">
+             hx-swap="innerHTML"
+             hx-include="#indexMenuFilters">
             <div class="empty-state p-3">
                 <p class="text-muted">Завантаження меню…</p>
             </div>
@@ -258,5 +296,17 @@
 
 <!-- Scripts: identity + SSE notifications (sse.js) -->
 <div th:replace="~{fragments/layout :: scripts}"></div>
+
+<script>
+    (function () {
+        var form = document.getElementById('indexMenuFilters');
+        if (!form) return;
+        form.addEventListener('change', function () {
+            var active = document.querySelector('#menus-overview .menu-tabs .menu-tab.active')
+                || document.querySelector('#menus-overview .menu-tabs .menu-tab');
+            if (active) active.click();
+        });
+    })();
+</script>
 </body>
 </html>

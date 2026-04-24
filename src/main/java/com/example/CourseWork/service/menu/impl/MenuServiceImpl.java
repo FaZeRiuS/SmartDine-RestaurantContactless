@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.time.LocalTime;
 import java.time.Clock;
@@ -119,6 +120,17 @@ public class MenuServiceImpl implements MenuService {
     @Transactional
     @Override
     public List<MenuWithDishesDto> getActiveMenusWithDishes(String filter) {
+        return getActiveMenusWithDishes(filter, List.of(), List.of(), List.of());
+    }
+
+    @Transactional
+    @Override
+    public List<MenuWithDishesDto> getActiveMenusWithDishes(
+            String filter,
+            List<String> includeTags,
+            List<String> excludeTags,
+            List<String> excludeAllergens
+    ) {
         List<Menu> menus = menuRepository.findAllWithDishes();
         if (menus.isEmpty()) {
             return new ArrayList<>();
@@ -155,6 +167,9 @@ public class MenuServiceImpl implements MenuService {
                 .collect(Collectors.toCollection(ArrayList::new));
 
         attachDishTags(dtos);
+        attachDishAllergens(dtos);
+
+        applyDishFilters(dtos, includeTags, excludeTags, excludeAllergens);
 
         java.util.List<com.example.CourseWork.dto.menu.DishResponseDto> allDishes = dtos.stream()
                 .filter(m -> m.getDishes() != null)
@@ -181,13 +196,7 @@ public class MenuServiceImpl implements MenuService {
         if (menus == null || menus.isEmpty()) {
             return;
         }
-        List<Integer> dishIds = menus.stream()
-                .filter(m -> m.getDishes() != null)
-                .flatMap(m -> m.getDishes().stream())
-                .map(com.example.CourseWork.dto.menu.DishResponseDto::getId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
+        List<Integer> dishIds = collectDishIds(menus);
         if (dishIds.isEmpty()) {
             return;
         }
@@ -212,6 +221,116 @@ public class MenuServiceImpl implements MenuService {
                 dishDto.setTags(tagsByDishId.getOrDefault(dishDto.getId(), List.of()));
             }
         }
+    }
+
+    private void attachDishAllergens(List<MenuWithDishesDto> menus) {
+        if (menus == null || menus.isEmpty()) {
+            return;
+        }
+        List<Integer> dishIds = collectDishIds(menus);
+        if (dishIds.isEmpty()) {
+            return;
+        }
+
+        Map<Integer, List<String>> allergensByDishId = new HashMap<>();
+        for (Dish d : dishRepository.findAllByIdWithAllergens(dishIds)) {
+            if (d == null || d.getId() == null) {
+                continue;
+            }
+            List<String> allergens = d.getAllergens();
+            allergensByDishId.put(d.getId(), allergens == null ? List.of() : new ArrayList<>(allergens));
+        }
+
+        for (MenuWithDishesDto menu : menus) {
+            if (menu.getDishes() == null) {
+                continue;
+            }
+            for (com.example.CourseWork.dto.menu.DishResponseDto dishDto : menu.getDishes()) {
+                if (dishDto == null || dishDto.getId() == null) {
+                    continue;
+                }
+                dishDto.setAllergens(allergensByDishId.getOrDefault(dishDto.getId(), List.of()));
+            }
+        }
+    }
+
+    private static List<Integer> collectDishIds(List<MenuWithDishesDto> menus) {
+        return menus.stream()
+                .filter(m -> m.getDishes() != null)
+                .flatMap(m -> m.getDishes().stream())
+                .map(com.example.CourseWork.dto.menu.DishResponseDto::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private static void applyDishFilters(
+            List<MenuWithDishesDto> menus,
+            List<String> includeTags,
+            List<String> excludeTags,
+            List<String> excludeAllergens
+    ) {
+        Set<String> includeTagSet = normalizeToSet(includeTags);
+        Set<String> excludeTagSet = normalizeToSet(excludeTags);
+        Set<String> excludeAllergenSet = normalizeToSet(excludeAllergens);
+
+        if (includeTagSet.isEmpty() && excludeTagSet.isEmpty() && excludeAllergenSet.isEmpty()) {
+            return;
+        }
+
+        for (MenuWithDishesDto menu : menus) {
+            if (menu == null || menu.getDishes() == null) {
+                continue;
+            }
+            menu.setDishes(menu.getDishes().stream()
+                    .filter(d -> dishMatchesFilters(d, includeTagSet, excludeTagSet, excludeAllergenSet))
+                    .collect(Collectors.toCollection(ArrayList::new)));
+        }
+    }
+
+    private static boolean dishMatchesFilters(
+            com.example.CourseWork.dto.menu.DishResponseDto dish,
+            Set<String> includeTags,
+            Set<String> excludeTags,
+            Set<String> excludeAllergens
+    ) {
+        if (dish == null) {
+            return false;
+        }
+
+        if (!includeTags.isEmpty()) {
+            List<String> tags = dish.getTags();
+            if (tags == null || tags.stream().noneMatch(includeTags::contains)) {
+                return false;
+            }
+        }
+
+        if (!excludeTags.isEmpty()) {
+            List<String> tags = dish.getTags();
+            if (tags != null && tags.stream().anyMatch(excludeTags::contains)) {
+                return false;
+            }
+        }
+
+        if (!excludeAllergens.isEmpty()) {
+            List<String> allergens = dish.getAllergens();
+            if (allergens != null && allergens.stream().anyMatch(excludeAllergens::contains)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static Set<String> normalizeToSet(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return Set.of();
+        }
+        return values.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Override

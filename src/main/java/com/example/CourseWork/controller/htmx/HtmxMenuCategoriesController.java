@@ -33,12 +33,20 @@ public class HtmxMenuCategoriesController {
     public String categoriesBody(
             @RequestParam(defaultValue = "all") String filter,
             @RequestParam(defaultValue = "index") String view,
+            @RequestParam(required = false) List<String> includeTags,
+            @RequestParam(required = false) List<String> excludeTags,
+            @RequestParam(required = false) List<String> excludeAllergens,
             HttpSession session,
             Model model) {
         Integer tableNumber = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", tableNumber);
 
-        List<MenuWithDishesDto> menus = menuService.getActiveMenusWithDishes(filter);
+        List<MenuWithDishesDto> menus = menuService.getActiveMenusWithDishes(
+                filter,
+                includeTags == null ? List.of() : includeTags,
+                excludeTags == null ? List.of() : excludeTags,
+                excludeAllergens == null ? List.of() : excludeAllergens
+        );
 
         model.addAttribute("menus", menus);
         model.addAttribute("menuView", view);

@@ -54,10 +54,12 @@ public class DishServiceImpl implements DishService {
         dish.setImageUrl(dto.getImageUrl());
         dish.setMenus(menus);
         dish.setTags(dto.getTags() == null ? new ArrayList<>() : new ArrayList<>(dto.getTags()));
+        dish.setAllergens(dto.getAllergens() == null ? new ArrayList<>() : new ArrayList<>(dto.getAllergens()));
 
         DishResponseDto out = dishMapper.toResponseDto(dishRepository.save(dish));
         out.setMenuIds(menuIds);
         out.setTags(dto.getTags() == null ? java.util.List.of() : dto.getTags());
+        out.setAllergens(dto.getAllergens() == null ? java.util.List.of() : dto.getAllergens());
         return out;
     }
 
@@ -81,10 +83,12 @@ public class DishServiceImpl implements DishService {
         dish.setImageUrl(dto.getImageUrl());
         dish.setMenus(menus);
         dish.setTags(dto.getTags() == null ? new ArrayList<>() : new ArrayList<>(dto.getTags()));
+        dish.setAllergens(dto.getAllergens() == null ? new ArrayList<>() : new ArrayList<>(dto.getAllergens()));
 
         DishResponseDto out = dishMapper.toResponseDto(dishRepository.save(dish));
         out.setMenuIds(menuIds);
         out.setTags(dto.getTags() == null ? java.util.List.of() : dto.getTags());
+        out.setAllergens(dto.getAllergens() == null ? java.util.List.of() : dto.getAllergens());
         return out;
     }
 
@@ -245,5 +249,15 @@ public class DishServiceImpl implements DishService {
             menuIdsByDish.computeIfAbsent(dishId, k -> new ArrayList<>()).add(menuId);
         }
         dishes.forEach(d -> d.setMenuIds(menuIdsByDish.getOrDefault(d.getId(), List.of())));
+    }
+
+    @Override
+    public List<String> getDistinctTags() {
+        return dishRepository.findDistinctTags();
+    }
+
+    @Override
+    public List<String> getDistinctAllergens() {
+        return dishRepository.findDistinctAllergens();
     }
 }

@@ -72,4 +72,9 @@ public class Dish {
     @CollectionTable(name = "dish_tags", joinColumns = @JoinColumn(name = "dish_id"))
     @Column(name = "tag")
     private List<String> tags = new ArrayList<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "dish_allergens", joinColumns = @JoinColumn(name = "dish_id"))
+    @Column(name = "allergen")
+    private List<String> allergens = new ArrayList<>();
 }

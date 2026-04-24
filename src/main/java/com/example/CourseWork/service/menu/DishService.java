@@ -23,4 +23,7 @@ public interface DishService {
     DishResponseDto getDishById(Integer id);
     Optional<DishResponseDto> getSmartCombo(Integer dishId, List<Integer> existingIds);
     void updateDishImage(Integer id, String imageUrl);
+
+    List<String> getDistinctTags();
+    List<String> getDistinctAllergens();
 }

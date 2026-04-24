@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -153,5 +154,133 @@ class MenuServiceTest {
 
         NotFoundException ex = assertThrows(NotFoundException.class, () -> menuService.updateMenu(menuId, menuDto));
         assertEquals(ErrorMessages.MENU_NOT_FOUND, ex.getMessage());
+    }
+
+    @Test
+    void testFilter_ExcludeAllergens_RemovesMatchingDishes() {
+        Menu menu = new Menu();
+        menu.setId(1);
+        menu.setName("Menu");
+
+        DishResponseDto d1 = new DishResponseDto();
+        d1.setId(10);
+        DishResponseDto d2 = new DishResponseDto();
+        d2.setId(20);
+
+        MenuWithDishesDto mapped = new MenuWithDishesDto();
+        mapped.setId(1);
+        mapped.setName("Menu");
+        mapped.setDishes(new ArrayList<>(List.of(d1, d2)));
+
+        when(menuRepository.findAllWithDishes()).thenReturn(List.of(menu));
+        when(menuMapper.toMenuWithDishesDto(any(Menu.class))).thenReturn(mapped);
+
+        Dish dish10 = new Dish();
+        dish10.setId(10);
+        dish10.setTags(List.of());
+        Dish dish20 = new Dish();
+        dish20.setId(20);
+        dish20.setTags(List.of());
+        when(dishRepository.findAllByIdWithTags(any())).thenReturn(List.of(dish10, dish20));
+
+        Dish dish10a = new Dish();
+        dish10a.setId(10);
+        dish10a.setAllergens(List.of("milk"));
+        Dish dish20a = new Dish();
+        dish20a.setId(20);
+        dish20a.setAllergens(List.of());
+        when(dishRepository.findAllByIdWithAllergens(any())).thenReturn(List.of(dish10a, dish20a));
+
+        List<MenuWithDishesDto> result = menuService.getActiveMenusWithDishes("all", List.of(), List.of(), List.of("milk"));
+
+        assertEquals(1, result.size());
+        assertNotNull(result.getFirst().getDishes());
+        assertEquals(1, result.getFirst().getDishes().size());
+        assertEquals(20, result.getFirst().getDishes().getFirst().getId());
+        verify(dishRatingService, times(1)).enrichWithRatings(anyList());
+    }
+
+    @Test
+    void testFilter_IncludeTags_OrSemantics() {
+        Menu menu = new Menu();
+        menu.setId(1);
+        menu.setName("Menu");
+
+        DishResponseDto d1 = new DishResponseDto();
+        d1.setId(10);
+        DishResponseDto d2 = new DishResponseDto();
+        d2.setId(20);
+
+        MenuWithDishesDto mapped = new MenuWithDishesDto();
+        mapped.setId(1);
+        mapped.setName("Menu");
+        mapped.setDishes(new ArrayList<>(List.of(d1, d2)));
+
+        when(menuRepository.findAllWithDishes()).thenReturn(List.of(menu));
+        when(menuMapper.toMenuWithDishesDto(any(Menu.class))).thenReturn(mapped);
+
+        Dish dish10 = new Dish();
+        dish10.setId(10);
+        dish10.setTags(List.of("meat"));
+        Dish dish20 = new Dish();
+        dish20.setId(20);
+        dish20.setTags(List.of("seafood"));
+        when(dishRepository.findAllByIdWithTags(any())).thenReturn(List.of(dish10, dish20));
+
+        Dish dish10a = new Dish();
+        dish10a.setId(10);
+        dish10a.setAllergens(List.of());
+        Dish dish20a = new Dish();
+        dish20a.setId(20);
+        dish20a.setAllergens(List.of());
+        when(dishRepository.findAllByIdWithAllergens(any())).thenReturn(List.of(dish10a, dish20a));
+
+        List<MenuWithDishesDto> result = menuService.getActiveMenusWithDishes("all", List.of("seafood", "vegan"), List.of(), List.of());
+
+        assertEquals(1, result.size());
+        assertEquals(1, result.getFirst().getDishes().size());
+        assertEquals(20, result.getFirst().getDishes().getFirst().getId());
+    }
+
+    @Test
+    void testFilter_ExcludeTags_RemovesMatchingDishes() {
+        Menu menu = new Menu();
+        menu.setId(1);
+        menu.setName("Menu");
+
+        DishResponseDto d1 = new DishResponseDto();
+        d1.setId(10);
+        DishResponseDto d2 = new DishResponseDto();
+        d2.setId(20);
+
+        MenuWithDishesDto mapped = new MenuWithDishesDto();
+        mapped.setId(1);
+        mapped.setName("Menu");
+        mapped.setDishes(new ArrayList<>(List.of(d1, d2)));
+
+        when(menuRepository.findAllWithDishes()).thenReturn(List.of(menu));
+        when(menuMapper.toMenuWithDishesDto(any(Menu.class))).thenReturn(mapped);
+
+        Dish dish10 = new Dish();
+        dish10.setId(10);
+        dish10.setTags(List.of("alcohol", "drink"));
+        Dish dish20 = new Dish();
+        dish20.setId(20);
+        dish20.setTags(List.of("drink"));
+        when(dishRepository.findAllByIdWithTags(any())).thenReturn(List.of(dish10, dish20));
+
+        Dish dish10a = new Dish();
+        dish10a.setId(10);
+        dish10a.setAllergens(List.of());
+        Dish dish20a = new Dish();
+        dish20a.setId(20);
+        dish20a.setAllergens(List.of());
+        when(dishRepository.findAllByIdWithAllergens(any())).thenReturn(List.of(dish10a, dish20a));
+
+        List<MenuWithDishesDto> result = menuService.getActiveMenusWithDishes("all", List.of(), List.of("alcohol"), List.of());
+
+        assertEquals(1, result.size());
+        assertEquals(1, result.getFirst().getDishes().size());
+        assertEquals(20, result.getFirst().getDishes().getFirst().getId());
     }
 }
