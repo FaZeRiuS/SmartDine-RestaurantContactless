@@ -254,6 +254,16 @@
     <script>
         document.body?.addEventListener('userAllergensUpdated', function () {
             try {
+                closeModal('allergenPrefsModal');
+            } catch (e) { /* ignore */ }
+
+            try {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Алергени збережено', 'success');
+                }
+            } catch (e) { /* ignore */ }
+
+            try {
                 // Refresh menu fragments (index and menu page) by re-triggering the active tab.
                 var activeMenuTab = document.querySelector('.menu-tabs .menu-tab.active') || document.querySelector('.menu-tabs .menu-tab');
                 if (activeMenuTab) activeMenuTab.click();

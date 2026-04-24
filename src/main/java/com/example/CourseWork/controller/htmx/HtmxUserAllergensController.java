@@ -4,6 +4,7 @@ import com.example.CourseWork.security.CurrentUserIdentity;
 import com.example.CourseWork.service.menu.DishService;
 import com.example.CourseWork.service.user.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import org.thymeleaf.context.Context;
 
 import java.util.List;
 import java.util.Set;
@@ -23,6 +26,7 @@ public class HtmxUserAllergensController {
     private final DishService dishService;
     private final UserPreferenceService userPreferenceService;
     private final CurrentUserIdentity currentUserIdentity;
+    private final SpringTemplateEngine templateEngine;
 
     @PreAuthorize("hasRole('CUSTOMER')")
     @GetMapping("/modal")
@@ -38,10 +42,23 @@ public class HtmxUserAllergensController {
 
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping
-    public String save(@RequestParam(required = false) List<String> excludeAllergens, Model model) {
+    public ResponseEntity<String> save(@RequestParam(required = false) List<String> excludeAllergens) {
         String userId = currentUserIdentity.currentUserId();
         userPreferenceService.setExcludedAllergens(userId, excludeAllergens);
-        return modal(model);
+
+        List<String> availableAllergens = dishService.getDistinctAllergens();
+        Set<String> selected = userPreferenceService.getExcludedAllergens(userId);
+
+        Context ctx = new Context();
+        ctx.setVariable("availableAllergens", availableAllergens);
+        ctx.setVariable("selectedAllergens", selected);
+
+        String html = templateEngine.process("fragments/user-allergens-modal", java.util.Set.of("modalBody"), ctx);
+
+        return ResponseEntity.ok()
+                // Fire after swap/settle to ensure DOM is updated before listeners run
+                .header("HX-Trigger-After-Swap", "userAllergensUpdated")
+                .body(html);
     }
 }
 
