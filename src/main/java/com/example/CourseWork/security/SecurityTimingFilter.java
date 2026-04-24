@@ -38,7 +38,7 @@ public class SecurityTimingFilter extends OncePerRequestFilter {
                     log.warn("SECURITY ALERT: Authorization for {} took {} ms (exceeds 200ms limit!)", 
                             request.getRequestURI(), duration);
                 } else {
-                    log.info("Security authorization for {} took {} ms", request.getRequestURI(), duration);
+                    log.debug("Security authorization for {} took {} ms", request.getRequestURI(), duration);
                 }
                 
                 // Add header to response for visibility in browser/tests
