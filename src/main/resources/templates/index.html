@@ -68,69 +68,11 @@
             </div>
         </div>
 
-        <div class="dishes-grid">
-            <div class="dish-card fade-in-up" th:each="dish, stat : ${personalizedRecommendations}"
-                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable ' : ''}"
-                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
-
-                <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
-                
-                <div class="dish-image-container">
-                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
-                             th:with="base=${dish.imageUrl.endsWith('.webp') ? dish.imageUrl.substring(0, dish.imageUrl.length() - 5) : dish.imageUrl}"
-                             th:src="${dish.imageUrl}"
-                             th:srcset="${base + '-w320.webp 320w, ' + base + '-w480.webp 480w, ' + base + '-w640.webp 640w, ' + base + '-w800.webp 800w'}"
-                             th:alt="${dish.name}"
-                             width="800"
-                             height="600"
-                             th:loading="${stat.index < 3 ? 'eager' : 'lazy'}"
-                             th:attr="fetchpriority=${stat.index < 3 ? 'high' : 'auto'}"
-                             decoding="async"
-                             sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px"
-                             class="dish-image">
-                    <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
-                        <span>Dish</span>
-                    </div>
-                </div>
-
-                <div class="dish-card-content">
-                    <div class="dish-card-header mb-1">
-                        <span class="dish-name" th:text="${dish.name}">Страва</span>
-                        <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
-                    </div>
-                    <div class="dish-meta d-flex align-center justify-between text-sm mb-1">
-                        <div>
-                            <span class="dish-rating" th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
-                                ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
-                                <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
-                            </span>
-                            <span class="dish-rating" th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
-                                ★ Немає оцінок
-                            </span>
-                        </div>
-                        <div class="dish-time text-muted" th:if="${dish.preparationTime != null}" title="Орієнтовний час приготування">
-                            ⏱️ <span th:text="${dish.preparationTime} + ' хв'">15 хв</span>
-                        </div>
-                    </div>
-                    <p class="dish-description" th:text="${dish.description}">Опис</p>
-                    <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
-                        <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
-                    </div>
-                    <div class="dish-allergens" th:if="${dish.allergens != null && !dish.allergens.isEmpty()}">
-                        <span class="dish-allergen" th:each="a : ${dish.allergens}" th:text="${a}">allergen</span>
-                    </div>
-                    <div class="dish-actions">
-                        <form hx-post="/htmx/cart/items" hx-swap="none">
-                            <input type="hidden" name="dishId" th:value="${dish.id}">
-                            <input type="hidden" name="quantity" value="1">
-                            <input type="hidden" name="specialRequest" value="">
-                            <button class="btn btn-primary add-to-cart-btn" type="submit" th:disabled="${hasActivePaidOrder}">
-                                🛒 У кошик
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+        <div id="personalizedDishesRoot"
+             hx-get="/htmx/home/recommendations"
+             hx-trigger="load, refresh"
+             hx-swap="innerHTML">
+            <div th:replace="~{fragments/home-dishes :: recommendationsGrid}"></div>
         </div>
     </div>
 </section>
@@ -147,74 +89,11 @@
             </div>
         </div>
 
-        <div class="dishes-grid" th:if="${popularDishes != null && !popularDishes.isEmpty()}">
-            <div class="dish-card fade-in-up" th:each="dish, stat : ${popularDishes}"
-                 th:classappend="${dish.isAvailable != null && !dish.isAvailable ? 'dish-unavailable ' : ''}"
-                 th:style="'animation-delay:' + ${stat.index * 0.1} + 's'">
-
-                <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
-                
-                <div class="dish-image-container">
-                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
-                             th:with="base=${dish.imageUrl.endsWith('.webp') ? dish.imageUrl.substring(0, dish.imageUrl.length() - 5) : dish.imageUrl}"
-                             th:src="${dish.imageUrl}"
-                             th:srcset="${base + '-w320.webp 320w, ' + base + '-w480.webp 480w, ' + base + '-w640.webp 640w, ' + base + '-w800.webp 800w'}"
-                             th:alt="${dish.name}"
-                             width="800"
-                             height="600"
-                             th:loading="${stat.index < 3 ? 'eager' : 'lazy'}"
-                             th:attr="fetchpriority=${stat.index < 3 ? 'high' : 'auto'}"
-                             decoding="async"
-                             sizes="(max-width: 600px) 92vw, (max-width: 1100px) 96vw, 390px"
-                             class="dish-image">
-                    <div th:unless="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}" class="dish-image-placeholder">
-                        <span>Dish</span>
-                    </div>
-                </div>
-
-                <div class="dish-card-content">
-                    <div class="dish-card-header">
-                        <span class="dish-name" th:text="${dish.name}">Страва</span>
-                        <span class="dish-price" th:text="${#numbers.formatDecimal(dish.price, 1, 2)} + ' ₴'">0.00 ₴</span>
-                    </div>
-                    <div class="dish-meta d-flex align-center justify-between text-sm mb-1">
-                        <div>
-                            <span class="dish-rating" th:if="${dish.ratingsCount != null && dish.ratingsCount > 0}">
-                                ★ <span th:text="${#numbers.formatDecimal(dish.avgRating, 1, 1)}">0.0</span>
-                                <span th:text="'(' + ${dish.ratingsCount} + ')'">(0)</span>
-                            </span>
-                            <span class="dish-rating" th:if="${dish.ratingsCount == null || dish.ratingsCount == 0}">
-                                ★ Немає оцінок
-                            </span>
-                        </div>
-                        <div class="dish-time text-muted" th:if="${dish.preparationTime != null}" title="Орієнтовний час приготування">
-                            ⏱️ <span th:text="${dish.preparationTime} + ' хв'">15 хв</span>
-                        </div>
-                    </div>
-                    <p class="dish-description" th:text="${dish.description}">Опис</p>
-                    <div class="dish-tags" th:if="${dish.tags != null && !dish.tags.isEmpty()}">
-                        <span class="dish-tag" th:each="tag : ${dish.tags}" th:text="${tag}">tag</span>
-                    </div>
-                    <div class="dish-allergens" th:if="${dish.allergens != null && !dish.allergens.isEmpty()}">
-                        <span class="dish-allergen" th:each="a : ${dish.allergens}" th:text="${a}">allergen</span>
-                    </div>
-                    <div class="dish-actions">
-                        <form hx-post="/htmx/cart/items" hx-swap="none">
-                            <input type="hidden" name="dishId" th:value="${dish.id}">
-                            <input type="hidden" name="quantity" value="1">
-                            <input type="hidden" name="specialRequest" value="">
-                            <button class="btn btn-primary add-to-cart-btn" type="submit" th:disabled="${hasActivePaidOrder}">
-                                🛒 У кошик
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="empty-state" th:if="${popularDishes == null || popularDishes.isEmpty()}">
-            <h3>Поки що немає популярних страв</h3>
-            <p class="text-muted">Перегляньте наше меню, щоб знайти щось смачне!</p>
+        <div id="popularDishesRoot"
+             hx-get="/htmx/home/popular"
+             hx-trigger="load, refresh"
+             hx-swap="innerHTML">
+            <div th:replace="~{fragments/home-dishes :: popularGrid}"></div>
         </div>
     </div>
 </section>

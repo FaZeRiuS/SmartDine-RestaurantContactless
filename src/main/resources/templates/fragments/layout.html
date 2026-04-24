@@ -251,6 +251,26 @@
     <script th:src="@{/js/cart.js(v=1.5)}" defer></script>
     <script th:src="@{/js/sse.js(v=1.5)}" defer></script>
 
+    <script>
+        document.body?.addEventListener('userAllergensUpdated', function () {
+            try {
+                // Refresh menu fragments (index and menu page) by re-triggering the active tab.
+                var activeMenuTab = document.querySelector('.menu-tabs .menu-tab.active') || document.querySelector('.menu-tabs .menu-tab');
+                if (activeMenuTab) activeMenuTab.click();
+            } catch (e) { /* ignore */ }
+
+            try {
+                // Refresh home blocks if present.
+                if (window.htmx) {
+                    var popular = document.getElementById('popularDishesRoot');
+                    if (popular) window.htmx.trigger(popular, 'refresh');
+                    var rec = document.getElementById('personalizedDishesRoot');
+                    if (rec) window.htmx.trigger(rec, 'refresh');
+                }
+            } catch (e) { /* ignore */ }
+        });
+    </script>
+
     <script th:inline="javascript">
         document.addEventListener('DOMContentLoaded', async function() {
             function parseEmojis(root) {
