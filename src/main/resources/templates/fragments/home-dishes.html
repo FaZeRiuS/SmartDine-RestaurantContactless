@@ -6,8 +6,8 @@
     <div class="dishes-grid" th:if="${personalizedRecommendations != null && !personalizedRecommendations.isEmpty()}">
         <th:block th:each="dish, stat : ${personalizedRecommendations}">
             <th:block th:with="delayStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
-                               imgLoading=${stat.index < 3 ? 'eager' : 'lazy'},
-                               imgFetchPriority=${stat.index < 3 ? 'high' : 'auto'}"
+                               imgLoading=${stat.index == 0 ? 'eager' : 'lazy'},
+                               imgFetchPriority=${stat.index == 0 ? 'high' : 'auto'}"
                       th:replace="~{fragments/dish-card :: dishCard(
                             dish=${dish},
                             stat=${stat},
@@ -32,8 +32,8 @@
     <div class="dishes-grid" th:if="${popularDishes != null && !popularDishes.isEmpty()}">
         <th:block th:each="dish, stat : ${popularDishes}">
             <th:block th:with="delayStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
-                               imgLoading=${stat.index < 3 ? 'eager' : 'lazy'},
-                               imgFetchPriority=${stat.index < 3 ? 'high' : 'auto'}"
+                               imgLoading=${stat.index == 0 ? 'eager' : 'lazy'},
+                               imgFetchPriority=${stat.index == 0 ? 'high' : 'auto'}"
                       th:replace="~{fragments/dish-card :: dishCard(
                             dish=${dish},
                             stat=${stat},
