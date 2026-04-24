@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReadParam;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,34 +43,40 @@ public class ImageServiceImpl implements ImageService {
         uploadPath = ensureUploadPath(uploadPath);
 
         String baseName = UUID.randomUUID().toString();
-        BufferedImage img = readAndValidateImage(file);
-        img = downscaleForSafety(img);
+        try {
+            BufferedImage img = readAndValidateImage(file);
+            img = downscaleForSafety(img);
 
-        // Prefer WebP variants when enabled and writer exists; otherwise save original as-is.
-        if (webpEnabled && hasWebpWriter()) {
-            try {
-                writeWebpVariants(uploadPath, baseName, img);
-                // Backwards compatibility: keep the old URLs working.
-                // - main: /uploads/<uuid>.webp (points to 800w)
-                // - thumb: /uploads/<uuid>-thumb.webp (points to 320w)
-                Files.copy(uploadPath.resolve(baseName + "-w800.webp"), uploadPath.resolve(baseName + ".webp"),
-                        StandardCopyOption.REPLACE_EXISTING);
-                Files.copy(uploadPath.resolve(baseName + "-w320.webp"), uploadPath.resolve(baseName + "-thumb.webp"),
-                        StandardCopyOption.REPLACE_EXISTING);
-                return "/uploads/" + baseName + ".webp";
-            } catch (Exception e) {
-                // Important: never let image processing take down the whole service.
-                log.error("WebP processing failed; falling back to original upload. {}", e.getMessage());
+            // Prefer WebP variants when enabled and writer exists; otherwise save original as-is.
+            if (webpEnabled && hasWebpWriter()) {
+                try {
+                    writeWebpVariants(uploadPath, baseName, img);
+                    // Backwards compatibility: keep the old URLs working.
+                    // - main: /uploads/<uuid>.webp (points to 800w)
+                    // - thumb: /uploads/<uuid>-thumb.webp (points to 320w)
+                    Files.copy(uploadPath.resolve(baseName + "-w800.webp"), uploadPath.resolve(baseName + ".webp"),
+                            StandardCopyOption.REPLACE_EXISTING);
+                    Files.copy(uploadPath.resolve(baseName + "-w320.webp"), uploadPath.resolve(baseName + "-thumb.webp"),
+                            StandardCopyOption.REPLACE_EXISTING);
+                    return "/uploads/" + baseName + ".webp";
+                } catch (Exception e) {
+                    // Important: never let image processing take down the whole service.
+                    log.error("WebP processing failed; falling back to original upload. {}", e.getMessage());
+                }
             }
-        }
 
-        return saveOriginal(uploadPath, baseName, file);
+            return saveOriginal(uploadPath, baseName, file);
+        } catch (OutOfMemoryError oom) {
+            // Last resort: keep the app alive; dish photos can still be served as uploaded.
+            log.error("OutOfMemoryError while processing image upload; falling back to original bytes. {}", oom.toString());
+            return saveOriginal(uploadPath, baseName, file);
+        }
     }
 
     private static BufferedImage readAndValidateImage(MultipartFile file) throws IOException {
-        // Decode once and validate dimensions to avoid "image bombs" (huge decompressed bitmaps) and OOM/restarts.
+        // Prefer subsampled decode for JPEG/PNG to avoid decoding full-resolution bitmaps into heap.
         try (InputStream in = file.getInputStream()) {
-            BufferedImage img = ImageIO.read(in);
+            BufferedImage img = readWithSubsampling(in);
             if (img == null) {
                 throw new IOException("Unsupported image format");
             }
@@ -74,11 +84,62 @@ public class ImageServiceImpl implements ImageService {
             int h = img.getHeight();
             long pixels = (long) w * (long) h;
             // Keep a conservative cap to prevent OOM in small-container heaps.
-            // 12 megapixels is still plenty for dish photos.
-            if (w <= 0 || h <= 0 || pixels > 12_000_000L) {
+            // 9 megapixels is plenty for dish photos after subsampling.
+            if (w <= 0 || h <= 0 || pixels > 9_000_000L) {
                 throw new IOException("Image too large");
             }
             return img;
+        }
+    }
+
+    /**
+     * Decode using ImageReader subsampling when possible.
+     * This is critical for "small file / huge pixels" JPEGs that would otherwise OOM on ImageIO.read().
+     */
+    private static BufferedImage readWithSubsampling(InputStream in) throws IOException {
+        try (ImageInputStream iis = ImageIO.createImageInputStream(in)) {
+            if (iis == null) {
+                return null;
+            }
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
+            if (!readers.hasNext()) {
+                return null;
+            }
+
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(iis, true, true);
+                int w = reader.getWidth(0);
+                int h = reader.getHeight(0);
+                if (w <= 0 || h <= 0) {
+                    return null;
+                }
+
+                // Target: keep decoded bitmap <= ~9MP AND max dimension <= 3200px (before extra downscale step).
+                int subsample = 1;
+                while (true) {
+                    int dw = Math.max(1, (w + subsample - 1) / subsample);
+                    int dh = Math.max(1, (h + subsample - 1) / subsample);
+                    long dp = (long) dw * (long) dh;
+                    int dmax = Math.max(dw, dh);
+                    if (dp <= 9_000_000L && dmax <= 3200) {
+                        break;
+                    }
+                    if (subsample >= 32) {
+                        // Hard stop: still too large even with heavy subsampling.
+                        throw new IOException("Image too large");
+                    }
+                    subsample *= 2;
+                }
+
+                ImageReadParam param = reader.getDefaultReadParam();
+                if (subsample > 1) {
+                    param.setSourceSubsampling(subsample, subsample, 0, 0);
+                }
+                return reader.read(0, param);
+            } finally {
+                reader.dispose();
+            }
         }
     }
 
