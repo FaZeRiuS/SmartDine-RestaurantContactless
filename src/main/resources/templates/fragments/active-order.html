@@ -23,7 +23,7 @@
                  class="order-timer mt-1 p-1" style="background: rgba(212, 175, 55, 0.1); border-radius: 8px; text-align: center;">
                 <span class="timer-label text-muted text-sm">Час до готовності: </span>
                 <span id="orderCountdownTimer" class="timer-value fw-700 text-gold text-lg"
-                      th:attr="data-ready-time=${activeOrder.estimatedReadyTime}">Обчислення...</span>
+                      th:attr="data-ready-time=${#temporals.format(activeOrder.estimatedReadyTime, 'yyyy-MM-dd''T''HH:mm:ssXXX')}">Обчислення...</span>
             </div>
 
             <div th:classappend="${homeActiveOrderWidget} ? ' active-order-minimal-info' : ''">

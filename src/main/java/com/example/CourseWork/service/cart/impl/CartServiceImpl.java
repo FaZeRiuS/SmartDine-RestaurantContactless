@@ -36,14 +36,21 @@ public class CartServiceImpl implements CartService {
     @Transactional
     @Override
     public CartResponseDto getCartByUserId(String userId) {
-        Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId).orElseGet(() -> {
-            Cart newCart = new Cart();
-            newCart.setUserId(userId);
-            newCart.setItems(new ArrayList<>());
-            return cartRepository.save(newCart);
-        });
-
-        return cartMapper.toResponseDto(cart);
+        return cartRepository.findByUserIdWithItemsAndDishes(userId)
+                .map(cartMapper::toResponseDto)
+                .orElseGet(() -> {
+                    try {
+                        Cart newCart = new Cart();
+                        newCart.setUserId(userId);
+                        newCart.setItems(new ArrayList<>());
+                        Cart saved = cartRepository.save(newCart);
+                        return cartMapper.toResponseDto(saved);
+                    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                        return cartRepository.findByUserIdWithItemsAndDishes(userId)
+                                .map(cartMapper::toResponseDto)
+                                .orElseThrow(() -> e);
+                    }
+                });
     }
 
     @Transactional
@@ -59,10 +66,15 @@ public class CartServiceImpl implements CartService {
         Integer dishId = itemDto.getDishId();
 
         Cart cart = cartRepository.findByUserIdWithItemsAndDishes(userId).orElseGet(() -> {
-            Cart newCart = new Cart();
-            newCart.setUserId(userId);
-            newCart.setItems(new ArrayList<>());
-            return cartRepository.save(newCart);
+            try {
+                Cart newCart = new Cart();
+                newCart.setUserId(userId);
+                newCart.setItems(new ArrayList<>());
+                return cartRepository.save(newCart);
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                return cartRepository.findByUserIdWithItemsAndDishes(userId)
+                        .orElseThrow(() -> e);
+            }
         });
 
         @SuppressWarnings("null")

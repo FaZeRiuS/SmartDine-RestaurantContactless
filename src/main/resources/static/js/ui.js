@@ -21,6 +21,7 @@ function initSharedUI() {
             const t = evt && evt.detail ? evt.detail.target : null;
             initAccessibleTabsIn(t || document);
             initKeyboardNavigationIn(t || document);
+            initOrderTimer();
         });
         document.body?.addEventListener('htmx:oobAfterSwap', function (evt) {
             const t = evt && evt.detail ? evt.detail.target : null;
@@ -76,6 +77,11 @@ function initOrderTimer() {
     if (!readyTimeStr) return;
     
     const targetDate = new Date(readyTimeStr).getTime();
+    if (isNaN(targetDate)) {
+        console.error("Invalid ready time format:", readyTimeStr);
+        timerEl.innerHTML = "Помилка формату часу";
+        return;
+    }
     
     if (window.orderTimerInterval) {
         clearInterval(window.orderTimerInterval);
@@ -87,7 +93,10 @@ function initOrderTimer() {
         
         if (distance < 0) {
             timerEl.innerHTML = "Майже готово!";
-            clearInterval(window.orderTimerInterval);
+            if (window.orderTimerInterval) {
+                clearInterval(window.orderTimerInterval);
+                window.orderTimerInterval = null;
+            }
             return;
         }
         
