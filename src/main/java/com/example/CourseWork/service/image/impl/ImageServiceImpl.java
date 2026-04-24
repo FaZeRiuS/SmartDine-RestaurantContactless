@@ -40,6 +40,7 @@ public class ImageServiceImpl implements ImageService {
 
         String baseName = UUID.randomUUID().toString();
         BufferedImage img = readAndValidateImage(file);
+        img = downscaleForSafety(img);
 
         // Prefer WebP variants when enabled and writer exists; otherwise save original as-is.
         if (webpEnabled && hasWebpWriter()) {
@@ -72,12 +73,26 @@ public class ImageServiceImpl implements ImageService {
             int w = img.getWidth();
             int h = img.getHeight();
             long pixels = (long) w * (long) h;
-            // 20 megapixels cap: plenty for dish images, protects memory/cpu.
-            if (w <= 0 || h <= 0 || pixels > 20_000_000L) {
+            // Keep a conservative cap to prevent OOM in small-container heaps.
+            // 12 megapixels is still plenty for dish photos.
+            if (w <= 0 || h <= 0 || pixels > 12_000_000L) {
                 throw new IOException("Image too large");
             }
             return img;
         }
+    }
+
+    private static BufferedImage downscaleForSafety(BufferedImage img) throws IOException {
+        if (img == null) return null;
+        int w = img.getWidth();
+        int h = img.getHeight();
+        int maxDim = Math.max(w, h);
+        // Reduce peak memory usage for large inputs; variants are max 800w anyway.
+        if (maxDim <= 2000) return img;
+        return Thumbnails.of(img)
+                .size(2000, 2000)
+                .keepAspectRatio(true)
+                .asBufferedImage();
     }
 
     private static boolean hasWebpWriter() {
