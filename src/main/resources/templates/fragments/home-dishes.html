@@ -4,19 +4,23 @@
 
 <th:block th:fragment="recommendationsGrid">
     <div class="dishes-grid" th:if="${personalizedRecommendations != null && !personalizedRecommendations.isEmpty()}">
-        <th:block th:each="dish, stat : ${personalizedRecommendations}"
-                  th:replace="~{fragments/dish-card :: dishCard(
-                        dish=${dish},
-                        stat=${stat},
-                        hasActivePaidOrder=${hasActivePaidOrder},
-                        headerMb=${true},
-                        cardExtraClass='fade-in-up',
-                        inlineStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
-                        imgLoading=${stat.index < 3 ? 'eager' : 'lazy'},
-                        imgFetchPriority=${stat.index < 3 ? 'high' : 'auto'},
-                        placeholderIcons=${false},
-                        buttonAriaLabel=${null}
-                  )}">
+        <th:block th:each="dish, stat : ${personalizedRecommendations}">
+            <th:block th:with="delayStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
+                               imgLoading=${stat.index < 3 ? 'eager' : 'lazy'},
+                               imgFetchPriority=${stat.index < 3 ? 'high' : 'auto'}"
+                      th:replace="~{fragments/dish-card :: dishCard(
+                            dish=${dish},
+                            stat=${stat},
+                            hasActivePaidOrder=${hasActivePaidOrder},
+                            headerMb=${true},
+                            cardExtraClass='fade-in-up',
+                            inlineStyle=${delayStyle},
+                            imgLoading=${imgLoading},
+                            imgFetchPriority=${imgFetchPriority},
+                            placeholderIcons=${false},
+                            buttonAriaLabel=${null}
+                      )}">
+            </th:block>
         </th:block>
     </div>
     <div class="empty-state" th:if="${personalizedRecommendations == null || personalizedRecommendations.isEmpty()}">
@@ -26,19 +30,23 @@
 
 <th:block th:fragment="popularGrid">
     <div class="dishes-grid" th:if="${popularDishes != null && !popularDishes.isEmpty()}">
-        <th:block th:each="dish, stat : ${popularDishes}"
-                  th:replace="~{fragments/dish-card :: dishCard(
-                        dish=${dish},
-                        stat=${stat},
-                        hasActivePaidOrder=${hasActivePaidOrder},
-                        headerMb=${false},
-                        cardExtraClass='fade-in-up',
-                        inlineStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
-                        imgLoading=${stat.index < 3 ? 'eager' : 'lazy'},
-                        imgFetchPriority=${stat.index < 3 ? 'high' : 'auto'},
-                        placeholderIcons=${false},
-                        buttonAriaLabel=${null}
-                  )}">
+        <th:block th:each="dish, stat : ${popularDishes}">
+            <th:block th:with="delayStyle=${'animation-delay:' + (stat.index * 0.1) + 's'},
+                               imgLoading=${stat.index < 3 ? 'eager' : 'lazy'},
+                               imgFetchPriority=${stat.index < 3 ? 'high' : 'auto'}"
+                      th:replace="~{fragments/dish-card :: dishCard(
+                            dish=${dish},
+                            stat=${stat},
+                            hasActivePaidOrder=${hasActivePaidOrder},
+                            headerMb=${false},
+                            cardExtraClass='fade-in-up',
+                            inlineStyle=${delayStyle},
+                            imgLoading=${imgLoading},
+                            imgFetchPriority=${imgFetchPriority},
+                            placeholderIcons=${false},
+                            buttonAriaLabel=${null}
+                      )}">
+            </th:block>
         </th:block>
     </div>
     <div class="empty-state" th:if="${popularDishes == null || popularDishes.isEmpty()}">
