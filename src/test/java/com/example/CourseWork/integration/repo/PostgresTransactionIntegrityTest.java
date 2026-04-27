@@ -1,9 +1,9 @@
-package com.example.CourseWork.integration;
+package com.example.CourseWork.integration.repo;
 
 import com.example.CourseWork.model.LoyaltyAccount;
-import com.example.CourseWork.service.loyalty.LoyaltyService;
 import com.example.CourseWork.repository.LoyaltyAccountRepository;
 import com.example.CourseWork.repository.LoyaltyTransactionRepository;
+import com.example.CourseWork.service.loyalty.LoyaltyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,7 +51,7 @@ public class PostgresTransactionIntegrityTest {
     @Test
     public void testConcurrencyIntegrity() {
         UUID userId = UUID.randomUUID();
-        
+
         // MANUALLY create the account in a separate transaction to ensure it's committed before threads start
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         TransactionStatus status = transactionManager.getTransaction(def);
@@ -73,7 +73,7 @@ public class PostgresTransactionIntegrityTest {
                 .setScale(2, RoundingMode.HALF_UP);
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        
+
         CompletableFuture<?>[] futures = IntStream.range(0, threadCount)
                 .mapToObj(i -> CompletableFuture.runAsync(() -> {
                     for (int j = 0; j < iterationsPerThread; j++) {
@@ -86,13 +86,9 @@ public class PostgresTransactionIntegrityTest {
         executor.shutdown();
 
         BigDecimal finalBalance = loyaltyService.getBalance(userId);
-        
-        System.out.println("--- Concurrency Integrity Test ---");
-        System.out.println("Expected Balance: " + expectedBalance);
-        System.out.println("Actual Balance:   " + finalBalance);
-        
-        assertEquals(0, expectedBalance.compareTo(finalBalance), 
-            "Data corruption detected! Balance should be exactly " + expectedBalance + " but was " + finalBalance);
+
+        assertEquals(0, expectedBalance.compareTo(finalBalance),
+                "Data corruption detected! Balance should be exactly " + expectedBalance + " but was " + finalBalance);
     }
 
     /**
@@ -104,34 +100,27 @@ public class PostgresTransactionIntegrityTest {
     public void testAtomicityRollback() {
         UUID userId = UUID.randomUUID();
         BigDecimal initialBalance = loyaltyService.getBalance(userId); // Should be 0
-        
+
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         TransactionStatus status = transactionManager.getTransaction(def);
 
         try {
-            // Step 1: Perform a successful DB update
             loyaltyService.creditPointsInternal(userId, new BigDecimal("100.00"), "tx-rollback-test");
-            
-            // Step 2: Simulate a failure (dynamic check to avoid dead code warning)
             if (userId != null) {
                 throw new RuntimeException("Simulated failure after partial update");
             }
-            
             transactionManager.commit(status);
         } catch (Exception e) {
             transactionManager.rollback(status);
         }
 
         BigDecimal finalBalance = loyaltyService.getBalance(userId);
-        
-        System.out.println("--- Atomicity Rollback Test ---");
-        System.out.println("Initial Balance: " + initialBalance);
-        System.out.println("Final Balance:   " + finalBalance);
-        
-        assertEquals(0, initialBalance.compareTo(finalBalance), 
-            "Atomicity violated! Partial data was persisted despite failure.");
-        
+
+        assertEquals(0, initialBalance.compareTo(finalBalance),
+                "Atomicity violated! Partial data was persisted despite failure.");
+
         boolean transactionExists = loyaltyTransactionRepository.existsByReference("tx-rollback-test");
         assertTrue(!transactionExists, "Transaction record should have been rolled back.");
     }
 }
+
