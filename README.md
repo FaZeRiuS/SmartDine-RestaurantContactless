@@ -23,7 +23,7 @@
 
 ## Технологічний стек
 
-- **Backend**: Java 24, Spring Boot 3.4.4.
+- **Backend**: Java 25, Spring Boot 3.4.4.
 - **Security**: Keycloak (OAuth2, OpenID Connect) для авторизації клієнтів та персоналу.
 - **Database**: PostgreSQL (Production) / H2 (Testing), Flyway для міграцій БД.
 - **Frontend**: HTML5, CSS3 (Modern Vanilla), JavaScript (ES6+), Thymeleaf, HTMX для динамічного UI.
