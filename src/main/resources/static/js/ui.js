@@ -847,6 +847,11 @@ function sequentialFocusableOnPage(el) {
 function bindSwipeToSwitchTabs(swipeArea, tablist) {
     if (!swipeArea || !tablist || swipeArea.dataset.a11ySwipeInit === '1') return;
     swipeArea.dataset.a11ySwipeInit = '1';
+    // Prevent global "site tab" swipe (home/menu/cart) from hijacking horizontal swipes
+    // inside the tab content area (e.g. #menuCategoriesRoot).
+    try {
+        swipeArea.setAttribute('data-no-site-swipe', '1');
+    } catch (e) { /* ignore */ }
 
     const isTouchLike = () => window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     const getTabs = () => Array.from(tablist.querySelectorAll('.menu-tab'))

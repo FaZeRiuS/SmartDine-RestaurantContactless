@@ -109,7 +109,7 @@ public class HtmxCartController {
 
         model.addAttribute("message", addedToOrder ? "🛎️ Страву додано до активного замовлення!" : "🛒 Страву додано у кошик!");
         model.addAttribute("toastType", "toast-success");
-        return "fragments/cart :: toast";
+        return "fragments/cart :: toastAndSync";
     }
 
     private static boolean shouldShowSmartCombo(HttpSession session) {

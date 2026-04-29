@@ -174,5 +174,11 @@
 <!-- Keep the badge in sync on any toast response. -->
 <span th:fragment="cartSync" th:replace="~{fragments/cart :: widget}"></span>
 
+<!-- Toast + badge sync together (for hx-swap="none" add-to-cart responses). -->
+<th:block th:fragment="toastAndSync">
+    <th:block th:replace="~{fragments/cart :: toast}"></th:block>
+    <th:block th:replace="~{fragments/cart :: widget}"></th:block>
+</th:block>
+
 </body>
 </html>
