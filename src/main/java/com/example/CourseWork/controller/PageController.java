@@ -113,14 +113,17 @@ public class PageController {
         // Performance hints: help browser start LCP image request earlier (preconnect/preload).
         // LCP on this page is typically the first dish image.
         DishResponseDto lcpDish = firstDishForLcp(personalized, popularDishes);
-        if (lcpDish != null && lcpDish.getImageUrl() != null && !lcpDish.getImageUrl().isBlank()) {
-            String lcpImageUrl = lcpDish.getImageUrl();
-            model.addAttribute("lcpImageUrl", lcpImageUrl);
-            String origin = extractOrigin(lcpImageUrl);
-            if (origin != null) {
-                model.addAttribute("lcpImagePreconnectOrigin", origin);
+        if (lcpDish != null) {
+            model.addAttribute("lcpDishId", lcpDish.getId());
+            if (lcpDish.getImageUrl() != null && !lcpDish.getImageUrl().isBlank()) {
+                String lcpImageUrl = lcpDish.getImageUrl();
+                model.addAttribute("lcpImageUrl", lcpImageUrl);
+                String origin = extractOrigin(lcpImageUrl);
+                if (origin != null) {
+                    model.addAttribute("lcpImagePreconnectOrigin", origin);
+                }
+                model.addAttribute("lcpImageCrossorigin", isAbsoluteHttpUrl(lcpImageUrl));
             }
-            model.addAttribute("lcpImageCrossorigin", isAbsoluteHttpUrl(lcpImageUrl));
         }
 
         return "index";
