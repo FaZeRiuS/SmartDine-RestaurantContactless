@@ -118,6 +118,12 @@ public class PageController {
             if (lcpDish.getImageUrl() != null && !lcpDish.getImageUrl().isBlank()) {
                 String lcpImageUrl = lcpDish.getImageUrl();
                 model.addAttribute("lcpImageUrl", lcpImageUrl);
+                
+                // Construct imagesrcset for preloading
+                String base = lcpImageUrl.endsWith(".webp") ? lcpImageUrl.substring(0, lcpImageUrl.length() - 5) : lcpImageUrl;
+                String imagesrcset = base + "-w320.webp 320w, " + base + "-w480.webp 480w, " + base + "-w640.webp 640w, " + base + "-w800.webp 800w";
+                model.addAttribute("lcpImageSrcset", imagesrcset);
+
                 String origin = extractOrigin(lcpImageUrl);
                 if (origin != null) {
                     model.addAttribute("lcpImagePreconnectOrigin", origin);

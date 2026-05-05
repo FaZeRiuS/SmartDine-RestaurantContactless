@@ -235,8 +235,7 @@ h3+p {
 }
 
 .lcp-no-anim,
-.lcp-no-anim.fade-in-up,
-.lcp-no-anim * {
+.lcp-no-anim.fade-in-up {
     animation: none !important;
     transition: none !important;
 }
