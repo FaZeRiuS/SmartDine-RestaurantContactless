@@ -3,7 +3,7 @@
 <body>
 <th:block th:fragment="dishCard(dish, stat, hasActivePaidOrder, headerMb, cardExtraClass, inlineStyle, imgLoading, imgFetchPriority, placeholderIcons, buttonAriaLabel, isLcp)">
     <div class="dish-card"
-         th:classappend="${((cardExtraClass != null && !cardExtraClass.isEmpty()) ? (' ' + cardExtraClass) : '') + ((dish.isAvailable != null && !dish.isAvailable) ? ' dish-unavailable' : '')}"
+         th:classappend="${((cardExtraClass != null && !cardExtraClass.isEmpty()) ? (' ' + cardExtraClass) : '') + ((dish.isAvailable != null && !dish.isAvailable) ? ' dish-unavailable' : '') + (isLcp != null && isLcp ? ' lcp-no-anim' : '')}"
          th:style="${inlineStyle != null ? inlineStyle : ''}">
 
         <div th:if="${dish.isAvailable != null && !dish.isAvailable}" class="dish-badge-unavailable">Недоступно</div>
