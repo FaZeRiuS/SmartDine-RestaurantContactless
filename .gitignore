@@ -58,3 +58,6 @@ build/
 
 ### Docker (optional local artifacts) ###
 **/docker-compose.override.yml
+
+### Docs ###
+/docs

@@ -3,6 +3,7 @@ package com.example.CourseWork.controller.admin;
 import com.example.CourseWork.dto.dashboard.DashboardViewDto;
 import com.example.CourseWork.service.dashboard.DashboardService;
 import com.example.CourseWork.service.qr.QrCodeService;
+import com.example.CourseWork.service.security.HmacSignatureService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +26,7 @@ public class AdminController {
 
     private final DashboardService dashboardService;
     private final QrCodeService qrCodeService;
+    private final HmacSignatureService hmacSignatureService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) throws Exception {
@@ -56,9 +58,12 @@ public class AdminController {
             return ResponseEntity.badRequest().build();
         }
 
+        String signature = hmacSignatureService.signTableNumber(table);
+
         String targetUrl = ServletUriComponentsBuilder.fromContextPath(request)
                 .path("/")
                 .queryParam("table", table)
+                .queryParam("sig", signature)
                 .build()
                 .toUriString();
 

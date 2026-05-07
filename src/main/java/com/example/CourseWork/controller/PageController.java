@@ -8,6 +8,7 @@ import com.example.CourseWork.service.menu.DishService;
 import com.example.CourseWork.service.menu.MenuService;
 import com.example.CourseWork.service.recommendation.RecommendationService;
 import com.example.CourseWork.security.CurrentUserIdentity;
+import com.example.CourseWork.service.security.HmacSignatureService;
 import org.springframework.beans.factory.annotation.Value;
 import com.example.CourseWork.service.order.OrderService;
 import com.example.CourseWork.dto.order.OrderResponseDto;
@@ -39,6 +40,7 @@ public class PageController {
     private final OrderService orderService;
     private final CurrentUserIdentity currentUserIdentity;
     private final UserPreferenceService userPreferenceService;
+    private final HmacSignatureService hmacSignatureService;
     private final String keycloakPublicUrl;
     @SuppressWarnings("unused")
     private final Clock appClock;
@@ -51,6 +53,7 @@ public class PageController {
             OrderService orderService,
             CurrentUserIdentity currentUserIdentity,
             UserPreferenceService userPreferenceService,
+            HmacSignatureService hmacSignatureService,
             Clock appClock,
             @Value("${keycloak.public-url:http://localhost:8080}") String keycloakPublicUrl
     ) {
@@ -61,16 +64,22 @@ public class PageController {
         this.orderService = orderService;
         this.currentUserIdentity = currentUserIdentity;
         this.userPreferenceService = userPreferenceService;
+        this.hmacSignatureService = hmacSignatureService;
         this.appClock = appClock;
         this.keycloakPublicUrl = keycloakPublicUrl;
     }
 
     @GetMapping("/")
     public String index(@RequestParam(required = false) Integer table,
+                        @RequestParam(required = false) String sig,
                         HttpSession session,
                         Model model) {
         if (table != null) {
-            session.setAttribute("tableNumber", table);
+            if (hmacSignatureService.verifyTableNumber(table, sig)) {
+                session.setAttribute("tableNumber", table);
+            } else {
+                model.addAttribute("tableError", "Недійсний QR-код для столику.");
+            }
         }
         Integer sessionTable = (Integer) session.getAttribute("tableNumber");
         model.addAttribute("tableNumber", sessionTable);
