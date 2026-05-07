@@ -29,6 +29,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderItemService orderItemService;
     private final OrderPaymentService orderPaymentService;
     private final OrderWaiterService orderWaiterService;
+    private final com.example.CourseWork.repository.OrderRepository orderRepository;
 
     @Override
     public OrderResponseDto createOrder(String userId, OrderRequestDto dto, Integer tableNumber) {
@@ -150,5 +151,23 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderResponseDto dismissWaiterCall(Integer orderId) {
         return orderWaiterService.dismissWaiterCall(orderId);
+    }
+
+    @Transactional
+    @Override
+    public void mergeOrders(String guestId, String authId) {
+        if (guestId == null || authId == null || guestId.equals(authId)) {
+            return;
+        }
+
+        List<com.example.CourseWork.model.Order> guestOrders = orderRepository.findAllWithItemsAndDishesByUserIdOrderByCreatedAtDesc(guestId);
+        if (guestOrders.isEmpty()) {
+            return;
+        }
+
+        for (com.example.CourseWork.model.Order order : guestOrders) {
+            order.setUserId(authId);
+            orderRepository.save(order);
+        }
     }
 }

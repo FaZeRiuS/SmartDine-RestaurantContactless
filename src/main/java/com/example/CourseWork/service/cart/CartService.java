@@ -9,4 +9,5 @@ public interface CartService {
     CartResponseDto updateCartItemQuantity(String userId, Integer itemId, Integer quantity);
     CartResponseDto updateCartItemSpecialRequest(String userId, Integer itemId, String specialRequest);
     CartResponseDto removeCartItem(String userId, Integer itemId);
+    void mergeCarts(String guestId, String authId);
 }

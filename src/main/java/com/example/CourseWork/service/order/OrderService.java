@@ -46,6 +46,8 @@ public interface OrderService {
 
     Page<OrderResponseDto> getOrderHistoryForStatuses(String userId, Collection<OrderStatus> statuses, Pageable pageable);
 
+    void mergeOrders(String guestId, String authId);
+
     OrderResponseDto callWaiter(Integer orderId);
 
     OrderResponseDto dismissWaiterCall(Integer orderId);

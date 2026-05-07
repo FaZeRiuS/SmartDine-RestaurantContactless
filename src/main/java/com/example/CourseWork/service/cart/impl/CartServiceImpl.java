@@ -155,4 +155,54 @@ public class CartServiceImpl implements CartService {
         
         return cartMapper.toResponseDto(cart);
     }
+
+    @SuppressWarnings("null")
+    @Transactional
+    @Override
+    public void mergeCarts(String guestId, String authId) {
+        if (guestId == null || authId == null || guestId.equals(authId)) {
+            return;
+        }
+
+        // Find guest cart
+        Cart guestCart = cartRepository.findByUserIdWithItemsAndDishes(guestId).orElse(null);
+        if (guestCart == null || guestCart.getItems().isEmpty()) {
+            // Nothing to merge
+            if (guestCart != null) {
+                cartRepository.delete(guestCart);
+            }
+            return;
+        }
+
+        // Find or create auth cart
+        Cart authCart = cartRepository.findByUserIdWithItemsAndDishes(authId).orElseGet(() -> {
+            Cart newCart = new Cart();
+            newCart.setUserId(authId);
+            newCart.setItems(new ArrayList<>());
+            return cartRepository.save(newCart);
+        });
+
+        // Merge items
+        for (CartItem guestItem : guestCart.getItems()) {
+            CartItem existingAuthItem = authCart.getItems().stream()
+                    .filter(item -> item.getDish().getId().equals(guestItem.getDish().getId()) &&
+                            Objects.equals(normalizeSpecialRequest(item.getSpecialRequest()), normalizeSpecialRequest(guestItem.getSpecialRequest())))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingAuthItem != null) {
+                existingAuthItem.setQuantity(existingAuthItem.getQuantity() + guestItem.getQuantity());
+            } else {
+                CartItem newItem = new CartItem();
+                newItem.setCart(authCart);
+                newItem.setDish(guestItem.getDish());
+                newItem.setQuantity(guestItem.getQuantity());
+                newItem.setSpecialRequest(guestItem.getSpecialRequest());
+                authCart.getItems().add(newItem);
+            }
+        }
+
+        cartRepository.save(authCart);
+        cartRepository.delete(guestCart);
+    }
 }

@@ -29,6 +29,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.example.CourseWork.security.SecurityTimingFilter;
+import com.example.CourseWork.security.GuestSessionFilter;
+import com.example.CourseWork.security.LoginSuccessMergeHandler;
 
 import java.util.List;
 import java.util.Map;
@@ -45,13 +47,19 @@ public class SecurityConfig {
     private final SecurityProperties securityProperties;
     private final String keycloakJwkSetUri;
     private final SecurityTimingFilter securityTimingFilter;
+    private final GuestSessionFilter guestSessionFilter;
+    private final LoginSuccessMergeHandler loginSuccessMergeHandler;
 
     public SecurityConfig(
             SecurityProperties securityProperties,
             SecurityTimingFilter securityTimingFilter,
+            GuestSessionFilter guestSessionFilter,
+            LoginSuccessMergeHandler loginSuccessMergeHandler,
             @Value("${spring.security.oauth2.client.provider.keycloak.jwk-set-uri:http://localhost:8080/realms/restaurant-realm/protocol/openid-connect/certs}") String keycloakJwkSetUri) {
         this.securityProperties = securityProperties;
         this.securityTimingFilter = securityTimingFilter;
+        this.guestSessionFilter = guestSessionFilter;
+        this.loginSuccessMergeHandler = loginSuccessMergeHandler;
         this.keycloakJwkSetUri = keycloakJwkSetUri;
     }
 
@@ -67,6 +75,7 @@ public class SecurityConfig {
 
         http
                 .addFilterBefore(securityTimingFilter, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.class)
+                .addFilterBefore(guestSessionFilter, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
@@ -141,7 +150,7 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo
                                 .oidcUserService(oidcUserService))
-                        .defaultSuccessUrl("/", true))
+                        .successHandler(loginSuccessMergeHandler))
                 .logout(logout -> logout
                         .logoutSuccessHandler(oidcLogoutSuccessHandler)
                         .invalidateHttpSession(true)
