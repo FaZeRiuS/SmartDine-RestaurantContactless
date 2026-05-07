@@ -30,21 +30,26 @@ public class LoginSuccessMergeHandler extends SavedRequestAwareAuthenticationSuc
             String authId = oidcUser.getSubject();
 
             if (guestId != null && authId != null) {
-                // If the user already has an active order (either auth or guest), do not merge
-                // carts
-                // to avoid the visual bug of having both active order and cart items.
-                boolean hasActiveOrder = orderService.getMyActiveOrder(authId).isPresent()
-                        || orderService.getMyActiveOrder(guestId).isPresent();
+                // Check whether there is an active order on either side
+                boolean guestHasActiveOrder = orderService.getMyActiveOrder(guestId).isPresent();
+                boolean authHasActiveOrder  = orderService.getMyActiveOrder(authId).isPresent();
 
-                if (!hasActiveOrder) {
+                if (!guestHasActiveOrder && !authHasActiveOrder) {
+                    // No active orders → safe to merge carts normally
                     cartService.mergeCarts(guestId, authId);
                 } else {
-                    cartService.getCartByUserId(guestId);
+                    // An active order exists (on guest and/or auth side).
+                    // We will transfer the order via mergeOrders below.
+                    // Clear the auth user's cart so it doesn't conflict with the incoming active order.
+                    cartService.clearCart(authId);
+                    // Also remove the guest cart to avoid it becoming orphaned data.
+                    cartService.clearCart(guestId);
                 }
 
+                // Transfer all guest orders to the authenticated account
                 orderService.mergeOrders(guestId, authId);
 
-                // Clean up the attribute
+                // Clean up the session attribute
                 session.removeAttribute(GuestSessionFilter.PREVIOUS_GUEST_ID);
             }
         }

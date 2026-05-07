@@ -205,4 +205,13 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(authCart);
         cartRepository.delete(guestCart);
     }
+
+    @Transactional
+    @Override
+    public void clearCart(String userId) {
+        cartRepository.findByUserIdWithItemsAndDishes(userId).ifPresent(cart -> {
+            cart.getItems().clear();
+            cartRepository.save(cart);
+        });
+    }
 }

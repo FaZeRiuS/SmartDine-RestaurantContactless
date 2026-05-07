@@ -10,4 +10,5 @@ public interface CartService {
     CartResponseDto updateCartItemSpecialRequest(String userId, Integer itemId, String specialRequest);
     CartResponseDto removeCartItem(String userId, Integer itemId);
     void mergeCarts(String guestId, String authId);
+    void clearCart(String userId);
 }
