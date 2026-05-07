@@ -22,15 +22,26 @@ public class LoginSuccessMergeHandler extends SavedRequestAwareAuthenticationSuc
     private final OrderService orderService;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws ServletException, IOException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+            Authentication authentication) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session != null && authentication.getPrincipal() instanceof OidcUser oidcUser) {
             String guestId = (String) session.getAttribute(GuestSessionFilter.PREVIOUS_GUEST_ID);
             String authId = oidcUser.getSubject();
 
             if (guestId != null && authId != null) {
-                // Merge carts and orders
-                cartService.mergeCarts(guestId, authId);
+                // If the user already has an active order (either auth or guest), do not merge
+                // carts
+                // to avoid the visual bug of having both active order and cart items.
+                boolean hasActiveOrder = orderService.getMyActiveOrder(authId).isPresent()
+                        || orderService.getMyActiveOrder(guestId).isPresent();
+
+                if (!hasActiveOrder) {
+                    cartService.mergeCarts(guestId, authId);
+                } else {
+                    cartService.getCartByUserId(guestId);
+                }
+
                 orderService.mergeOrders(guestId, authId);
 
                 // Clean up the attribute
