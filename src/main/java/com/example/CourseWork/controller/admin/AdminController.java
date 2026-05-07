@@ -74,5 +74,22 @@ public class AdminController {
                 .contentType(MediaType.IMAGE_PNG)
                 .body(png);
     }
+
+    @GetMapping(value = "/qr/url", produces = MediaType.TEXT_PLAIN_VALUE)
+    @ResponseBody
+    @SuppressWarnings("null")
+    public ResponseEntity<String> tableQrUrl(@RequestParam("table") int table, HttpServletRequest request) {
+        if (table <= 0 || table > 500) {
+            return ResponseEntity.badRequest().build();
+        }
+        String signature = hmacSignatureService.signTableNumber(table);
+        String targetUrl = ServletUriComponentsBuilder.fromContextPath(request)
+                .path("/")
+                .queryParam("table", table)
+                .queryParam("sig", signature)
+                .build()
+                .toUriString();
+        return ResponseEntity.ok(targetUrl);
+    }
 }
 

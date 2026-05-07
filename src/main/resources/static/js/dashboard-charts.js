@@ -102,13 +102,9 @@
 
     // ── QR Code Generator ──
 
-    function buildTargetUrl(table) {
-        const u = new URL(window.location.origin + "/");
-        u.searchParams.set("table", String(table));
-        return u.toString();
-    }
+    // Removed buildTargetUrl, using backend endpoint instead
 
-    window.renderQr = function renderQr() {
+    window.renderQr = async function renderQr() {
         const table = Number(document.getElementById('tableNumber').value);
         const size = Number(document.getElementById('qrSize').value);
 
@@ -123,24 +119,32 @@
             return;
         }
 
-        const targetUrl = buildTargetUrl(table);
         const qrSrc = `/admin/qr/table?table=${encodeURIComponent(table)}&size=${encodeURIComponent(size)}`;
 
         const img = document.getElementById('qrImg');
         img.width = size;
         img.height = size;
         img.src = qrSrc;
-        if (typeof showToast === 'function') showToast('QR-код згенеровано', 'success');
 
         const downloadBtn = document.getElementById('downloadBtn');
         downloadBtn.href = qrSrc;
         downloadBtn.download = `table-${table}-qr.png`;
 
-        const targetUrlInput = document.getElementById('targetUrl');
-        targetUrlInput.value = targetUrl;
+        try {
+            const urlResp = await fetch(`/admin/qr/url?table=${encodeURIComponent(table)}`);
+            if(urlResp.ok) {
+                const targetUrl = await urlResp.text();
+                const targetUrlInput = document.getElementById('targetUrl');
+                targetUrlInput.value = targetUrl;
 
-        const openUrlBtn = document.getElementById('openUrlBtn');
-        openUrlBtn.href = targetUrl;
+                const openUrlBtn = document.getElementById('openUrlBtn');
+                openUrlBtn.href = targetUrl;
+                
+                if (typeof showToast === 'function') showToast('QR-код згенеровано', 'success');
+            }
+        } catch(e) { 
+            console.error('Помилка отримання підписаного URL:', e); 
+        }
     };
 
     window.copyUrl = async function copyUrl() {
