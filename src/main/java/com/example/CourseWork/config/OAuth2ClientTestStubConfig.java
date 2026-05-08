@@ -3,6 +3,7 @@ package com.example.CourseWork.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.lang.NonNull;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
@@ -38,5 +39,52 @@ public class OAuth2ClientTestStubConfig {
                 .clientName("Keycloak")
                 .build();
         return new InMemoryClientRegistrationRepository(keycloak);
+    }
+    @Bean
+    public com.example.CourseWork.security.SecurityTimingFilter securityTimingFilter() {
+        return new com.example.CourseWork.security.SecurityTimingFilter() {
+            @Override
+            protected void doFilterInternal(@NonNull jakarta.servlet.http.HttpServletRequest request, 
+                                          @NonNull jakarta.servlet.http.HttpServletResponse response, 
+                                          @NonNull jakarta.servlet.FilterChain filterChain) 
+                                          throws jakarta.servlet.ServletException, java.io.IOException {
+                long start = System.currentTimeMillis();
+                try {
+                    filterChain.doFilter(request, response);
+                } finally {
+                    response.addHeader("X-Security-Time-Ms", String.valueOf(System.currentTimeMillis() - start));
+                }
+            }
+        };
+    }
+
+    @Bean
+    public com.example.CourseWork.security.GuestSessionFilter guestSessionFilter() {
+        return new com.example.CourseWork.security.GuestSessionFilter() {
+            @Override
+            protected void doFilterInternal(@NonNull jakarta.servlet.http.HttpServletRequest request, 
+                                          @NonNull jakarta.servlet.http.HttpServletResponse response, 
+                                          @NonNull jakarta.servlet.FilterChain filterChain) 
+                                          throws jakarta.servlet.ServletException, java.io.IOException {
+                filterChain.doFilter(request, response);
+            }
+        };
+    }
+
+    @Bean
+    public com.example.CourseWork.security.LoginSuccessMergeHandler loginSuccessMergeHandler() {
+        // Since it's a class with dependencies, we can just return a simple instance 
+        // with null dependencies if they are not used in the default success flow 
+        // that we might trigger in tests, or better, use a dummy success handler.
+        return new com.example.CourseWork.security.LoginSuccessMergeHandler(null, null) {
+            @Override
+            public void onAuthenticationSuccess(jakarta.servlet.http.HttpServletRequest request, 
+                                              jakarta.servlet.http.HttpServletResponse response,
+                                              org.springframework.security.core.Authentication authentication) 
+                                              throws jakarta.servlet.ServletException, java.io.IOException {
+                // Do nothing or simple redirect
+                response.sendRedirect("/");
+            }
+        };
     }
 }

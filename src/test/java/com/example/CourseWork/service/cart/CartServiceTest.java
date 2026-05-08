@@ -154,4 +154,146 @@ class CartServiceTest {
         assertThat(cart.getItems()).isEmpty();
         verify(cartRepository).save(cart);
     }
+
+    // ── mergeCarts ──────────────────────────────────────────────
+
+    @Test
+    void mergeCarts_whenGuestCartEmpty_shouldDeleteGuestCartAndReturn() {
+        // Arrange
+        Cart guestCart = new Cart();
+        guestCart.setUserId("GUEST_abc");
+        guestCart.setItems(new ArrayList<>());
+
+        when(cartRepository.findByUserIdWithItemsAndDishes("GUEST_abc")).thenReturn(Optional.of(guestCart));
+
+        // Act
+        cartService.mergeCarts("GUEST_abc", USER_ID);
+
+        // Assert: guest cart should be deleted even though it's empty
+        verify(cartRepository).delete(guestCart);
+        verify(cartRepository, never()).findByUserIdWithItemsAndDishes(USER_ID);
+    }
+
+    @Test
+    void mergeCarts_whenGuestCartAbsent_shouldDoNothing() {
+        // Arrange
+        when(cartRepository.findByUserIdWithItemsAndDishes("GUEST_xyz")).thenReturn(Optional.empty());
+
+        // Act
+        cartService.mergeCarts("GUEST_xyz", USER_ID);
+
+        // Assert: auth cart is never touched
+        verify(cartRepository, never()).findByUserIdWithItemsAndDishes(USER_ID);
+        verify(cartRepository, never()).save(any());
+    }
+
+    @Test
+    void mergeCarts_whenGuestHasItems_andAuthCartExists_shouldMergeQuantities() {
+        // Arrange
+        Dish dish = new Dish();
+        dish.setId(7);
+
+        // Guest cart: 2 × dish-7
+        CartItem guestItem = new CartItem();
+        guestItem.setDish(dish);
+        guestItem.setQuantity(2);
+        guestItem.setSpecialRequest("no salt");
+        Cart guestCart = new Cart();
+        guestCart.setUserId("GUEST_abc");
+        guestCart.setItems(new ArrayList<>(java.util.List.of(guestItem)));
+
+        // Auth cart: already has 3 × dish-7 (same special request)
+        CartItem authItem = new CartItem();
+        authItem.setDish(dish);
+        authItem.setQuantity(3);
+        authItem.setSpecialRequest("no salt");
+        Cart authCart = new Cart();
+        authCart.setUserId(USER_ID);
+        authCart.setItems(new ArrayList<>(java.util.List.of(authItem)));
+
+        when(cartRepository.findByUserIdWithItemsAndDishes("GUEST_abc")).thenReturn(Optional.of(guestCart));
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.of(authCart));
+
+        // Act
+        cartService.mergeCarts("GUEST_abc", USER_ID);
+
+        // Assert: quantity should be summed (3 + 2 = 5)
+        assertThat(authCart.getItems()).hasSize(1);
+        assertThat(authCart.getItems().get(0).getQuantity()).isEqualTo(5);
+        verify(cartRepository).save(authCart);
+        verify(cartRepository).delete(guestCart);
+    }
+
+    @Test
+    void mergeCarts_whenGuestHasNewDish_shouldAddNewItemToAuthCart() {
+        // Arrange
+        Dish dishA = new Dish();
+        dishA.setId(1);
+        Dish dishB = new Dish();
+        dishB.setId(2);
+
+        CartItem guestItem = new CartItem();
+        guestItem.setDish(dishB);
+        guestItem.setQuantity(1);
+        guestItem.setSpecialRequest("");
+        Cart guestCart = new Cart();
+        guestCart.setUserId("GUEST_abc");
+        guestCart.setItems(new ArrayList<>(java.util.List.of(guestItem)));
+
+        CartItem authItem = new CartItem();
+        authItem.setDish(dishA);
+        authItem.setQuantity(2);
+        authItem.setSpecialRequest("");
+        Cart authCart = new Cart();
+        authCart.setUserId(USER_ID);
+        authCart.setItems(new ArrayList<>(java.util.List.of(authItem)));
+
+        when(cartRepository.findByUserIdWithItemsAndDishes("GUEST_abc")).thenReturn(Optional.of(guestCart));
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.of(authCart));
+
+        // Act
+        cartService.mergeCarts("GUEST_abc", USER_ID);
+
+        // Assert: auth cart should now have 2 distinct items
+        assertThat(authCart.getItems()).hasSize(2);
+        verify(cartRepository).save(authCart);
+        verify(cartRepository).delete(guestCart);
+    }
+
+    @Test
+    void mergeCarts_whenSameId_shouldDoNothing() {
+        // Merging a user with themselves is a no-op
+        cartService.mergeCarts(USER_ID, USER_ID);
+        verifyNoInteractions(cartRepository);
+    }
+
+    // ── clearCart ───────────────────────────────────────────────
+
+    @Test
+    void clearCart_whenCartExists_shouldRemoveAllItems() {
+        // Arrange
+        CartItem item = new CartItem();
+        item.setId(1);
+        Cart cart = new Cart();
+        cart.setUserId(USER_ID);
+        cart.setItems(new ArrayList<>(java.util.List.of(item)));
+
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.of(cart));
+
+        // Act
+        cartService.clearCart(USER_ID);
+
+        // Assert
+        assertThat(cart.getItems()).isEmpty();
+        verify(cartRepository).save(cart);
+    }
+
+    @Test
+    void clearCart_whenCartAbsent_shouldDoNothing() {
+        when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.empty());
+
+        cartService.clearCart(USER_ID);
+
+        verify(cartRepository, never()).save(any());
+    }
 }

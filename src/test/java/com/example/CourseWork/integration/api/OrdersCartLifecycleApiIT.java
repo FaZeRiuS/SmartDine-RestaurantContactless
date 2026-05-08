@@ -172,5 +172,38 @@ class OrdersCartLifecycleApiIT {
                         .param("quantity", "1"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void addItemToCart_whenActiveOrderExists_returns409() throws Exception {
+        // Arrange: create an active unpaid order for the user
+        Dish dish = new Dish();
+        dish.setName("Pizza");
+        dish.setPrice(new BigDecimal("120.00"));
+        dish.setIsAvailable(true);
+        dish.setPreparationTime(15);
+        dish = dishRepository.save(dish);
+
+        Order order = new Order();
+        order.setUserId("cart-blocked-user");
+        order.setStatus(OrderStatus.NEW);
+        order.setPaymentStatus(PaymentStatus.PENDING);
+        order.setCreatedAt(OffsetDateTime.now());
+        order.setTotalPrice(new BigDecimal("120.00"));
+        order.setItems(new ArrayList<>());
+        OrderItem oi = new OrderItem();
+        oi.setOrder(order);
+        oi.setDish(dish);
+        oi.setQuantity(1);
+        order.getItems().add(oi);
+        orderRepository.save(order);
+
+        // Act + Assert: trying to add a new item to the cart should be blocked (409 Conflict)
+        mockMvc.perform(post("/api/cart/items")
+                        .with(login("cart-blocked-user", "CUSTOMER"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"dishId\":" + dish.getId() + ",\"quantity\":1}"))
+                .andExpect(status().isConflict());
+    }
 }
 

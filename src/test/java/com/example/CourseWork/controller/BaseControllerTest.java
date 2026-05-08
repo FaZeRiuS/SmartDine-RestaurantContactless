@@ -37,6 +37,9 @@ public abstract class BaseControllerTest {
     @MockitoBean(name = "loyaltyService")
     protected com.example.CourseWork.service.loyalty.LoyaltyService loyaltyService;
 
+    @MockitoBean
+    protected com.example.CourseWork.service.security.HmacSignatureService hmacSignatureService;
+
     @BeforeEach
     void setUpBase() {
     }
