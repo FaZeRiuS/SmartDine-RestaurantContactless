@@ -158,7 +158,75 @@ window.userFacingErrorMessage = userFacingErrorMessage;
  */
 function checkUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('paymentResult') === 'success') {
+    const paymentResult = params.get('paymentResult');
+    const orderIdStr = params.get('orderId');
+
+    if (paymentResult === 'success' && orderIdStr) {
+        const orderId = parseInt(orderIdStr, 10);
+        if (!isNaN(orderId)) {
+            // Clean up the URL without refreshing
+            const newUrl = window.location.pathname + window.location.hash;
+            window.history.replaceState({}, document.title, newUrl);
+
+            // Show a temporary pending toast
+            const statusToast = showToast('⏳ Перевірка статусу оплати...', 'info');
+
+            let attempts = 0;
+            const maxAttempts = 10;
+            const intervalMs = 1500;
+
+            const pollStatus = async () => {
+                try {
+                    const response = await fetch(`/api/orders/${orderId}`);
+                    if (response.status === 403 || response.status === 401) {
+                        console.error('Forbidden access to order status check');
+                        if (statusToast && typeof dismissToast === 'function') {
+                            dismissToast(statusToast);
+                        }
+                        showToast('⚠️ Оплата надіслана. Не вдалося перевірити статус замовлення через обмеження доступу.', 'warning');
+                        return;
+                    }
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+                    const order = await response.json();
+                    if (order.paymentStatus === 'SUCCESS') {
+                        if (statusToast && typeof dismissToast === 'function') {
+                            dismissToast(statusToast);
+                        }
+                        showToast('✅ Оплата успішна! Ваше замовлення готується.', 'success');
+                        
+                        // Notify standard order listeners
+                        document.body.dispatchEvent(new CustomEvent('order-updated', { detail: { orderId: orderId } }));
+                        return;
+                    } else if (order.paymentStatus === 'FAILED') {
+                        if (statusToast && typeof dismissToast === 'function') {
+                            dismissToast(statusToast);
+                        }
+                        showToast('❌ Оплата відхилена або виникла помилка.', 'error');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error fetching order status:', error);
+                }
+
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(pollStatus, intervalMs);
+                } else {
+                    if (statusToast && typeof dismissToast === 'function') {
+                        dismissToast(statusToast);
+                    }
+                    showToast('⏳ Оплата все ще обробляється. Статус замовлення оновиться автоматично.', 'warning');
+                }
+            };
+
+            setTimeout(pollStatus, 500);
+            return;
+        }
+    }
+
+    if (paymentResult === 'success') {
         showToast('✅ Оплата успішна! Ваше замовлення готується.', 'success');
         
         // Clean up the URL without refreshing
@@ -483,6 +551,7 @@ function showToast(message, type = 'info', action = null) {
     
     const duration = action ? 8000 : 4000;
     scheduleToastAutoDismiss(toast, duration);
+    return toast;
 }
 
 window.showToast = showToast;

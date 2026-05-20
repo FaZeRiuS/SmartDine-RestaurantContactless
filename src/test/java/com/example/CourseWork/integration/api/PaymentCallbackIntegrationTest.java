@@ -153,7 +153,7 @@ class PaymentCallbackIntegrationTest {
     }
 
     @Test
-    void callback_ignoredStatus_doesNotMutateDb() throws Exception {
+    void callback_failureStatus_setsPaymentFailed_andPublishesUpdate() throws Exception {
         Order order = new Order();
         order.setUserId("guest-user");
         order.setStatus(OrderStatus.NEW);
@@ -169,11 +169,11 @@ class PaymentCallbackIntegrationTest {
                         .param("data", cb.data())
                         .param("signature", cb.signature()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Ignored status=error")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Handled failure status=error")));
 
         Order saved = orderRepository.findById(java.util.Objects.requireNonNull(order.getId())).orElseThrow();
-        assertThat(saved.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
-        verify(sseService, never()).sendOrderUpdate(any(), any());
+        assertThat(saved.getPaymentStatus()).isEqualTo(PaymentStatus.FAILED);
+        verify(sseService, times(1)).sendOrderUpdate(eq("guest-user"), any());
         verify(loyaltyService, never()).earnPointsInternal(any(), any(), any());
     }
 

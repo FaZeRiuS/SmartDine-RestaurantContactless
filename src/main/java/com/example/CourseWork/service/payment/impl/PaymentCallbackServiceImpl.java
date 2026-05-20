@@ -61,6 +61,22 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
     }
 
     @Override
+    @Transactional
+    public void handleCallbackFailure(LiqPayCallbackDto callback) {
+        Integer dbOrderId = LiqPayUtil.extractDbOrderId(callback.getOrderId());
+        @SuppressWarnings("null")
+        Order order = orderRepository.findById(dbOrderId)
+                .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
+
+        if (PaymentStatus.SUCCESS.equals(order.getPaymentStatus())) {
+            return; // idempotent: do not overwrite a successful payment status
+        }
+
+        order.setPaymentStatus(PaymentStatus.FAILED);
+        orderRepository.save(order);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public void publishOrderUpdateToUser(Integer dbOrderId) {
         @SuppressWarnings("null")

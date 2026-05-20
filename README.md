@@ -31,7 +31,7 @@
 - **Media**: Thumbnailator та WebP-imageio для оптимізації фото страв.
 - **Testing**: Playwright, HtmlUnit, JUnit 5, Mockito.
 - **DevOps**: Docker, Docker Compose, Nginx.
-- **Payments**: LiqPay SDK.
+- **Payments**: LiqPay API.
 
 ---
 
@@ -49,7 +49,7 @@
 
 ### Вимоги
 - Docker & Docker Compose
-- JDK 24
+- JDK 25
 - Maven 3.9+
 
 ### Локальний запуск (Development)

@@ -47,6 +47,20 @@ class OrderControllerTest extends BaseControllerTest {
     }
 
     @Test
+    void getOrderById_ShouldWorkForAuthorizedUser() throws Exception {
+        // Arrange
+        OrderResponseDto response = new OrderResponseDto();
+        response.setId(1);
+        when(orderService.getOrderById(1)).thenReturn(response);
+
+        // Act & Assert - OK for Customer
+        mockMvc.perform(get("/api/orders/1")
+                        .with(withUser("cust-1", "CUSTOMER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1));
+    }
+
+    @Test
     void getOrderHistory_ShouldRequireCustomer() throws Exception {
         // Arrange
         when(orderService.getOrderHistory(eq("cust-1"), any())).thenReturn(new PageImpl<>(List.of(new OrderResponseDto())));

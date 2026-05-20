@@ -83,13 +83,15 @@ public class PaymentController {
 
         String status = callback.getStatus() != null ? callback.getStatus() : "";
         boolean isSuccess = "success".equalsIgnoreCase(status) || "sandbox".equalsIgnoreCase(status);
+        Integer dbOrderId = LiqPayUtil.extractDbOrderId(callback.getOrderId());
+
         if (!isSuccess) {
-            return ResponseEntity.ok("Ignored status=" + status);
+            paymentCallbackService.handleCallbackFailure(callback);
+            paymentCallbackService.publishOrderUpdateToUser(dbOrderId);
+            return ResponseEntity.ok("Handled failure status=" + status);
         }
 
         paymentCallbackService.handleCallbackSuccess(callback);
-
-        Integer dbOrderId = LiqPayUtil.extractDbOrderId(callback.getOrderId());
         paymentCallbackService.publishOrderUpdateToUser(dbOrderId);
 
         return ResponseEntity.ok("OK");

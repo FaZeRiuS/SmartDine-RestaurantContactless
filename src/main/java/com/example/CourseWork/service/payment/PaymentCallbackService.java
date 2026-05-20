@@ -10,6 +10,12 @@ public interface PaymentCallbackService {
     void handleCallbackSuccess(LiqPayCallbackDto callback);
 
     /**
+     * Handles LiqPay callback for unsuccessful/failed payments.
+     * Must be idempotent.
+     */
+    void handleCallbackFailure(LiqPayCallbackDto callback);
+
+    /**
      * Loads the order with lines and dishes inside a transaction and pushes the snapshot to the owner via SSE.
      * Required when OSIV is disabled — mapping must not run on a detached {@code Order}.
      */

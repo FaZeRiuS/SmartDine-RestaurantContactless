@@ -86,6 +86,27 @@ class PaymentControllerTest extends BaseControllerTest {
     }
 
     @Test
+    void callback_ShouldProcessFailedPayment() throws Exception {
+        // Arrange
+        LiqPayCallbackDto callback = new LiqPayCallbackDto();
+        callback.setOrderId("order_100_123456");
+        callback.setStatus("failure");
+        when(liqPayService.decodeCallbackData(anyString())).thenReturn(callback);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/payment/callback")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("data", "valid-data")
+                .param("signature", "valid-sig"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Handled failure status=failure"));
+
+        verify(paymentCallbackService).handleCallbackFailure(any());
+        verify(paymentCallbackService).publishOrderUpdateToUser(100);
+    }
+
+    @Test
     void callback_ShouldRejectInvalidSignature() throws Exception {
         // Arrange
         doThrow(new java.security.SignatureException("Invalid signature"))
