@@ -13,7 +13,11 @@ public class CacheConfig {
     @Bean
     @SuppressWarnings("null")
     public CaffeineCacheManager cacheManager() {
-        CaffeineCacheManager manager = new CaffeineCacheManager("menusWithDishes");
+        CaffeineCacheManager manager = new CaffeineCacheManager(
+                "menusWithDishes",
+                "popularDishesBase",
+                "personalizedRecommendations"
+        );
         @SuppressWarnings("null")
         Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofSeconds(60))

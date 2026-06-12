@@ -177,4 +177,10 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
         ORDER BY orderHour
         """, nativeQuery = true)
     List<HourCountView> countSuccessfulOrdersByHour(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    Optional<Order> findByIdForUpdate(@Param("id") Integer id);
+
+    boolean existsByPaymentTransactionId(String paymentTransactionId);
 }

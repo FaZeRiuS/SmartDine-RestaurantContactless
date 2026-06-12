@@ -9,6 +9,7 @@ import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.menu.impl.DishServiceImpl;
 import com.example.CourseWork.service.recommendation.RecommendationService;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import com.example.CourseWork.exception.ErrorMessages;
 import com.example.CourseWork.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,12 +43,15 @@ class DishServiceTest {
     @Mock
     private RecommendationService recommendationService;
 
+    @Mock
+    private CurrentUserIdentity currentUserIdentity;
+
     private DishService dishService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        dishService = new DishServiceImpl(dishRepository, menuRepository, dishMapper, dishRatingService, recommendationService);
+        dishService = new DishServiceImpl(dishRepository, menuRepository, dishMapper, dishRatingService, recommendationService, currentUserIdentity);
     }
 
     @Test

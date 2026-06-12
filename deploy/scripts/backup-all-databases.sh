@@ -25,7 +25,7 @@ require_file() {
 
 rotate() {
   local pattern=$1
-  find "$BACKUP_DIR" -maxdepth 1 -type f -name "$pattern" -mtime "+${RETENTION_DAYS}" -delete 2>/dev/null || true
+  find "$BACKUP_DIR" -maxdepth 1 -type f -name "$pattern" -mtime "+${RETENTION_DAYS}" -exec rm -f {} + 2>/dev/null || true
 }
 
 mkdir -p "$BACKUP_DIR"

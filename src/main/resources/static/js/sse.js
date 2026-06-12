@@ -53,7 +53,7 @@ function startSseConnection(userId) {
         window.sseConnected = false;
     }
 
-    eventSource = new EventSource('/api/sse/subscribe/' + encodeURIComponent(userId));
+    eventSource = new EventSource('/api/sse/subscribe/' + encodeURIComponent(userId), { withCredentials: true });
 
     eventSource.onopen = () => {
         // sseConnected set on server's `connected` event

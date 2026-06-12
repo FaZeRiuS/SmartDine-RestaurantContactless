@@ -94,7 +94,7 @@ public class HtmxCartController {
 
         // Recommendation logic (Smart Combo)
         if (shouldShowSmartCombo(session)) {
-            var recommendation = recommendationService.getCrossSellRecommendation(dishId, existingDishIds);
+            var recommendation = recommendationService.getCrossSellRecommendation(userId, dishId, existingDishIds);
             if (recommendation.isPresent()) {
                 model.addAttribute("recommendDish", recommendation.get());
                 markSmartComboShown(session);

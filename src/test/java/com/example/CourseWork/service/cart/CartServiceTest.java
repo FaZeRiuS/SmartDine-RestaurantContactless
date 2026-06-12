@@ -9,6 +9,7 @@ import com.example.CourseWork.model.Dish;
 import com.example.CourseWork.repository.CartRepository;
 import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.service.cart.impl.CartServiceImpl;
+import com.example.CourseWork.service.cart.impl.CartHelper;
 import com.example.CourseWork.exception.BadRequestException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +32,7 @@ class CartServiceTest {
     @Mock private CartRepository cartRepository;
     @Mock private DishRepository dishRepository;
     @Mock private CartMapper cartMapper;
+    @Mock private CartHelper cartHelper;
 
     @InjectMocks
     private CartServiceImpl cartService;
@@ -40,8 +42,10 @@ class CartServiceTest {
     @Test
     void getCartByUserId_WhenCartDoesNotExist_ShouldCreateNew() {
         // Arrange
+        Cart newCart = new Cart();
+        newCart.setUserId(USER_ID);
         when(cartRepository.findByUserIdWithItemsAndDishes(USER_ID)).thenReturn(Optional.empty());
-        when(cartRepository.save(any(Cart.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(cartHelper.createCartRequiresNew(USER_ID)).thenReturn(newCart);
         when(cartMapper.toResponseDto(any(Cart.class))).thenReturn(new CartResponseDto());
 
         // Act
@@ -49,7 +53,7 @@ class CartServiceTest {
 
         // Assert
         assertThat(result).isNotNull();
-        verify(cartRepository).save(argThat(cart -> cart.getUserId().equals(USER_ID)));
+        verify(cartHelper).createCartRequiresNew(USER_ID);
     }
 
     @Test
@@ -199,6 +203,7 @@ class CartServiceTest {
         guestItem.setQuantity(2);
         guestItem.setSpecialRequest("no salt");
         Cart guestCart = new Cart();
+        guestCart.setId(2);
         guestCart.setUserId("GUEST_abc");
         guestCart.setItems(new ArrayList<>(java.util.List.of(guestItem)));
 
@@ -208,6 +213,7 @@ class CartServiceTest {
         authItem.setQuantity(3);
         authItem.setSpecialRequest("no salt");
         Cart authCart = new Cart();
+        authCart.setId(1);
         authCart.setUserId(USER_ID);
         authCart.setItems(new ArrayList<>(java.util.List.of(authItem)));
 
@@ -237,6 +243,7 @@ class CartServiceTest {
         guestItem.setQuantity(1);
         guestItem.setSpecialRequest("");
         Cart guestCart = new Cart();
+        guestCart.setId(2);
         guestCart.setUserId("GUEST_abc");
         guestCart.setItems(new ArrayList<>(java.util.List.of(guestItem)));
 
@@ -245,6 +252,7 @@ class CartServiceTest {
         authItem.setQuantity(2);
         authItem.setSpecialRequest("");
         Cart authCart = new Cart();
+        authCart.setId(1);
         authCart.setUserId(USER_ID);
         authCart.setItems(new ArrayList<>(java.util.List.of(authItem)));
 

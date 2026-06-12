@@ -75,11 +75,16 @@ class PaymentCallbackIntegrationTest {
     private record CallbackPayload(String data, String signature) {}
 
     private CallbackPayload buildCallback(String orderId, String status) throws Exception {
+        return buildCallback(orderId, status, "100.00", "pay_123456");
+    }
+
+    private CallbackPayload buildCallback(String orderId, String status, String amount, String paymentId) throws Exception {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("status", status);
         payload.put("order_id", orderId);
-        payload.put("amount", "10.00");
+        payload.put("amount", amount);
         payload.put("currency", "UAH");
+        payload.put("payment_id", paymentId);
 
         String json = objectMapper.writeValueAsString(payload);
         String data = Base64.getEncoder().encodeToString(json.getBytes(StandardCharsets.UTF_8));
@@ -270,6 +275,51 @@ class PaymentCallbackIntegrationTest {
                 .andExpect(status().isOk());
 
         verify(loyaltyService, never()).earnPointsInternal(any(), any(), any());
+    }
+
+    @Test
+    void callback_replayAttack_isIgnored() throws Exception {
+        // First order
+        Order order1 = new Order();
+        order1.setUserId("guest-user");
+        order1.setStatus(OrderStatus.NEW);
+        order1.setPaymentStatus(PaymentStatus.PENDING);
+        order1.setTotalPrice(new BigDecimal("100.00"));
+        order1 = orderRepository.save(order1);
+
+        String liqpayOrderId1 = "order_" + order1.getId() + "_123456";
+        CallbackPayload cb1 = buildCallback(liqpayOrderId1, "success", "100.00", "pay_dup");
+
+        mockMvc.perform(post("/api/payment/callback")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("data", cb1.data())
+                        .param("signature", cb1.signature()))
+                .andExpect(status().isOk());
+
+        Order saved1 = orderRepository.findById(order1.getId()).orElseThrow();
+        assertThat(saved1.getPaymentStatus()).isEqualTo(PaymentStatus.SUCCESS);
+        assertThat(saved1.getPaymentTransactionId()).isEqualTo("pay_dup");
+
+        // Second order
+        Order order2 = new Order();
+        order2.setUserId("guest-user");
+        order2.setStatus(OrderStatus.NEW);
+        order2.setPaymentStatus(PaymentStatus.PENDING);
+        order2.setTotalPrice(new BigDecimal("100.00"));
+        order2 = orderRepository.save(order2);
+
+        String liqpayOrderId2 = "order_" + order2.getId() + "_123456";
+        CallbackPayload cb2 = buildCallback(liqpayOrderId2, "success", "100.00", "pay_dup");
+
+        mockMvc.perform(post("/api/payment/callback")
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("data", cb2.data())
+                        .param("signature", cb2.signature()))
+                .andExpect(status().isOk());
+
+        Order saved2 = orderRepository.findById(order2.getId()).orElseThrow();
+        assertThat(saved2.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(saved2.getPaymentTransactionId()).isNull();
     }
 }
 

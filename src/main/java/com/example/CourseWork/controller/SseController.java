@@ -9,10 +9,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequiredArgsConstructor
 public class SseController {
+
+    private static final Logger log = LoggerFactory.getLogger(SseController.class);
 
     private final SseService sseService;
 
@@ -27,6 +31,9 @@ public class SseController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMINISTRATOR") || 
                                a.getAuthority().equals("ROLE_CHEF") || 
                                a.getAuthority().equals("ROLE_WAITER"));
+
+        log.info("SSE subscription request: userId={}, isStaff={}, authorities={}", 
+                userId, isStaff, auth != null ? auth.getAuthorities() : "none");
         
         return sseService.subscribe(userId, isStaff);
     }

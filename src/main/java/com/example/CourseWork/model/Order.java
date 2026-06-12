@@ -92,6 +92,9 @@ public class Order {
     @ToString.Include
     private boolean needsWaiter = false;
 
+    @Column(name = "payment_transaction_id", unique = true, length = 100)
+    private String paymentTransactionId;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("id ASC")
     private List<OrderItem> items = new ArrayList<>();

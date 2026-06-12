@@ -162,6 +162,7 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
     /**
      * Available dishes that appeared in at least one order line, ordered by total ordered quantity (desc).
      */
+    @org.springframework.cache.annotation.Cacheable(cacheNames = "popularDishesBase")
     @Query(value = """
         SELECT d.id, COALESCE(SUM(oi.quantity), 0) AS order_units
         FROM dish d

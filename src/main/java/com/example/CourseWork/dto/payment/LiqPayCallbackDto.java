@@ -12,5 +12,8 @@ public class LiqPayCallbackDto {
 
     private String amount;
     private String currency;
+
+    @JsonProperty("payment_id")
+    private String paymentId;
 }
 

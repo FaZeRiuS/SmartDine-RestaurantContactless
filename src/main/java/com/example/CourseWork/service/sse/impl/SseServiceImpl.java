@@ -86,12 +86,21 @@ public class SseServiceImpl implements SseService {
 
     @SuppressWarnings("null")
     private void sendToEmitters(List<SseEmitter> emitters, String eventName, Object data) {
+        java.util.List<SseEmitter> broken = new java.util.ArrayList<>();
         for (SseEmitter emitter : emitters) {
             try {
                 emitter.send(SseEmitter.event().name(eventName).data(data));
-            } catch (Exception ignored) {
-                // Broken emitter; onCompletion/onError will detach it
+            } catch (Exception e) {
+                broken.add(emitter);
+                try {
+                    emitter.completeWithError(e);
+                } catch (Exception ignored) {}
             }
+        }
+        if (!broken.isEmpty()) {
+            emitters.removeAll(broken);
+            userEmitters.forEach((userId, list) -> list.removeAll(broken));
+            userEmitters.values().removeIf(List::isEmpty);
         }
     }
 
@@ -111,19 +120,39 @@ public class SseServiceImpl implements SseService {
      */
     @Scheduled(fixedRate = 25000)
     public void sendHeartbeat() {
-        staffEmitters.forEach(this::sendHeartbeat);
-        userEmitters.values().forEach(emitters -> emitters.forEach(this::sendHeartbeat));
-    }
-
-    private void sendHeartbeat(SseEmitter emitter) {
-        try {
-            // Use a small named event rather than a comment to improve delivery/flush through intermediaries.
-            emitter.send(SseEmitter.event()
-                    .name("ping")
-                    .data(Objects.requireNonNull(HEARTBEAT_PAYLOAD))
-                    .reconnectTime(10000));
-        } catch (Exception ignored) {
-            // Emitter will be removed via onError/onCompletion
+        java.util.List<SseEmitter> brokenStaff = new java.util.ArrayList<>();
+        for (SseEmitter emitter : staffEmitters) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("ping")
+                        .data(Objects.requireNonNull(HEARTBEAT_PAYLOAD))
+                        .reconnectTime(10000));
+            } catch (Exception e) {
+                brokenStaff.add(emitter);
+                try {
+                    emitter.completeWithError(e);
+                } catch (Exception ignored) {}
+            }
         }
+        staffEmitters.removeAll(brokenStaff);
+
+        userEmitters.forEach((userId, list) -> {
+            java.util.List<SseEmitter> brokenUser = new java.util.ArrayList<>();
+            for (SseEmitter emitter : list) {
+                try {
+                    emitter.send(SseEmitter.event()
+                            .name("ping")
+                            .data(Objects.requireNonNull(HEARTBEAT_PAYLOAD))
+                            .reconnectTime(10000));
+                } catch (Exception e) {
+                    brokenUser.add(emitter);
+                    try {
+                        emitter.completeWithError(e);
+                    } catch (Exception ignored) {}
+                }
+            }
+            list.removeAll(brokenUser);
+        });
+        userEmitters.values().removeIf(List::isEmpty);
     }
 }

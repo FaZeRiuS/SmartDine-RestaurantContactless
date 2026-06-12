@@ -29,6 +29,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.Objects;
+import com.example.CourseWork.util.SpecialRequestUtil;
 
 @Service
 public class OrderItemServiceImpl implements OrderItemService {
@@ -40,12 +41,6 @@ public class OrderItemServiceImpl implements OrderItemService {
     private final OrderTotalCalculator orderTotalCalculator;
     private final OrderAccessPolicy orderAccessPolicy;
     private final OrderNotifier orderNotifier;
-
-    private static String normalizeSpecialRequest(String value) {
-        if (value == null) return "";
-        String v = value.trim();
-        return v.isBlank() ? "" : v;
-    }
 
     public OrderItemServiceImpl(
             OrderRepository orderRepository,
@@ -89,7 +84,7 @@ public class OrderItemServiceImpl implements OrderItemService {
                     OrderItem orderItem = new OrderItem();
                     orderItem.setDish(cartItem.getDish());
                     orderItem.setQuantity(cartItem.getQuantity());
-                    orderItem.setSpecialRequest(normalizeSpecialRequest(cartItem.getSpecialRequest()));
+                    orderItem.setSpecialRequest(SpecialRequestUtil.normalize(cartItem.getSpecialRequest()));
                     orderItem.setOrder(order);
                     return orderItem;
                 }).collect(Collectors.toList());
@@ -131,10 +126,10 @@ public class OrderItemServiceImpl implements OrderItemService {
             Dish dish = dishRepository.findById(dishId)
                     .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
 
-            final String req = normalizeSpecialRequest(itemDto.getSpecialRequest());
+            final String req = SpecialRequestUtil.normalize(itemDto.getSpecialRequest());
             OrderItem existingItem = order.getItems().stream()
                     .filter(item -> item.getDish().getId().equals(dish.getId()) &&
-                            Objects.equals(normalizeSpecialRequest(item.getSpecialRequest()), req))
+                            Objects.equals(SpecialRequestUtil.normalize(item.getSpecialRequest()), req))
                     .findFirst()
                     .orElse(null);
 
@@ -217,7 +212,7 @@ public class OrderItemServiceImpl implements OrderItemService {
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_ITEM_NOT_FOUND));
 
-        item.setSpecialRequest(normalizeSpecialRequest(specialRequest));
+        item.setSpecialRequest(SpecialRequestUtil.normalize(specialRequest));
 
         orderRepository.save(order);
         orderNotifier.notifyStaffOrderUpdated(order.getId(), false);

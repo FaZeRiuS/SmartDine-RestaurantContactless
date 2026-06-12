@@ -12,6 +12,7 @@ import com.example.CourseWork.repository.MenuRepository;
 import com.example.CourseWork.service.menu.DishRatingService;
 import com.example.CourseWork.service.menu.DishService;
 import com.example.CourseWork.service.recommendation.RecommendationService;
+import com.example.CourseWork.security.CurrentUserIdentity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class DishServiceImpl implements DishService {
     private final DishMapper dishMapper;
     private final DishRatingService dishRatingService;
     private final RecommendationService recommendationService;
+    private final CurrentUserIdentity currentUserIdentity;
 
     @Override
     @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)
@@ -246,7 +248,13 @@ public class DishServiceImpl implements DishService {
 
     @Override
     public Optional<DishResponseDto> getSmartCombo(Integer dishId, List<Integer> existingIds) {
-        return recommendationService.getCrossSellRecommendation(dishId, existingIds);
+        String userId = null;
+        try {
+            userId = currentUserIdentity.currentUserId();
+        } catch (Exception e) {
+            // Safe fallback for guest or unauthenticated clients
+        }
+        return recommendationService.getCrossSellRecommendation(userId, dishId, existingIds);
     }
     @Override
     @CacheEvict(cacheNames = "menusWithDishes", allEntries = true)

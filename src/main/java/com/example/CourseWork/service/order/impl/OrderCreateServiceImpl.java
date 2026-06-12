@@ -16,10 +16,16 @@ import com.example.CourseWork.repository.OrderRepository;
 import com.example.CourseWork.service.order.OrderCreateService;
 import com.example.CourseWork.service.order.component.OrderNotifier;
 import com.example.CourseWork.service.order.component.OrderTotalCalculator;
+import com.example.CourseWork.exception.BadRequestException;
+import com.example.CourseWork.util.SpecialRequestUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderCreateServiceImpl implements OrderCreateService {
@@ -44,6 +50,7 @@ public class OrderCreateServiceImpl implements OrderCreateService {
         this.orderNotifier = orderNotifier;
     }
 
+    @CacheEvict(cacheNames = "personalizedRecommendations", key = "#userId")
     @Override
     public OrderResponseDto createOrder(String userId, OrderRequestDto dto, Integer tableNumber) {
         Order order = new Order();
@@ -54,15 +61,33 @@ public class OrderCreateServiceImpl implements OrderCreateService {
         order.setPaymentStatus(PaymentStatus.PENDING);
         order.setItems(new ArrayList<>());
 
+        // Batch fetch all dishes to avoid N+1 query pattern (Issue 13)
+        java.util.List<Integer> dishIds = dto.getItems().stream()
+                .map(OrderItemDto::getDishId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+
+        java.util.Map<Integer, Dish> dishMap = java.util.Collections.emptyMap();
+        if (!dishIds.isEmpty()) {
+            dishMap = dishRepository.findAllById(dishIds).stream()
+                    .collect(Collectors.toMap(Dish::getId, Function.identity()));
+        }
+
         for (OrderItemDto itemDto : dto.getItems()) {
             Integer dishId = itemDto.getDishId();
-            @SuppressWarnings("null")
-            Dish dish = dishRepository.findById(dishId)
-                    .orElseThrow(() -> new NotFoundException(ErrorMessages.DISH_NOT_FOUND));
+            Dish dish = dishMap.get(dishId);
+            if (dish == null) {
+                throw new NotFoundException(ErrorMessages.DISH_NOT_FOUND);
+            }
+            if (Boolean.FALSE.equals(dish.getIsAvailable())) {
+                throw new BadRequestException(ErrorMessages.DISH_NOT_AVAILABLE);
+            }
 
+            final String req = SpecialRequestUtil.normalize(itemDto.getSpecialRequest());
             OrderItem existingItem = order.getItems().stream()
                     .filter(item -> item.getDish().getId().equals(dish.getId()) &&
-                            java.util.Objects.equals(item.getSpecialRequest(), itemDto.getSpecialRequest()))
+                            java.util.Objects.equals(SpecialRequestUtil.normalize(item.getSpecialRequest()), req))
                     .findFirst()
                     .orElse(null);
 
@@ -72,7 +97,7 @@ public class OrderCreateServiceImpl implements OrderCreateService {
                 OrderItem item = new OrderItem();
                 item.setDish(dish);
                 item.setQuantity(itemDto.getQuantity());
-                item.setSpecialRequest(itemDto.getSpecialRequest());
+                item.setSpecialRequest(req);
                 item.setOrder(order);
                 order.getItems().add(item);
             }

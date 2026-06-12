@@ -15,8 +15,10 @@ import com.example.CourseWork.service.sse.SseService;
 import com.example.CourseWork.util.LiqPayUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.CourseWork.exception.BadRequestException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.UUID;
 
 @Service
@@ -44,16 +46,52 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
     public void handleCallbackSuccess(LiqPayCallbackDto callback) {
         Integer dbOrderId = LiqPayUtil.extractDbOrderId(callback.getOrderId());
         @SuppressWarnings("null")
-        Order order = orderRepository.findById(dbOrderId)
+        Order order = orderRepository.findByIdForUpdate(dbOrderId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
         if (PaymentStatus.SUCCESS.equals(order.getPaymentStatus())) {
             return; // idempotent: already processed
         }
 
+        // Replay Attack protection: check if transaction has already been processed
+        String paymentIdStr = callback.getPaymentId();
+        if (paymentIdStr != null && !paymentIdStr.isBlank()) {
+            if (orderRepository.existsByPaymentTransactionId(paymentIdStr)) {
+                return; // already processed
+            }
+        }
+
+        // Amount Validation: verify amount paid matches the order total
+        BigDecimal total = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
+        BigDecimal discount = order.getLoyaltyDiscount() != null ? order.getLoyaltyDiscount() : BigDecimal.ZERO;
+        BigDecimal tip = order.getTipAmount() != null ? order.getTipAmount() : BigDecimal.ZERO;
+        BigDecimal expectedPayable = total.subtract(discount).add(tip);
+        if (expectedPayable.compareTo(BigDecimal.ZERO) < 0) {
+            expectedPayable = BigDecimal.ZERO;
+        }
+        expectedPayable = expectedPayable.setScale(2, RoundingMode.HALF_UP);
+
+        if (callback.getAmount() == null) {
+            throw new BadRequestException("Missing payment amount in callback");
+        }
+        BigDecimal callbackAmount;
+        try {
+            callbackAmount = new BigDecimal(callback.getAmount()).setScale(2, RoundingMode.HALF_UP);
+        } catch (Exception e) {
+            throw new BadRequestException("Invalid payment amount format: " + callback.getAmount());
+        }
+
+        // Check if amount matches expected total (allow up to 0.02 UAH epsilon difference due to rounding)
+        if (callbackAmount.subtract(expectedPayable).abs().compareTo(new BigDecimal("0.02")) > 0) {
+            throw new BadRequestException("Payment amount mismatch: paid " + callbackAmount + ", expected " + expectedPayable);
+        }
+
         order.setPaymentStatus(PaymentStatus.SUCCESS);
         if (OrderStatus.READY.equals(order.getStatus())) {
             order.setStatus(OrderStatus.COMPLETED);
+        }
+        if (paymentIdStr != null && !paymentIdStr.isBlank()) {
+            order.setPaymentTransactionId(paymentIdStr);
         }
         orderRepository.save(order);
 
@@ -65,7 +103,7 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
     public void handleCallbackFailure(LiqPayCallbackDto callback) {
         Integer dbOrderId = LiqPayUtil.extractDbOrderId(callback.getOrderId());
         @SuppressWarnings("null")
-        Order order = orderRepository.findById(dbOrderId)
+        Order order = orderRepository.findByIdForUpdate(dbOrderId)
                 .orElseThrow(() -> new NotFoundException(ErrorMessages.ORDER_NOT_FOUND));
 
         if (PaymentStatus.SUCCESS.equals(order.getPaymentStatus())) {

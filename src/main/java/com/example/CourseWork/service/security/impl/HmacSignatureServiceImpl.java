@@ -4,6 +4,8 @@ import com.example.CourseWork.service.security.HmacSignatureService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.core.env.Environment;
+import java.util.Arrays;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,13 +22,15 @@ public class HmacSignatureServiceImpl implements HmacSignatureService {
     private static final String HMAC_ALGO = "HmacSHA256";
     private final String secretKey;
 
-    public HmacSignatureServiceImpl(@Value("${app.security.qr.hmac-secret}") String secretKey) {
-        if (secretKey == null || secretKey.isBlank()) {
-            log.warn("HMAC secret key is missing or empty. QR codes will not be properly signed/verified. Set app.security.qr.hmac-secret in configuration.");
-            this.secretKey = "default-unsafe-secret";
-        } else {
-            this.secretKey = secretKey;
+    public HmacSignatureServiceImpl(
+            @Value("${app.security.qr.hmac-secret}") String secretKey,
+            Environment env
+    ) {
+        boolean isTest = Arrays.asList(env.getActiveProfiles()).contains("test");
+        if ((secretKey == null || secretKey.isBlank() || "default-unsafe-secret".equals(secretKey)) && !isTest) {
+            throw new IllegalStateException("CRITICAL CONFIGURATION ERROR: app.security.qr.hmac-secret is missing, empty, or insecure.");
         }
+        this.secretKey = (secretKey == null || secretKey.isBlank()) ? "default-unsafe-secret" : secretKey;
     }
 
     @Override
