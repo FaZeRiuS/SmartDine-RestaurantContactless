@@ -60,9 +60,21 @@ function startSseConnection(userId) {
     };
 
     eventSource.addEventListener('connected', () => {
+        const wasDisconnected = (st.attempt > 0);
         window.sseConnected = true;
         st.attempt = 0;
         clearReconnectTimer();
+
+        if (wasDisconnected) {
+            console.log("SSE reconnected. Syncing state...");
+            if (typeof refreshUiAfterReloadNotification === 'function') {
+                try {
+                    refreshUiAfterReloadNotification();
+                } catch (e) {
+                    console.error("Failed to refresh UI after SSE reconnection", e);
+                }
+            }
+        }
     });
 
     eventSource.addEventListener('order-update', (event) => {
@@ -132,8 +144,10 @@ function startSseConnection(userId) {
     });
 
     eventSource.onerror = () => {
-        if (eventSource.readyState === EventSource.CONNECTING) {
-            return;
+        try {
+            eventSource.close();
+        } catch (e) {
+            // ignore
         }
         window.sseConnected = false;
         scheduleReconnect();

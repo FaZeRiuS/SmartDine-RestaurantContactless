@@ -62,7 +62,7 @@
                 <span class="dish-allergen" th:each="a : ${dish.allergens}" th:text="${a}">allergen</span>
             </div>
             <div class="dish-actions">
-                <form hx-post="/htmx/cart/items" hx-swap="none">
+                <form hx-post="/htmx/cart/items" hx-swap="none" hx-disabled-elt="find button">
                     <input type="hidden" name="dishId" th:value="${dish.id}">
                     <input type="hidden" name="quantity" value="1">
                     <input type="hidden" name="specialRequest" value="">

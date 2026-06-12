@@ -70,6 +70,8 @@ self.addEventListener('fetch', event => {
 
   // 1. Do not intercept API or streaming responses (SSE lives under /api/sse/...)
   if (url.pathname.startsWith('/api/') ||
+      url.pathname.startsWith('/htmx/') ||
+      url.pathname.startsWith('/deploy/') ||
       url.pathname.includes('/sse/') ||
       event.request.headers.get('Accept') === 'text/event-stream') {
     return;

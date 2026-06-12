@@ -115,6 +115,7 @@
                         type="button"
                         hx-post="/htmx/orders/confirm"
                         hx-swap="none"
+                        hx-disabled-elt="this"
                         data-toast-pending="Оформлюємо замовлення..."
                         data-toast-success="Замовлення створено"
                         data-toast-success-type="success">
@@ -157,7 +158,7 @@
         <div class="text-xs text-muted mb-2">Разом смакує краще:</div>
         <div class="d-flex align-center justify-between gap-3">
             <strong class="text-sm" th:text="${recommendDish.name}">Страва</strong>
-            <form hx-post="/htmx/cart/items" hx-swap="none" class="m-0">
+            <form hx-post="/htmx/cart/items" hx-swap="none" class="m-0" hx-disabled-elt="find button">
                 <input type="hidden" name="dishId" th:value="${recommendDish.id}">
                 <input type="hidden" name="quantity" value="1">
                 <input type="hidden" name="specialRequest" value="">

@@ -7,7 +7,6 @@ import com.example.CourseWork.repository.DishRepository;
 import com.example.CourseWork.service.menu.DishRatingService;
 import com.example.CourseWork.service.recommendation.RecommendationService;
 import com.example.CourseWork.service.user.UserPreferenceService;
-import com.example.CourseWork.security.CurrentUserIdentity;
 import org.springframework.cache.annotation.Cacheable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,10 +44,12 @@ public class RecommendationServiceImpl implements RecommendationService {
         List<Integer> ids = base.stream().map(Dish::getId).filter(java.util.Objects::nonNull).distinct().toList();
         Map<Integer, List<String>> allergensById = dishRepository.findAllByIdWithAllergens(ids).stream()
                 .filter(d -> d != null && d.getId() != null)
-                .collect(Collectors.toMap(Dish::getId, d -> d.getAllergens() == null ? List.of() : d.getAllergens(), (a, b) -> a));
+                .collect(Collectors.toMap(Dish::getId, d -> d.getAllergens() == null ? List.of() : d.getAllergens(),
+                        (a, b) -> a));
         Map<Integer, List<String>> tagsById = dishRepository.findAllByIdWithTags(ids).stream()
                 .filter(d -> d != null && d.getId() != null)
-                .collect(Collectors.toMap(Dish::getId, d -> d.getTags() == null ? List.of() : d.getTags(), (a, b) -> a));
+                .collect(
+                        Collectors.toMap(Dish::getId, d -> d.getTags() == null ? List.of() : d.getTags(), (a, b) -> a));
 
         List<DishResponseDto> dishes = base.stream()
                 .map(dishMapper::toResponseDto)
@@ -72,7 +73,8 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<DishResponseDto> getCrossSellRecommendation(String userId, Integer baseDishId, List<Integer> existingDishIds) {
+    public Optional<DishResponseDto> getCrossSellRecommendation(String userId, Integer baseDishId,
+            List<Integer> existingDishIds) {
         List<Integer> existing = existingDishIds != null ? existingDishIds : List.of();
 
         List<Object[]> rows = dishRepository.findSmartComboCandidatesForDish(baseDishId, SMART_COMBO_CANDIDATE_LIMIT);
@@ -87,10 +89,11 @@ public class RecommendationServiceImpl implements RecommendationService {
             }
         }
 
-        // Single batch fetch of all menu links for candidate and existing dishes to prevent N+1 queries (Issue 14)
+        // Single batch fetch of all menu links for candidate and existing dishes to
+        // prevent N+1 queries (Issue 14)
         List<Integer> allIds = new java.util.ArrayList<>(candidateIds);
         allIds.addAll(existing);
-        
+
         Map<Integer, java.util.Set<Integer>> dishMenusMap = new java.util.HashMap<>();
         if (!allIds.isEmpty()) {
             List<Object[]> links = dishRepository.findDishMenuLinksForDishIds(allIds);
@@ -120,20 +123,22 @@ public class RecommendationServiceImpl implements RecommendationService {
             if (existing.contains(id)) {
                 continue;
             }
-            
+
             // Check menu sharing in memory (Issue 14)
             java.util.Set<Integer> candidateMenus = dishMenusMap.getOrDefault(id, java.util.Set.of());
             boolean sharesMenu = candidateMenus.stream().anyMatch(existingMenuIds::contains);
             if (sharesMenu) {
                 continue;
             }
-            
+
             long cnt = row[1] != null ? ((Number) row[1]).longValue() : 0L;
-            weighted.add(new long[]{id, cnt + 1L});
+            weighted.add(new long[] { id, cnt + 1L });
         }
 
         // Filter out dishes with excluded allergens for the user safely (Issue 4)
-        java.util.Set<String> excluded = (userId != null && !userId.isBlank()) ? userPreferenceService.getExcludedAllergens(userId) : java.util.Set.of();
+        java.util.Set<String> excluded = (userId != null && !userId.isBlank())
+                ? userPreferenceService.getExcludedAllergens(userId)
+                : java.util.Set.of();
         if (!excluded.isEmpty() && !weighted.isEmpty()) {
             List<Integer> finalCandidateIds = weighted.stream().map(e -> (int) e[0]).distinct().toList();
             java.util.Set<Integer> disallowedIds = dishRepository.findAllByIdWithAllergens(finalCandidateIds).stream()

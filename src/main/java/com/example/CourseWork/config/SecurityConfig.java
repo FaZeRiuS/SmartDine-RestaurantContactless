@@ -156,7 +156,9 @@ public class SecurityConfig {
                         .invalidateHttpSession(true)
                         .clearAuthentication(true))
                 .headers(headers -> headers
-                        .frameOptions(frame -> frame.sameOrigin()));
+                        .frameOptions(frame -> frame.deny())
+                        .contentSecurityPolicy(csp -> csp
+                                .policyDirectives("frame-ancestors 'none';")));
 
         return http.build();
     }
